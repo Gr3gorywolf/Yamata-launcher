@@ -145,8 +145,10 @@ class UpdateService {
 
     if (Platform.isMacOS) {
       await Process.start(
-        provider.updateInfo!.downloadedFilePath!,
-        [],
+        "open",
+        [
+          provider.updateInfo!.downloadedFilePath!,
+        ],
         mode: ProcessStartMode.detached,
       );
       exit(0);

@@ -91,6 +91,10 @@ class FileSystemService {
     return _appSupportPath + "/emulator-intents.json";
   }
 
+  static get updatesPath {
+    return cachePath + "/updates";
+  }
+
   static Future<String?> locateFile() async {
     if (Platform.isAndroid) {
       var internalDirectory = _systemPaths?.internalPath != null
@@ -315,7 +319,8 @@ class FileSystemService {
       downloadSourcesPath,
       consoleSourcesPath,
       fetchCachePath,
-      notificationImagesPath
+      notificationImagesPath,
+      updatesPath
     ];
     for (var path in paths) {
       if (!await Directory(path).exists()) {

@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
+import 'package:yamata_launcher/services/update_service.dart';
 import 'package:yamata_launcher/utils/animation_helper.dart';
 import 'package:yamata_launcher/services/assets_service.dart';
 import 'package:yamata_launcher/services/download_service.dart';
@@ -52,6 +53,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     Provider.of<DownloadProvider>(context, listen: false);
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
         .initialize();
+    await UpdateService.initialize();
     Future.delayed(Duration(milliseconds: 2000)).then((value) {
       Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
       context.push("/explore");

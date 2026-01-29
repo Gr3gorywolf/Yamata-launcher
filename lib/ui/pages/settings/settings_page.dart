@@ -4,12 +4,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/services/update_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/console_sources/console_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
@@ -291,13 +293,34 @@ class _SettingsPageState extends State<SettingsPage> {
               trailing: Icons.open_in_new,
               onTap: () => _launchUrl('https://gregoryc.dev'),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'App version: $_appVersion',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
+            Consumer<AppProvider>(builder: (context, app, _) {
+              var isDownloaded = app.updateInfo?.downloadedFilePath != null;
+              return _NavigationTile(
+                title: 'App version $_appVersion',
+                subtitle: app.updateInfo != null
+                    ? "Update ${app.updateInfo?.version} available, tap to ${isDownloaded ? 'install' : 'download'}"
+                    : 'Tap to check for updates',
+                trailing: Icons.chevron_right,
+                onTap: () async {
+                  if (app.updateInfo != null) {
+                    if (isDownloaded) {
+                      UpdateService.handleInstall();
+                      return;
+                    }
+                    AlertsService.showUpdateChangelogAlert(
+                        context, app.updateInfo!);
+                  } else {
+                    var updateInfo = await UpdateService.checkForUpdate();
+                    if (updateInfo != null) {
+                      AlertsService.showUpdateChangelogAlert(
+                          context, updateInfo);
+                    } else {
+                      AlertsService.showSnackbar('You are up to date!');
+                    }
+                  }
+                },
+              );
+            })
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/models/update_info.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:provider/provider.dart';
@@ -15,14 +16,22 @@ class AppProvider extends ChangeNotifier {
 
   bool _isAppLoaded = false;
   bool get isAppLoaded => _isAppLoaded;
+  UpdateInfo? _updateInfo;
   ThemeMode _theme = ThemeMode.system;
   ThemeMode get themeMode => _theme;
+  UpdateInfo? get updateInfo => _updateInfo;
   ViewModeToggleMode consoleRomsItemType = ViewModeToggleMode.grid;
+
   setAppLoaded(bool val) {
     _isAppLoaded = val;
     if (Platform.isAndroid) {
       consoleRomsItemType = ViewModeToggleMode.list;
     }
+    notifyListeners();
+  }
+
+  setUpdateInfo(UpdateInfo info) {
+    _updateInfo = info;
     notifyListeners();
   }
 

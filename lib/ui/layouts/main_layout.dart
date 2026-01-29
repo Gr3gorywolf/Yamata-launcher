@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
 
@@ -23,6 +26,17 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> with TrayListener {
   int _locationToIndex(String location) {
     return MainLayout._routes.indexWhere((e) => location.startsWith(e));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      var updateProvider = Provider.of<AppProvider>(context, listen: false);
+      if (updateProvider.updateInfo != null) {
+        AlertsService.showUpdateAppBanner(context);
+      }
+    });
   }
 
   @override

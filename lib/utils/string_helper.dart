@@ -163,4 +163,23 @@ class StringHelper {
 
   static String hash20(String input) =>
       sha1.convert(utf8.encode(input)).toString().substring(0, 20);
+
+  static bool isVersionStringNewer(String current, String reference) {
+    var currentVersion = current.split(".");
+    var newVersion = reference.split(".");
+
+    for (var i = 0; i < newVersion.length; i++) {
+      if (i >= currentVersion.length) {
+        return true;
+      }
+      var newVerPart = int.tryParse(newVersion[i]) ?? 0;
+      var currVerPart = int.tryParse(currentVersion[i]) ?? 0;
+      if (newVerPart > currVerPart) {
+        return true;
+      } else if (newVerPart < currVerPart) {
+        return false;
+      }
+    }
+    return false;
+  }
 }

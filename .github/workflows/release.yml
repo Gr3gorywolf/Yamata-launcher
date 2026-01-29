@@ -211,9 +211,47 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Extract pubspec version
+        id: get_current_version
+        shell: bash
+        env:
+          FLUTTER_APP_PATH: .
+        run: |
+          set -euo pipefail
+
+          PUBSPEC="${{ env.FLUTTER_APP_PATH }}/pubspec.yaml"
+
+          CURRENT_LINE="$(grep -E '^version:\s*' "$PUBSPEC")"
+          CURRENT_VERSION="${CURRENT_LINE#version: }"
+          # Export outputs
+          echo "version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${CURRENT_VERSION%%+*}" >> "$GITHUB_OUTPUT" 
       # -----------------------------------------
-      # Version bump (pubspec.yml)
+      # Download artifacts
       # -----------------------------------------
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: List files
+        run: ls -R dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_current_version.outputs.version }}
+          name: "Yamata Launcher v${{ steps.get_current_version.outputs.version }}"
+          body: |
+            **Yamata Launcher v${{ steps.get_current_version.outputs.version }}**
+
+            - Automatic release from CI
+            - Version bumped from pubspec.yml
+            - Multi-platform build included
+
+          files: |
+            dist/**/*
+
       - name: Bump pubspec version
         id: bump
         shell: bash
@@ -246,9 +284,6 @@ jobs:
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=v${NEW_VERSION%%+*}" >> "$GITHUB_OUTPUT"
 
-      # -----------------------------------------
-      # Commit & tag
-      # -----------------------------------------
       - name: Commit version bump
         shell: bash
         env:
@@ -262,32 +297,3 @@ jobs:
           git commit -m "chore(release): bump version to ${{ steps.bump.outputs.version }}"
           git tag "v${{ steps.bump.outputs.version }}"
           git push origin HEAD --tags
-
-      # -----------------------------------------
-      # Download artifacts
-      # -----------------------------------------
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: List files
-        run: ls -R dist
-
-      # -----------------------------------------
-      # Create GitHub Release
-      # -----------------------------------------
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.bump.outputs.version }}
-          name: "Yamata Launcher v${{ steps.bump.outputs.version }}"
-          body: |
-            **Yamata Launcher v${{ steps.bump.outputs.version }}**
-
-            - Automatic release from CI
-            - Version bumped from pubspec.yml
-            - Multi-platform build included
-
-          files: |
-            dist/**/*

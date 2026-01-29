@@ -64,6 +64,7 @@ dependencies:
       path: packages/tray_manager
       ref: fix-windows-context-menu-close
   dmg: ^0.1.7
+  flutter_app_installer: ^1.0.2
 
 
 dev_dependencies:

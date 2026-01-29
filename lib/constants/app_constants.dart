@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 class AppConstants {
+  static String repositoryBasePath = "Gr3gorywolf/Yamata-launcher";
   static String apiBasePath =
       "https://raw.githubusercontent.com/Gr3gorywolf/NeonRom3r-RomsInfos/neo/";
   static String serverBaseUrl = "https://api.yamata-launcher.gregoryc.dev/";

@@ -3,12 +3,17 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/main.dart';
+import 'package:yamata_launcher/models/update_info.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/update_service.dart';
 
 class AlertsService {
   static Flushbar? _currentSnackbar;
+  static bool isUpdateAlertOpen = false;
   static showSnackbar(String message,
       {String? title,
       IconData? icon,
@@ -204,6 +209,142 @@ class AlertsService {
             ],
           );
         });
+  }
+
+  static void showUpdateChangelogAlert(
+      BuildContext context, UpdateInfo update) {
+    showDialog(
+        context: context,
+        builder: (cont) {
+          return AlertDialog(
+            title: Text("What's new on version ${update.version}?",
+                style: Theme.of(context).textTheme.titleMedium),
+            content: Container(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: SingleChildScrollView(child: Text(update.changelog))),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    if (update.downloadedFilePath != null) {
+                      UpdateService.handleInstall();
+                    } else {
+                      UpdateService.startUpdateDownload();
+                      AlertsService.showUpdateAppBanner(navigatorContext!);
+                      Navigator.of(context, rootNavigator: true).pop();
+                    }
+                  },
+                  child: Text(update?.downloadedFilePath != null
+                      ? "Install"
+                      : "Download")),
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  },
+                  child: Text("Close"))
+            ],
+          );
+        });
+  }
+
+  static void showUpdateAppBanner(BuildContext context) {
+    if (isUpdateAlertOpen == true) return;
+    isUpdateAlertOpen = true;
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                isUpdateAlertOpen = false;
+                if (UpdateService.currentDownload != null) {
+                  UpdateService.cancelUpdateDownload();
+                }
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              },
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.cloud_download_outlined),
+          ],
+        ),
+        content: Consumer<AppProvider>(
+          builder: (context, app, _) {
+            final update = app.updateInfo;
+
+            if (update == null) {
+              return const Text('Checking for updates...');
+            }
+
+            if (!update.isDownloading) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(update.downloadedFilePath != null
+                          ? 'Update ${update.version} is ready to install.'
+                          : 'App version ${update.version} is available.'),
+                      const SizedBox(height: 1),
+                      TextButton(
+                          style: TextButton.styleFrom(
+                              padding: EdgeInsets.all(2),
+                              minimumSize: Size(50, 30),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                          onPressed: () {
+                            AlertsService.showUpdateChangelogAlert(
+                                context, update);
+                          },
+                          child: Text('View details'))
+                    ]),
+              );
+            }
+
+            final percent = update.progress ?? 0;
+            final progress = percent / 100;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Downloading update ${update.version}... $percent%'),
+                const SizedBox(height: 8),
+                if (update.progress != null)
+                  LinearProgressIndicator(value: progress)
+                else
+                  const LinearProgressIndicator(),
+              ],
+            );
+          },
+        ),
+        actions: [
+          Consumer<AppProvider>(
+            builder: (context, app, _) {
+              final update = app.updateInfo;
+              if (update?.progress == 100 &&
+                  update?.downloadedFilePath != null) {
+                return TextButton(
+                  onPressed: () {
+                    UpdateService.handleInstall();
+                  },
+                  child: Text('Install'),
+                );
+              }
+
+              return TextButton(
+                onPressed: update?.isDownloading == true
+                    ? UpdateService.cancelUpdateDownload
+                    : UpdateService.startUpdateDownload,
+                child: Text(
+                  update?.isDownloading == true ? 'Cancel' : 'Download',
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 

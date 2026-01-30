@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "gr3gorywolf" "\0"
+            VALUE "CompanyName", "com.gr3gorywolf" "\0"
             VALUE "FileDescription", "Yamata Launcher" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "yamata_launcher" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2021 com.gregoryc.dev. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 gr3gorywolf. All rights reserved." "\0"
             VALUE "OriginalFilename", "yamata_launcher.exe" "\0"
-            VALUE "ProductName", "yamata_launcher" "\0"
+            VALUE "ProductName", "Yamata Launcher" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

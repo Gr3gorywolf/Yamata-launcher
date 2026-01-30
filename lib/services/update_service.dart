@@ -7,10 +7,13 @@ import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/models/update_info.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/repository/update_repository.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
+import 'package:yamata_launcher/constants/app_constants.dart';
+import 'dart:convert';
 
 class UpdateService {
   static FileDownloadFetch? _currentDownload;
@@ -82,18 +85,6 @@ class UpdateService {
     return null;
   }
 
-  static void _restartCurrentApp() {
-    final exe = Platform.resolvedExecutable;
-
-    Process.start(
-      exe,
-      [],
-      mode: ProcessStartMode.detached,
-    );
-
-    exit(0);
-  }
-
   static void cancelUpdateDownload() {
     var provider = Provider.of<AppProvider>(navigatorContext!, listen: false);
     if (provider.updateInfo == null) return;
@@ -141,6 +132,37 @@ class UpdateService {
         [],
         mode: ProcessStartMode.normal,
       );
+    }
+
+    if (Platform.isLinux) {
+      var loading = AlertsService.showLoadingAlert(
+          navigatorContext!,
+          "Installing Update",
+          "Please wait while the update is being installed.");
+      var process = await Process.start(
+        "bash",
+        [
+          "-c",
+          "curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!}"
+        ],
+        mode: ProcessStartMode.normal,
+      );
+      final exitCode = await process.exitCode;
+      loading.close();
+      if (exitCode != 0) {
+        return;
+      }
+
+      await Process.start(
+        "bash",
+        [
+          "-c",
+          "~/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage",
+        ],
+        mode: ProcessStartMode.detached,
+      );
+
+      exit(0);
     }
 
     if (Platform.isMacOS) {

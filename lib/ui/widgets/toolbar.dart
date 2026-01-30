@@ -12,10 +12,10 @@ class Toolbar extends StatefulWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
-  State<Toolbar> createState() => _ToolbarState();
+  State<Toolbar> createState() => ToolbarState();
 }
 
-class _ToolbarState extends State<Toolbar> {
+class ToolbarState extends State<Toolbar> {
   bool isSearching = false;
   String searchText = '';
   TextEditingController _controller = TextEditingController();
@@ -29,6 +29,16 @@ class _ToolbarState extends State<Toolbar> {
       filters = widget.initialValues?.filters;
     }
     super.initState();
+  }
+
+  void setValues(ToolbarValue newValues) {
+    setState(() {
+      searchText = newValues.search;
+      sortBy = newValues.sortBy;
+      filters = newValues.filters;
+    });
+    _controller.text = searchText;
+    _notifyChange();
   }
 
   void _notifyChange() {
@@ -154,7 +164,14 @@ class _ToolbarState extends State<Toolbar> {
     }
 
     return PopupMenuButton<ToolBarFilterElement>(
-      icon: const Icon(Icons.filter_list),
+      icon: Badge(
+          alignment: Alignment.topRight,
+          padding: EdgeInsets.all(2),
+          smallSize: 6,
+          isLabelVisible: filters != null && filters!.isNotEmpty,
+          largeSize: 12,
+          textStyle: TextStyle(color: Colors.white),
+          child: Icon(Icons.filter_list)),
       onSelected: (value) {
         setState(() {
           if (_isFilterSelected(value)) {

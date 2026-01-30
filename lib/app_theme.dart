@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:yamata_launcher/app_theme_dark.dart';
 
 const Color grayBorderColorLight = Color(0xFFE3E7E7);
 
@@ -137,6 +138,30 @@ ThemeData appThemeLight = ThemeData(
     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     largeSize: 26,
     smallSize: 20,
+  ),
+  segmentedButtonTheme: SegmentedButtonThemeData(
+    style: ButtonStyle(
+      elevation: WidgetStateProperty.all(0),
+      overlayColor: WidgetStateProperty.all(Colors.transparent),
+      side: WidgetStateProperty.all(BorderSide.none),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      backgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primaryGreen.withOpacity(0.15);
+        }
+        return surfaceColorLight;
+      }),
+      foregroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primaryGreen;
+        }
+        return textPrimaryLight.withOpacity(0.5);
+      }),
+    ),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(

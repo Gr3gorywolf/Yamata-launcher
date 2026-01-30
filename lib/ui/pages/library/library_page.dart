@@ -20,6 +20,8 @@ import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
 import 'package:provider/provider.dart';
 
+enum quickFiltersTypes { none, all, installed, favorites }
+
 var _initialToolbarValues = ToolbarValue(
     filters: [],
     search: '',
@@ -35,6 +37,8 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage> {
   ToolbarValue? filterValues = _initialToolbarValues;
+  final toolbarKey = GlobalKey<ToolbarState>();
+  quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
 
   List<ToolBarFilterGroup> getFilters(List<RomLibraryItem> roms) => [
         ToolBarFilterGroup(
@@ -81,6 +85,45 @@ class _LibraryPageState extends State<LibraryPage> {
     super.initState();
   }
 
+  handleQuickFilterChanged(quickFiltersTypes filter) {
+    switch (filter) {
+      case quickFiltersTypes.all:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? '',
+            sortBy: filterValues?.sortBy,
+            filters: _initialToolbarValues.filters));
+        break;
+      case quickFiltersTypes.favorites:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? '',
+            sortBy: filterValues?.sortBy,
+            filters: [
+              ToolBarFilterElement(
+                  label: "Favorite", field: 'isFavorite', value: "true"),
+            ]));
+        break;
+      case quickFiltersTypes.installed:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? '',
+            sortBy: filterValues?.sortBy,
+            filters: [
+              ToolBarFilterElement(
+                  label: "Installed",
+                  field: 'filePath',
+                  value: "true",
+                  matcher: (rom) {
+                    return rom.filePath != null && rom.filePath!.isNotEmpty;
+                  }),
+            ]));
+        break;
+      default:
+        break;
+    }
+    setState(() {
+      selectedQuickFilter = filter;
+    });
+  }
+
   handleAddToLibrary(RomInfo info, String filePath) async {
     var libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
     var item = libraryProvider.addRomToLibrary(info);
@@ -96,6 +139,7 @@ class _LibraryPageState extends State<LibraryPage> {
     var roms = libraryProvider.libraryItems;
     var getFilteredRoms = () {
       if (filterValues == null) return roms.map((e) => e.rom).toList();
+      print(selectedQuickFilter);
       return FilterHelpers.handleDynamicFilter<RomLibraryItem>(
               roms, filterValues!,
               nameField: 'rom.name')
@@ -113,8 +157,10 @@ class _LibraryPageState extends State<LibraryPage> {
         onChanged: (values) {
           setState(() {
             filterValues = values;
+            selectedQuickFilter = quickFiltersTypes.none;
           });
         },
+        key: toolbarKey,
         settings: ToolbarSettings(
           title: "Library",
           filters: getFilters(roms),
@@ -133,7 +179,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 value: ToolBarSortByType.ascending),
           ],
         ),
-        initialValues: _initialToolbarValues,
+        initialValues: filterValues,
       ),
       body: roms.isEmpty
           ? EmptyPlaceholder(
@@ -149,6 +195,27 @@ class _LibraryPageState extends State<LibraryPage> {
             )
           : RomList(
               showConsole: true,
+              topRightChild: SegmentedButton<quickFiltersTypes>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                    value: quickFiltersTypes.all,
+                    icon: Icon(Icons.list, size: 18),
+                  ),
+                  ButtonSegment(
+                    value: quickFiltersTypes.favorites,
+                    icon: Icon(Icons.favorite, size: 18),
+                  ),
+                  ButtonSegment(
+                    value: quickFiltersTypes.installed,
+                    icon: Icon(Icons.download_done, size: 18),
+                  ),
+                ],
+                selected: {selectedQuickFilter},
+                onSelectionChanged: (newSelection) {
+                  handleQuickFilterChanged(newSelection.first);
+                },
+              ),
               initialViewMode: Platform.isAndroid
                   ? ViewModeToggleMode.list
                   : ViewModeToggleMode.grid,

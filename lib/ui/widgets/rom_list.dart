@@ -22,12 +22,14 @@ class RomList extends StatefulWidget {
   bool showConsole;
   ViewModeToggleMode? initialViewMode;
   Function(ViewModeToggleMode)? onViewModeChanged;
+  Widget? topRightChild;
   RomList(
       {this.isLoading,
       this.roms,
       this.showConsole = false,
       this.initialViewMode,
-      this.onViewModeChanged});
+      this.onViewModeChanged,
+      this.topRightChild});
 
   @override
   State<RomList> createState() => _RomListState();
@@ -40,6 +42,32 @@ class _RomListState extends State<RomList> {
     viewMode = widget.initialViewMode ?? ViewModeToggleMode.grid;
   }
 
+  Widget _buildTop() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            ViewModeToggle(
+              value: viewMode,
+              onChanged: (value) {
+                if (mounted) setState(() => viewMode = value);
+                if (widget.onViewModeChanged != null) {
+                  widget.onViewModeChanged!(value);
+                }
+              },
+            ),
+            Spacer(),
+            if (widget.topRightChild != null) widget.topRightChild!,
+          ],
+        ),
+        SizedBox(
+          height: 5,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var gridAxisCount =
@@ -47,36 +75,28 @@ class _RomListState extends State<RomList> {
     if (widget.isLoading == true) {
       return const Center(child: CircularProgressIndicator());
     }
-
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: widget.roms?.isEmpty ?? true
-          ? EmptyPlaceholder(
-              icon: Icons.search_off,
-              title: "No ROMs Found",
-              description: "No ROMs found matching the current criteria.")
+          ? Column(
+              children: [
+                _buildTop(),
+                Expanded(
+                  child: EmptyPlaceholder(
+                      icon: Icons.search_off,
+                      title: "No ROMs Found",
+                      description:
+                          "No ROMs found matching the current criteria."),
+                ),
+              ],
+            )
           : FadeIn(
               duration: Duration(seconds: 1),
               child: CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ViewModeToggle(
-                          value: viewMode,
-                          onChanged: (value) {
-                            if (mounted) setState(() => viewMode = value);
-                            if (widget.onViewModeChanged != null) {
-                              widget.onViewModeChanged!(value);
-                            }
-                          },
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                      ],
-                    ),
+                    child: _buildTop(),
                   ),
                   if (viewMode == ViewModeToggleMode.list)
                     SliverList(

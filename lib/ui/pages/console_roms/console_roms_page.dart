@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 
 import '../../../utils/filter_helpers.dart';
 
+enum quickFiltersTypes { none, all, download_available, on_library }
+
 class ConsoleRomsPage extends StatefulWidget {
   Console console;
   List<RomInfo>? infos;
@@ -24,8 +26,10 @@ class ConsoleRomsPage extends StatefulWidget {
 class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
   String _searchQuery = "";
   List<RomInfo>? _roms = [];
+  final toolbarKey = GlobalKey<ToolbarState>();
   bool _isLoading = false;
   ToolbarValue? filterValues = null;
+  quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
 
   List<RomInfo> get filteredRoms {
     if (_roms == null) return [];
@@ -33,9 +37,64 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
     return FilterHelpers.handleDynamicFilter<RomInfo>(_roms!, filterValues!);
   }
 
+  handleQuickFilterChanged(quickFiltersTypes filter) {
+    switch (filter) {
+      case quickFiltersTypes.all:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? "",
+            sortBy: filterValues?.sortBy,
+            filters: []));
+        break;
+      case quickFiltersTypes.on_library:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? "",
+            sortBy: filterValues?.sortBy,
+            filters: [
+              ToolBarFilterElement(
+                label: "On Library",
+                field: "isOnLibrary",
+                value: "",
+                matcher: (romInfo) {
+                  var libraryProvider =
+                      Provider.of<LibraryProvider>(context, listen: false);
+                  var libItem = libraryProvider.getLibraryItem(romInfo.slug);
+                  return libItem != null;
+                },
+              ),
+            ]));
+        break;
+      case quickFiltersTypes.download_available:
+        toolbarKey.currentState?.setValues(ToolbarValue(
+            search: filterValues?.search ?? '',
+            sortBy: filterValues?.sortBy,
+            filters: [
+              ToolBarFilterElement(
+                label: "Download Available",
+                field: "isDownloadAvailable",
+                value: "",
+                matcher: (romInfo) {
+                  var downloadSourcesProvider =
+                      Provider.of<DownloadSourcesProvider>(context,
+                          listen: false);
+                  return downloadSourcesProvider
+                          .isRomCompilingDownloadSources(romInfo.slug) ||
+                      downloadSourcesProvider
+                          .getRomSources(romInfo.slug)
+                          .isNotEmpty;
+                },
+              ),
+            ]));
+        break;
+      default:
+        break;
+    }
+    setState(() {
+      selectedQuickFilter = filter;
+    });
+  }
+
   @override
   void initState() {
-
     super.initState();
     if (widget.infos == null) {
       fetchRoms();
@@ -65,9 +124,11 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
     var libraryProvider = Provider.of<LibraryProvider>(context);
     return Scaffold(
       appBar: Toolbar(
+        key: toolbarKey,
         onChanged: (values) {
           setState(() {
             filterValues = values;
+            selectedQuickFilter = quickFiltersTypes.none;
           });
         },
         initialValues: ToolbarValue(
@@ -88,6 +149,17 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
           ToolBarFilterGroup(
             groupName: "Availability",
             filters: [
+              ToolBarFilterElement(
+                label: "On Library",
+                field: "isOnLibrary",
+                value: "",
+                matcher: (romInfo) {
+                  var libraryProvider =
+                      Provider.of<LibraryProvider>(context, listen: false);
+                  var libItem = libraryProvider.getLibraryItem(romInfo.slug);
+                  return libItem != null;
+                },
+              ),
               ToolBarFilterElement(
                   label: "Downloaded",
                   field: "isDownloaded",
@@ -124,6 +196,27 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
       body: RomList(
         isLoading: this._isLoading,
         roms: filteredRoms,
+        topRightChild: SegmentedButton<quickFiltersTypes>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(
+              value: quickFiltersTypes.all,
+              icon: Icon(Icons.list, size: 18),
+            ),
+            ButtonSegment(
+              value: quickFiltersTypes.download_available,
+              icon: Icon(Icons.cloud_download_rounded, size: 18),
+            ),
+            ButtonSegment(
+              value: quickFiltersTypes.on_library,
+              icon: Icon(Icons.collections_bookmark_rounded, size: 18),
+            ),
+          ],
+          selected: {selectedQuickFilter},
+          onSelectionChanged: (newSelection) {
+            handleQuickFilterChanged(newSelection.first);
+          },
+        ),
         initialViewMode: appProvider.consoleRomsItemType,
         onViewModeChanged: (mode) {
           appProvider.setConsoleRomsItemType(mode);

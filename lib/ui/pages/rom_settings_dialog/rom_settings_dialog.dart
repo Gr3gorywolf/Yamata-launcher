@@ -228,7 +228,7 @@ class RomSettingsDialog extends StatelessWidget {
                       onPressed: () => _pickEmulatorBinary()),
                 ],
               ),
-              if (!Platform.isAndroid)
+              if (FileSystemService.isDesktop)
                 DialogSectionItem(
                   title: "Launch parameters",
                   helperText:

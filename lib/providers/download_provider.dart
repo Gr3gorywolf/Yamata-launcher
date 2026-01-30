@@ -291,7 +291,7 @@ class DownloadProvider extends ChangeNotifier {
         VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
       _handleExtractRom(download, rom, path);
     } else {
-      _handleMoveToContainingFolder(libraryItem, path,
+      _handleMoveContentToParentFolder(libraryItem, path,
           updateLibrary: !download.isExtraContent);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
     }
@@ -413,7 +413,7 @@ class DownloadProvider extends ChangeNotifier {
             "Failed to delete zip file: ${e.toString()}",
             exception: e);
       }
-      _handleMoveToContainingFolder(libraryItem!, extractedFile.path,
+      _handleMoveContentToParentFolder(libraryItem!, extractedFile.path,
           updateLibrary: !download.isExtraContent);
     }
 
@@ -431,11 +431,10 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _handleMoveToContainingFolder(RomLibraryItem libraryItem, String path,
+  void _handleMoveContentToParentFolder(RomLibraryItem libraryItem, String path,
       {bool updateLibrary = true}) async {
     if (await SettingsService()
-            .get<bool>(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER) !=
-        true) {
+        .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER)) {
       return;
     }
     try {

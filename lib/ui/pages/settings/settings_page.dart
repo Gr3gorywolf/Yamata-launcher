@@ -32,7 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
   /// Settings state
   String _downloadPath = '';
   bool _prefixConsoleSlug = false;
-  bool _moveRomToContainingFolder = false;
+  bool _moveRomToSubfolder = false;
   bool _enableNotifications = false;
   bool _enableImageCaching = false;
   bool _extractRomsAfterDownload = false;
@@ -62,8 +62,8 @@ class _SettingsPageState extends State<SettingsPage> {
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     _closeToSystemTray =
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
-    _moveRomToContainingFolder = await SettingsService()
-        .get<bool>(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER);
+    _moveRomToSubfolder = await SettingsService()
+        .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER);
     setState(() {});
   }
 
@@ -211,30 +211,30 @@ class _SettingsPageState extends State<SettingsPage> {
             // Path section
             const _SectionHeader(title: 'Paths'),
             ListTile(
-              leading: const Icon(Icons.folder),
+              leading: const Icon(Icons.file_download_outlined),
               trailing: const Icon(Icons.edit),
-              title: const Text('Download path'),
+              title: const Text('Downloads path'),
               subtitle: Opacity(opacity: 0.7, child: Text(_downloadPath)),
               onTap: _pickDownloadPath,
             ),
             _SwitchTile(
               icon: Icons.drive_file_move,
-              title: 'Add console name folder',
+              title: 'Download roms to console subfolder',
               subtitle:
-                  "Put your roms in folders named after consoles e.g. '<console>/<rom target>'",
+                  "Put your roms in folders named with the console slug e.g. 'ps2/romfile.zip'. This helps emulators to find the roms more easily specially emudeck.",
               value: _prefixConsoleSlug,
               onChanged: (v) =>
                   _setSetting(SettingsKeys.PREFIX_CONSOLE_SLUG, v),
             ),
 
             _SwitchTile(
-              icon: Icons.drive_file_move,
-              title: 'Move roms to containing folder',
+              icon: Icons.folder_copy,
+              title: 'Move roms to named subfolder',
               subtitle:
-                  "After the download and extraction, move rom files to the containing folder instead of keeping them in a subfolder with the rom name",
-              value: _moveRomToContainingFolder,
+                  "After the download and extraction, move rom files to a subfolder with the rom name.",
+              value: _moveRomToSubfolder,
               onChanged: (v) =>
-                  _setSetting(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER, v),
+                  _setSetting(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER, v),
             ),
             // Behavior section
             const _SectionHeader(title: 'Behavior'),

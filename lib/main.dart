@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 
@@ -41,6 +42,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
+  var showedTrayNotification = false;
   // Window overrides
   @override
   void onWindowClose() async {
@@ -48,6 +50,14 @@ class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
     if (closeToTray) {
       windowManager.hide();
+      if (!showedTrayNotification) {
+        await NotificationsService.showNotification(
+          title: "Yamata Launcher",
+          body:
+              "Application is still running in the system tray. You can change this behavior in settings.",
+        );
+        showedTrayNotification = true;
+      }
     } else {
       windowManager.destroy();
     }

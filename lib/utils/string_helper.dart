@@ -164,6 +164,12 @@ class StringHelper {
   static String hash20(String input) =>
       sha1.convert(utf8.encode(input)).toString().substring(0, 20);
 
+  static String generateUUID() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final randomPart = DateTime.now().microsecondsSinceEpoch.remainder(1000000);
+    return '${timestamp}_$randomPart';
+  }
+
   static bool isVersionStringNewer(String current, String reference) {
     var currentVersion = current.split(".");
     var newVersion = reference.split(".");

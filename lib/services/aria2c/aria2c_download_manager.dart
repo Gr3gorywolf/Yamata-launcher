@@ -85,10 +85,14 @@ class Aria2cDownloadManager {
     final receivePort = ReceivePort();
     final controller = StreamController<Aria2Event>.broadcast();
     final doneCompleter = Completer<Aria2DoneEvent>();
+    var downloadSubFolder = StringHelper.removeInvalidPathCharacters(rom.name);
     final downloadPath = p.join(
-        FileSystemService.downloadsPath,
-        includeConsolePrefix ? rom.console : "",
-        StringHelper.removeInvalidPathCharacters(rom.name!));
+      FileSystemService.downloadsPath,
+      includeConsolePrefix ? rom.console : "",
+      downloadSubFolder.isEmpty
+          ? "ROM_${StringHelper.generateUUID()}"
+          : downloadSubFolder,
+    );
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
     }

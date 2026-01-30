@@ -9,6 +9,7 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -47,6 +48,7 @@ class RomLibraryActions extends StatelessWidget {
   Widget build(BuildContext context) {
     var libraryProvider = Provider.of<LibraryProvider>(context);
     var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
+    var downloadProvider = Provider.of<DownloadProvider>(context);
     var libraryItem = libraryProvider.getLibraryItem(rom.slug);
     var isFavorite = (libraryItem?.isFavorite ?? false) == true;
     var filePath = libraryItem?.filePath ?? "";
@@ -209,6 +211,7 @@ class RomLibraryActions extends StatelessWidget {
                   downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty)
                 PopupMenuItem<_RomMenuAction>(
                   value: _RomMenuAction.downloadExtra,
+                  enabled: !downloadProvider.isRomDownloading(rom),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

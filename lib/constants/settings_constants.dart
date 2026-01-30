@@ -7,7 +7,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 enum SettingsKeys {
   DOWNLOAD_PATH,
   PREFIX_CONSOLE_SLUG,
-  MOVE_ROMS_TO_CONTAINING_FOLDER,
+  MOVE_ROMS_TO_NAMED_SUBFOLDER,
   ENABLE_IMAGE_CACHING,
   ENABLE_NOTIFICATIONS,
   ENABLE_EXTRACTION,
@@ -60,9 +60,9 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     type: SettingType.bool,
     defaultValue: true,
   ),
-  SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER: Setting<bool>(
-    key: 'move_roms_to_containing_folder',
+  SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER: Setting<bool>(
+    key: 'move_roms_to_named_subfolder',
     type: SettingType.bool,
-    defaultValue: true,
+    defaultValue: false,
   ),
 };

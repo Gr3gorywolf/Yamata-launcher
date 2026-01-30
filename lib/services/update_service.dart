@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_app_installer/flutter_app_installer.dart';
@@ -9,6 +10,7 @@ import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/repository/update_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
@@ -21,7 +23,25 @@ class UpdateService {
 
   static Future<void> initialize() async {
     await cleanupOldDownloads();
-    await checkForUpdate();
+    var foundUpdate = await checkForUpdate();
+    if (foundUpdate != null) {
+      startUpdatesWatch();
+    }
+  }
+
+  static startUpdatesWatch() {
+    Timer.periodic(Duration(minutes: 10), (timer) async {
+      var foundUpdate = await checkForUpdate();
+      if (foundUpdate != null) {
+        timer.cancel();
+        AlertsService.showUpdateAppBanner(navigatorContext!);
+        NotificationsService.showNotification(
+          title: "Yamata Launcher Update Available",
+          body:
+              "A new version (${foundUpdate.version}) of Yamata Launcher is available.",
+        );
+      }
+    });
   }
 
   static Future cleanupOldDownloads() async {

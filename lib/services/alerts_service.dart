@@ -10,6 +10,7 @@ import 'package:yamata_launcher/models/update_info.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
+import 'package:yamata_launcher/ui/widgets/loading_alert_dialog_content.dart';
 
 class AlertsService {
   static Flushbar? _currentSnackbar;
@@ -134,30 +135,49 @@ class AlertsService {
   }
 
   static _DialogHandle showLoadingAlert(
-      BuildContext ctx, String title, String text) {
+    BuildContext ctx,
+    String title,
+    String text, {
+    ValueNotifier<double?>? progressNotifier,
+  }) {
     showDialog(
-        context: ctx,
-        barrierDismissible: false,
-        builder: (cont) {
-          return AlertDialog(
-            title: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
-            content: Container(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Row(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Expanded(child: Text(text)),
-                  ],
-                )),
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        Widget content;
+
+        if (progressNotifier == null) {
+          content = LoadingAlertDialogContent(text: text);
+        } else {
+          content = ValueListenableBuilder<double?>(
+            valueListenable: progressNotifier,
+            builder: (context, progress, _) {
+              final displayText = progress == null
+                  ? text
+                  : '$text (${(progress * 100).toStringAsFixed(0)}%)';
+
+              return LoadingAlertDialogContent(
+                text: displayText,
+                progress: progress,
+              );
+            },
           );
-        });
+        }
+
+        return AlertDialog(
+          title: Text(
+            title,
+            style: Theme.of(ctx).textTheme.titleMedium,
+          ),
+          content: content,
+        );
+      },
+    );
+
     final navigator = Navigator.of(ctx, rootNavigator: true);
     return _DialogHandle(() {
       if (navigator.canPop()) {
-        Navigator.of(ctx, rootNavigator: true).pop();
+        navigator.pop();
       }
     });
   }

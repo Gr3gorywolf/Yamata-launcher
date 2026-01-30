@@ -138,6 +138,20 @@ class RomListItem extends StatelessWidget {
                                     SizedBox(
                                       height: 10,
                                     ),
+                                    if (_downloadInfo.isExtraContent) ...[
+                                      Opacity(
+                                        opacity: 0.7,
+                                        child: Text(
+                                          "Extra Content",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 5,
+                                      ),
+                                    ],
                                     LinearProgressIndicator(
                                       backgroundColor: Colors.grey[800],
                                       value:
@@ -266,6 +280,18 @@ class RomListItem extends StatelessWidget {
                     ...(_downloadInfo != null
                         ? [
                             Spacer(),
+                            if (_downloadInfo.isExtraContent) ...[
+                              Opacity(
+                                opacity: 0.7,
+                                child: Text(
+                                  "Extra Content",
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              ),
+                              SizedBox(
+                                height: 5,
+                              ),
+                            ],
                             LinearProgressIndicator(
                               backgroundColor: Colors.grey[800],
                               value: (_downloadInfo.downloadPercent ?? 0) / 100,

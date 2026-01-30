@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/models/aria2c.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
@@ -15,11 +16,11 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
-
+import 'package:path/path.dart' as p;
 import 'aria2c/aria2c_download_manager.dart';
 
 class DownloadService {
-  downloadRom(BuildContext context, RomInfo rom, DownloadSourceRom sourceRom,
+  downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
       {isExtraContent = false}) async {
     var downloadsPath = FileSystemService.downloadsPath;
     if (!await Directory(downloadsPath).exists()) {
@@ -30,9 +31,9 @@ class DownloadService {
       source: sourceRom,
       aria2cPath: FileSystemService.aria2cPath,
     );
-    Provider.of<DownloadProvider>(context, listen: false).addRomDownloadToQueue(
-        rom, sourceRom, handle,
-        isExtraContent: isExtraContent);
+    Provider.of<DownloadProvider>(navigatorContext!, listen: false)
+        .addRomDownloadToQueue(rom, sourceRom, handle,
+            isExtraContent: isExtraContent);
   }
 
   void catchRomPortrait(RomInfo romInfo) async {

@@ -161,6 +161,19 @@ class FileSystemService {
     }
   }
 
+  /*
+  * Moves the content of the specified file to its containing folder.
+  */
+  static String moveFilesToParentFolder(String filePath) {
+    var fileDir = Directory(p.dirname(filePath));
+    var parentPath = fileDir.parent.path;
+    for (var item in fileDir.listSync()) {
+      var newPath = p.join(parentPath, item.uri.pathSegments.last);
+      item.renameSync(newPath);
+    }
+    return p.join(parentPath, Uri.parse(filePath).pathSegments.last);
+  }
+
   /**
    * Flattens all files in a directory by moving them to the root of the directory.
    */

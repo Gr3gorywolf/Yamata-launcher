@@ -14,12 +14,13 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_client.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
+import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:provider/provider.dart';
-
+import "package:path/path.dart" as p;
 import 'package:yamata_launcher/models/aria2c.dart';
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
@@ -145,7 +146,7 @@ class DownloadProvider extends ChangeNotifier {
     if (active != null) {
       _activeDownloadInfos
           .removeWhere((element) => element.downloadId == info.downloadId);
-      active.handle!.abort!();
+      active.handle!.abort!(deleteFiles: !info.isExtraContent);
       _disposeActive(info.downloadId);
       if (Platform.isAndroid) {
         print("Cancelling notification for tag: ${info.romSlug}");
@@ -276,7 +277,8 @@ class DownloadProvider extends ChangeNotifier {
     await libraryProvider.updateLibraryItem(libraryItem);
     await NotificationsService.showNotification(
       title: 'Download completed',
-      body: '${rom.name} has been downloaded successfully.',
+      body:
+          '${download.isExtraContent ? "Extra content for " : ""} ${rom.name} has been downloaded successfully.',
       image: rom.portrait,
       tag: rom.slug,
     );
@@ -289,6 +291,8 @@ class DownloadProvider extends ChangeNotifier {
         VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
       _handleExtractRom(download, rom, path);
     } else {
+      _handleMoveToContainingFolder(libraryItem, path,
+          updateLibrary: !download.isExtraContent);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
     }
   }
@@ -409,11 +413,15 @@ class DownloadProvider extends ChangeNotifier {
             "Failed to delete zip file: ${e.toString()}",
             exception: e);
       }
+      _handleMoveToContainingFolder(libraryItem!, extractedFile.path,
+          updateLibrary: !download.isExtraContent);
     }
 
     NotificationsService.showNotification(
         title: download.downloadInfo ?? "",
-        body: '${rom.name} is ready to play!',
+        body: download.isExtraContent
+            ? "Extra content for ${rom.name} extracted"
+            : '${rom.name} is ready to play!',
         image: rom.portrait,
         tag: rom.slug,
         androidActions: [AndroidNotificationsActionTypes.PlayRomAction]);
@@ -421,5 +429,30 @@ class DownloadProvider extends ChangeNotifier {
     _activeDownloadInfos.remove(download);
     _handleProgressChanged();
     notifyListeners();
+  }
+
+  void _handleMoveToContainingFolder(RomLibraryItem libraryItem, String path,
+      {bool updateLibrary = true}) async {
+    if (await SettingsService()
+            .get<bool>(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER) !=
+        true) {
+      return;
+    }
+    try {
+      var newPath = FileSystemService.moveFilesToParentFolder(path);
+
+      if (updateLibrary) {
+        libraryItem.filePath = newPath;
+        Provider.of<LibraryProvider>(navigatorContext!, listen: false)
+            .updateLibraryItem(libraryItem);
+      }
+      var parentFolder = Directory(p.dirname(path));
+      try {
+        parentFolder.deleteSync();
+      } catch (e) {}
+    } catch (e) {
+      print("Error moving files to containing folder: ${e.toString()}");
+      return;
+    }
   }
 }

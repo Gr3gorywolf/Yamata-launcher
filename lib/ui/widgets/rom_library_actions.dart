@@ -118,8 +118,7 @@ class RomLibraryActions extends StatelessWidget {
       );
 
       if (romSource == null) return;
-      DownloadService()
-          .downloadRom(context, rom, romSource, isExtraContent: true);
+      DownloadService().downloadRom(rom, romSource, isExtraContent: true);
       AlertsService.showSnackbar("Download started", duration: 3);
     }
 

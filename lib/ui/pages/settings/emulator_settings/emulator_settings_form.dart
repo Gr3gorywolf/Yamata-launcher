@@ -73,9 +73,8 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       allowedExtensions: VALID_EXECUTABLE_EXTENSIONS,
     );
     if (selectedFile != null) {
-      setState(() {
-        selectedBinary = selectedFile.files.single.path ?? "";
-      });
+      selectedBinaryController.text = selectedFile.files.single.path ?? "";
+      setState(() {});
     }
   }
 
@@ -99,6 +98,8 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
 
   @override
   Widget build(BuildContext context) {
+    var emulatorExecutableType =
+        Platform.isAndroid || Platform.isMacOS ? "application" : "binary";
     return AlertDialog(
       title: Text(
           '${widget.editingSetting == null ? "Add" : "Edit"} Emulator Setting'),
@@ -134,17 +135,16 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
               ),
             ),
             DialogSectionItem(
-              title:
-                  "Emulator ${Platform.isAndroid ? "application" : "binary"}",
+              title: "Emulator $emulatorExecutableType",
               icon: Icons.videogame_asset,
               helperText:
-                  "Select the emulator ${Platform.isAndroid ? "application" : "binary"} to be used for the selected console. ${FileSystemService.isDesktop ? " If no binary is selected will launch the game directly (Useful for desktop Games)" : ""}.",
+                  "Select the emulator $emulatorExecutableType to be used for the selected console. ${FileSystemService.isDesktop ? " If no $emulatorExecutableType is selected will launch the game directly (Useful for desktop Games)" : ""}.",
               actions: [
-                if (selectedBinary.isNotEmpty)
+                if (selectedBinaryController.text.isNotEmpty)
                   IconButton(
                       onPressed: () {
                         setState(() {
-                          selectedBinary = "";
+                          selectedBinaryController.text = "";
                         });
                       },
                       icon: Icon(Icons.clear)),
@@ -156,7 +156,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                 controller: selectedBinaryController,
                 enabled: FileSystemService.isDesktop,
                 decoration: InputDecoration(
-                  hintText: "Emulator binary path",
+                  hintText: "Emulator $emulatorExecutableType path",
                   helperMaxLines: 3,
                   helperStyle: TextStyle(color: Colors.grey[500]),
                   filled: true,
@@ -172,31 +172,32 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                 },
               ),
             ),
-            DialogSectionItem(
-              title: "Launch parameters",
-              helperText:
-                  "Parameters flags used when launching the ROM (if supported by the emulator)",
-              icon: Icons.terminal,
-              actions: [],
-              content: TextField(
-                controller: launchParametersController,
-                decoration: InputDecoration(
-                  hintText: "Custom launch parameters",
-                  helperMaxLines: 3,
-                  helperStyle: TextStyle(color: Colors.grey[500]),
-                  filled: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 7),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+            if (FileSystemService.isDesktop)
+              DialogSectionItem(
+                title: "Launch parameters",
+                helperText:
+                    "Parameters flags used when launching the ROM (if supported by the emulator)",
+                icon: Icons.terminal,
+                actions: [],
+                content: TextField(
+                  controller: launchParametersController,
+                  decoration: InputDecoration(
+                    hintText: "Custom launch parameters",
+                    helperMaxLines: 3,
+                    helperStyle: TextStyle(color: Colors.grey[500]),
+                    filled: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 7),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
+                  onChanged: (text) {
+                    setState(() {});
+                  },
                 ),
-                onChanged: (text) {
-                  setState(() {});
-                },
               ),
-            ),
           ],
         ),
       ),

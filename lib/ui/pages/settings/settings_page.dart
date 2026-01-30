@@ -32,6 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
   /// Settings state
   String _downloadPath = '';
   bool _prefixConsoleSlug = false;
+  bool _moveRomToContainingFolder = false;
   bool _enableNotifications = false;
   bool _enableImageCaching = false;
   bool _extractRomsAfterDownload = false;
@@ -61,6 +62,8 @@ class _SettingsPageState extends State<SettingsPage> {
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     _closeToSystemTray =
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
+    _moveRomToContainingFolder = await SettingsService()
+        .get<bool>(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER);
     setState(() {});
   }
 
@@ -218,10 +221,20 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.drive_file_move,
               title: 'Add console name folder',
               subtitle:
-                  "Put your roms in folders named after consoles e.g. 'nds/rom'",
+                  "Put your roms in folders named after consoles e.g. '<console>/<rom target>'",
               value: _prefixConsoleSlug,
               onChanged: (v) =>
                   _setSetting(SettingsKeys.PREFIX_CONSOLE_SLUG, v),
+            ),
+
+            _SwitchTile(
+              icon: Icons.drive_file_move,
+              title: 'Move roms to containing folder',
+              subtitle:
+                  "After the download and extraction, move rom files to the containing folder instead of keeping them in a subfolder with the rom name",
+              value: _moveRomToContainingFolder,
+              onChanged: (v) =>
+                  _setSetting(SettingsKeys.MOVE_ROMS_TO_CONTAINING_FOLDER, v),
             ),
             // Behavior section
             const _SectionHeader(title: 'Behavior'),

@@ -87,7 +87,7 @@ class Aria2cDownloadManager {
     final doneCompleter = Completer<Aria2DoneEvent>();
     final downloadPath = p.join(
         FileSystemService.downloadsPath,
-        includeConsolePrefix ? rom.console.toUpperCase() : "",
+        includeConsolePrefix ? rom.console : "",
         StringHelper.removeInvalidPathCharacters(rom.name!));
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
@@ -157,7 +157,7 @@ class Aria2cDownloadManager {
       }
     });
 
-    void abort() {
+    void abort({bool deleteFiles = true}) {
       final job = _jobs.remove(id);
       if (job == null) return;
       job.controlPort?.send({'cmd': 'abort'});
@@ -165,12 +165,14 @@ class Aria2cDownloadManager {
       job.sub!.cancel();
       job.controller!.close();
       Future.delayed(const Duration(milliseconds: 300), () {
-        try {
-          final dir = Directory(downloadPath);
-          if (dir.existsSync()) {
-            dir.deleteSync(recursive: true);
-          }
-        } catch (e) {}
+        if (deleteFiles) {
+          try {
+            final dir = Directory(downloadPath);
+            if (dir.existsSync()) {
+              dir.deleteSync(recursive: true);
+            }
+          } catch (e) {}
+        }
         job.isolate!.kill(priority: Isolate.immediate);
       });
     }

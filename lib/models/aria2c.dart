@@ -70,7 +70,7 @@ class Aria2DownloadHandle {
   final String id;
   final Stream<Aria2Event> events;
   final Future<Aria2DoneEvent> done;
-  final void Function() abort;
+  final void Function({bool deleteFiles}) abort;
 
   Aria2DownloadHandle({
     required this.id,

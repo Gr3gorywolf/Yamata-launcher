@@ -16,13 +16,14 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 
-void main() async {
+void main(List<String> args) async {
   if (FileSystemService.isDesktop) {
     WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = WindowOptions(
       skipTaskbar: false,
       minimumSize: Size(800, 800),
+      fullScreen: args.contains("--fullscreen"),
       title: "Yamata Launcher",
       titleBarStyle: TitleBarStyle.normal,
     );

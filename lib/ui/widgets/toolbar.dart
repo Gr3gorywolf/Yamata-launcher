@@ -2,25 +2,25 @@ import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/utils/screen_helpers.dart';
 
-class Toolbar extends StatefulWidget implements PreferredSizeWidget {
-  final ToolbarSettings settings;
-  final ToolbarValue? initialValues;
-  final Function(ToolbarValue)? onChanged;
+class Toolbar<T> extends StatefulWidget implements PreferredSizeWidget {
+  final ToolbarSettings<T> settings;
+  final ToolbarValue<T>? initialValues;
+  final Function(ToolbarValue<T>)? onChanged;
   const Toolbar(
       {Key? key, required this.settings, this.initialValues, this.onChanged})
       : super(key: key);
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
-  State<Toolbar> createState() => ToolbarState();
+  State<Toolbar<T>> createState() => ToolbarState<T>();
 }
 
-class ToolbarState extends State<Toolbar> {
+class ToolbarState<T> extends State<Toolbar<T>> {
   bool isSearching = false;
   String searchText = '';
   TextEditingController _controller = TextEditingController();
   ToolBarSortByElement? sortBy;
-  List<ToolBarFilterElement>? filters = [];
+  List<ToolBarFilterElement<T>>? filters = [];
   @override
   void initState() {
     if (widget.initialValues != null) {
@@ -31,7 +31,7 @@ class ToolbarState extends State<Toolbar> {
     super.initState();
   }
 
-  void setValues(ToolbarValue newValues) {
+  void setValues(ToolbarValue<T> newValues) {
     setState(() {
       searchText = newValues.search;
       sortBy = newValues.sortBy;
@@ -44,7 +44,7 @@ class ToolbarState extends State<Toolbar> {
   void _notifyChange() {
     if (widget.onChanged != null) {
       widget.onChanged!(
-        ToolbarValue(
+        ToolbarValue<T>(
           search: searchText,
           sortBy: sortBy,
           filters: filters ?? [],
@@ -154,7 +154,8 @@ class ToolbarState extends State<Toolbar> {
   }
 
   Widget buildFilters() {
-    final filterGroups = widget.settings.filters ?? [];
+    final List<ToolBarFilterGroup<T>> filterGroups =
+        widget.settings.filters ?? [];
     bool _sameFilter(ToolBarFilterElement a, ToolBarFilterElement b) {
       return a.value == b.value && a.field == b.field;
     }
@@ -163,7 +164,7 @@ class ToolbarState extends State<Toolbar> {
       return filters?.any((f) => _sameFilter(f, filter)) ?? false;
     }
 
-    return PopupMenuButton<ToolBarFilterElement>(
+    return PopupMenuButton<ToolBarFilterElement<T>>(
       icon: Badge(
           alignment: Alignment.topRight,
           padding: EdgeInsets.all(2),
@@ -183,11 +184,11 @@ class ToolbarState extends State<Toolbar> {
         _notifyChange();
       },
       itemBuilder: (context) {
-        final List<PopupMenuEntry<ToolBarFilterElement>> entries = [];
+        final List<PopupMenuEntry<ToolBarFilterElement<T>>> entries = [];
 
         for (final group in filterGroups) {
           entries.add(
-            PopupMenuItem<ToolBarFilterElement>(
+            PopupMenuItem<ToolBarFilterElement<T>>(
               enabled: false,
               child: Text(
                 group.groupName,
@@ -201,7 +202,7 @@ class ToolbarState extends State<Toolbar> {
 
           for (final filter in group.filters) {
             entries.add(
-              PopupMenuItem<ToolBarFilterElement>(
+              PopupMenuItem<ToolBarFilterElement<T>>(
                 value: filter,
                 child: Row(
                   children: [

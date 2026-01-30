@@ -19,16 +19,13 @@ import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/filters/library_item_filters.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/sorts/library_item_sorts.dart';
 
 enum quickFiltersTypes { none, all, installed, favorites }
 
-var _initialToolbarValues = ToolbarValue(
-    filters: [],
-    search: '',
-    sortBy: ToolBarSortByElement(
-        label: 'Added Date',
-        field: 'addedAt',
-        value: ToolBarSortByType.descending));
+var _initialToolbarValues = ToolbarValue<RomLibraryItem>(
+    filters: [], search: '', sortBy: LibraryItemSorts.addedDateSort);
 
 class LibraryPage extends StatefulWidget {
   @override
@@ -36,39 +33,26 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  ToolbarValue? filterValues = _initialToolbarValues;
+  ToolbarValue<RomLibraryItem>? filterValues = _initialToolbarValues;
   final toolbarKey = GlobalKey<ToolbarState>();
   quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
 
-  List<ToolBarFilterGroup> getFilters(List<RomLibraryItem> roms) => [
+  List<ToolBarFilterGroup<RomLibraryItem>> getFilters(
+          List<RomLibraryItem> roms) =>
+      [
         ToolBarFilterGroup(
           groupName: 'Consoles',
           filters: roms.map((e) => e.rom.console).toSet().map((console) {
-            return ToolBarFilterElement(
-                label: ConsoleService.getConsoleFromName(console)?.name ?? "",
-                field: 'rom.console',
-                value: console);
+            return LibraryItemFilters.consoleFilter(
+                ConsoleService.getConsoleFromName(console)!);
           }).toList(),
         ),
         ToolBarFilterGroup(
           groupName: 'Availability',
           filters: [
-            ToolBarFilterElement(
-                label: "Installed",
-                field: 'filePath',
-                value: "true",
-                matcher: (rom) {
-                  return rom.filePath != null && rom.filePath!.isNotEmpty;
-                }),
-            ToolBarFilterElement(
-                label: "Never Played",
-                field: 'lastPlayedAt',
-                value: "true",
-                matcher: (rom) {
-                  return rom.lastPlayedAt == null;
-                }),
-            ToolBarFilterElement(
-                label: "Favorite", field: 'isFavorite', value: "true"),
+            LibraryItemFilters.installedFilter,
+            LibraryItemFilters.neverPlayerFilter,
+            LibraryItemFilters.favoriteFilter
           ],
         ),
       ];
@@ -88,33 +72,24 @@ class _LibraryPageState extends State<LibraryPage> {
   handleQuickFilterChanged(quickFiltersTypes filter) {
     switch (filter) {
       case quickFiltersTypes.all:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomLibraryItem>(
             search: filterValues?.search ?? '',
             sortBy: filterValues?.sortBy,
             filters: _initialToolbarValues.filters));
         break;
       case quickFiltersTypes.favorites:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomLibraryItem>(
             search: filterValues?.search ?? '',
             sortBy: filterValues?.sortBy,
             filters: [
-              ToolBarFilterElement(
-                  label: "Favorite", field: 'isFavorite', value: "true"),
+              LibraryItemFilters.favoriteFilter,
             ]));
         break;
       case quickFiltersTypes.installed:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomLibraryItem>(
             search: filterValues?.search ?? '',
             sortBy: filterValues?.sortBy,
-            filters: [
-              ToolBarFilterElement(
-                  label: "Installed",
-                  field: 'filePath',
-                  value: "true",
-                  matcher: (rom) {
-                    return rom.filePath != null && rom.filePath!.isNotEmpty;
-                  }),
-            ]));
+            filters: [LibraryItemFilters.installedFilter]));
         break;
       default:
         break;
@@ -153,7 +128,7 @@ class _LibraryPageState extends State<LibraryPage> {
               {LibraryImportDialog.show(context, handleAddToLibrary)},
           label: Text('Import Game'),
           icon: Icon(Icons.add)),
-      appBar: Toolbar(
+      appBar: Toolbar<RomLibraryItem>(
         onChanged: (values) {
           setState(() {
             filterValues = values;
@@ -165,18 +140,9 @@ class _LibraryPageState extends State<LibraryPage> {
           title: "Library",
           filters: getFilters(roms),
           sorts: [
-            ToolBarSortByElement(
-                label: 'Name',
-                field: 'rom.name',
-                value: ToolBarSortByType.ascending),
-            ToolBarSortByElement(
-                label: 'Added Date',
-                field: 'addedAt',
-                value: ToolBarSortByType.ascending),
-            ToolBarSortByElement(
-                label: 'Played time',
-                field: 'playTimeMins',
-                value: ToolBarSortByType.ascending),
+            LibraryItemSorts.romNameSort,
+            LibraryItemSorts.addedDateSort,
+            LibraryItemSorts.playedTimeSort,
           ],
         ),
         initialValues: filterValues,

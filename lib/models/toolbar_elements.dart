@@ -1,9 +1,9 @@
-class ToolbarSettings {
+class ToolbarSettings<T> {
   String? searchHint = "Search...";
   String? title = "Search";
   bool disableSearch = false;
   List<ToolBarSortByElement>? sorts = [];
-  List<ToolBarFilterGroup>? filters = [];
+  List<ToolBarFilterGroup<T>>? filters = [];
   ToolbarSettings(
       {this.sorts,
       this.filters,
@@ -12,16 +12,16 @@ class ToolbarSettings {
       this.disableSearch = false});
 }
 
-class ToolbarValue {
+class ToolbarValue<T> {
   String search;
   ToolBarSortByElement? sortBy;
-  List<ToolBarFilterElement> filters;
+  List<ToolBarFilterElement<T>> filters;
   ToolbarValue({required this.search, this.sortBy, required this.filters});
 }
 
 enum ToolBarSortByType { ascending, descending }
 
-class ToolBarSortByElement {
+class ToolBarSortByElement<T> {
   String label;
   String field;
   ToolBarSortByType value;
@@ -29,17 +29,17 @@ class ToolBarSortByElement {
       {required this.label, required this.field, required this.value});
 }
 
-class ToolBarFilterGroup {
+class ToolBarFilterGroup<T> {
   String groupName;
-  List<ToolBarFilterElement> filters;
+  List<ToolBarFilterElement<T>> filters;
   ToolBarFilterGroup({required this.groupName, required this.filters});
 }
 
-class ToolBarFilterElement {
+class ToolBarFilterElement<T> {
   String label;
   String field;
   String value;
-  bool Function(dynamic rom)? matcher;
+  bool Function(T subject)? matcher;
 
   ToolBarFilterElement({
     required this.label,

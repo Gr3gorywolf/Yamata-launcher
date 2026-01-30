@@ -17,7 +17,7 @@ class ExplorePage extends StatefulWidget {
 class ExplorePage_State extends State<ExplorePage> {
   List<Console> _consoles = ConsoleService.getConsoles(unique: true)
     ..sort((a, b) => a.name?.compareTo(b.name ?? "") ?? 0);
-  ToolbarValue? filterValues = null;
+  ToolbarValue<Console>? filterValues = null;
 
   var textController = TextEditingController();
 
@@ -32,7 +32,7 @@ class ExplorePage_State extends State<ExplorePage> {
   Widget build(BuildContext bldContext) {
     var axisCount = max(2, (MediaQuery.of(context).size.width / 220).floor());
     return Scaffold(
-      appBar: Toolbar(
+      appBar: Toolbar<Console>(
         settings: ToolbarSettings(title: "Explore", disableSearch: true),
         onChanged: (val) => {
           setState(() {

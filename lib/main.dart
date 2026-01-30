@@ -17,7 +17,12 @@ import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 
-void main(List<String> args) async {
+void main(List<String> args) {
+  initWindow(args);
+  runApp(MyApp());
+}
+
+void initWindow(List<String> args) async {
   if (FileSystemService.isDesktop) {
     WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
@@ -33,7 +38,6 @@ void main(List<String> args) async {
       await windowManager.focus();
     });
   }
-  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {

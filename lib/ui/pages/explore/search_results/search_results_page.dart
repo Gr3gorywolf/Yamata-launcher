@@ -23,7 +23,7 @@ class SearchResultsPage extends StatefulWidget {
 class _SearchResultsPageState extends State<SearchResultsPage> {
   List<RomInfo>? _roms = [];
   bool _isLoading = false;
-  ToolbarValue? filterValues = null;
+  ToolbarValue<RomInfo>? filterValues = null;
 
   List<RomInfo> get filteredRoms {
     if (_roms == null) return [];
@@ -73,13 +73,13 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
     var libraryProvider = Provider.of<LibraryProvider>(context);
     return Scaffold(
-      appBar: Toolbar(
+      appBar: Toolbar<RomInfo>(
         onChanged: (values) {
           setState(() {
             filterValues = values;
           });
         },
-        initialValues: ToolbarValue(
+        initialValues: ToolbarValue<RomInfo>(
             filters: [],
             search: '',
             sortBy: ToolBarSortByElement(

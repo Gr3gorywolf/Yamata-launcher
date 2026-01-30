@@ -10,6 +10,8 @@ import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/filters/rom_info_filters.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/sorts/rom_info_sorts.dart';
 
 import '../../../utils/filter_helpers.dart';
 
@@ -24,11 +26,10 @@ class ConsoleRomsPage extends StatefulWidget {
 }
 
 class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
-  String _searchQuery = "";
   List<RomInfo>? _roms = [];
   final toolbarKey = GlobalKey<ToolbarState>();
   bool _isLoading = false;
-  ToolbarValue? filterValues = null;
+  ToolbarValue<RomInfo>? filterValues = null;
   quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
 
   List<RomInfo> get filteredRoms {
@@ -40,49 +41,25 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
   handleQuickFilterChanged(quickFiltersTypes filter) {
     switch (filter) {
       case quickFiltersTypes.all:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomInfo>(
             search: filterValues?.search ?? "",
             sortBy: filterValues?.sortBy,
             filters: []));
         break;
       case quickFiltersTypes.on_library:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomInfo>(
             search: filterValues?.search ?? "",
             sortBy: filterValues?.sortBy,
             filters: [
-              ToolBarFilterElement(
-                label: "On Library",
-                field: "isOnLibrary",
-                value: "",
-                matcher: (romInfo) {
-                  var libraryProvider =
-                      Provider.of<LibraryProvider>(context, listen: false);
-                  var libItem = libraryProvider.getLibraryItem(romInfo.slug);
-                  return libItem != null;
-                },
-              ),
+              RomInfoFilters.isOnLibraryFilter,
             ]));
         break;
       case quickFiltersTypes.download_available:
-        toolbarKey.currentState?.setValues(ToolbarValue(
+        toolbarKey.currentState?.setValues(ToolbarValue<RomInfo>(
             search: filterValues?.search ?? '',
             sortBy: filterValues?.sortBy,
             filters: [
-              ToolBarFilterElement(
-                label: "Download Available",
-                field: "isDownloadAvailable",
-                value: "",
-                matcher: (romInfo) {
-                  var downloadSourcesProvider =
-                      Provider.of<DownloadSourcesProvider>(context,
-                          listen: false);
-                  return downloadSourcesProvider
-                          .isRomCompilingDownloadSources(romInfo.slug) ||
-                      downloadSourcesProvider
-                          .getRomSources(romInfo.slug)
-                          .isNotEmpty;
-                },
-              ),
+              RomInfoFilters.isDownloadAvailableFilter,
             ]));
         break;
       default:
@@ -120,10 +97,8 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
   @override
   Widget build(BuildContext context) {
     var appProvider = Provider.of<AppProvider>(context);
-    var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
-    var libraryProvider = Provider.of<LibraryProvider>(context);
     return Scaffold(
-      appBar: Toolbar(
+      appBar: Toolbar<RomInfo>(
         key: toolbarKey,
         onChanged: (values) {
           setState(() {
@@ -131,64 +106,19 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
             selectedQuickFilter = quickFiltersTypes.none;
           });
         },
-        initialValues: ToolbarValue(
-            filters: [],
-            search: '',
-            sortBy: ToolBarSortByElement(
-                label: 'Name',
-                field: 'name',
-                value: ToolBarSortByType.ascending)),
+        initialValues: ToolbarValue<RomInfo>(
+            filters: [], search: '', sortBy: RomInfoSorts.nameSort),
         settings: ToolbarSettings(title: widget.console.name, sorts: [
-          ToolBarSortByElement(
-              label: 'Name', field: 'name', value: ToolBarSortByType.ascending),
-          ToolBarSortByElement(
-              label: 'Release Date',
-              field: 'releaseDate',
-              value: ToolBarSortByType.ascending),
+          RomInfoSorts.nameSort,
+          RomInfoSorts.releaseDateSort,
         ], filters: [
           ToolBarFilterGroup(
             groupName: "Availability",
             filters: [
-              ToolBarFilterElement(
-                label: "On Library",
-                field: "isOnLibrary",
-                value: "",
-                matcher: (romInfo) {
-                  var libraryProvider =
-                      Provider.of<LibraryProvider>(context, listen: false);
-                  var libItem = libraryProvider.getLibraryItem(romInfo.slug);
-                  return libItem != null;
-                },
-              ),
-              ToolBarFilterElement(
-                  label: "Downloaded",
-                  field: "isDownloaded",
-                  value: "",
-                  matcher: (romInfo) {
-                    var libItem = libraryProvider.getLibraryItem(romInfo.slug);
-                    return libItem != null && libItem.downloadedAt != null;
-                  }),
-              ToolBarFilterElement(
-                label: "Not Downloaded",
-                field: "isNotDownloaded",
-                value: "",
-                matcher: (romInfo) {
-                  var libItem = libraryProvider.getLibraryItem(romInfo.slug);
-                  return libItem == null || libItem.downloadedAt == null;
-                },
-              ),
-              ToolBarFilterElement(
-                label: "Download Available",
-                field: "isDownloadAvailable",
-                value: "",
-                matcher: (romInfo) {
-                  return downloadSourcesProvider
-                          .isRomCompilingDownloadSources(romInfo.slug) ||
-                      downloadSourcesProvider
-                          .getRomSources(romInfo.slug)
-                          .isNotEmpty;
-                },
-              ),
+              RomInfoFilters.isOnLibraryFilter,
+              RomInfoFilters.isDownloadedFilter,
+              RomInfoFilters.isNotDownloadedFilter,
+              RomInfoFilters.isDownloadAvailableFilter,
             ],
           )
         ]),

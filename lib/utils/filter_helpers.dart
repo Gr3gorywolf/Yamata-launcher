@@ -24,7 +24,7 @@ class FilterHelpers {
 
   static List<T> handleDynamicFilter<T extends JsonSerializable>(
     List<T> subjects,
-    ToolbarValue toolbarValue, {
+    ToolbarValue<T> toolbarValue, {
     String nameField = 'name',
   }) {
     List<T> filteredSubjects = subjects;
@@ -44,7 +44,7 @@ class FilterHelpers {
     }
 
     if (toolbarValue.filters.isNotEmpty) {
-      final Map<String, List<ToolBarFilterElement>> grouped = {};
+      final Map<String, List<ToolBarFilterElement<T>>> grouped = {};
 
       for (final f in toolbarValue.filters) {
         grouped.putIfAbsent(f.field, () => []).add(f);

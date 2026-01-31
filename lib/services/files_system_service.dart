@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:media_scanner/media_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
@@ -167,10 +168,17 @@ class FileSystemService {
   static String moveFilesToParentFolder(String filePath) {
     var fileDir = Directory(p.dirname(filePath));
     var parentPath = fileDir.parent.path;
+    if (Platform.isAndroid) {
+      MediaScanner.loadMedia(path: parentPath);
+    }
     for (var item in fileDir.listSync()) {
       var newPath = p.join(parentPath, item.uri.pathSegments.last);
       item.renameSync(newPath);
+      if (Platform.isAndroid) {
+        MediaScanner.loadMedia(path: newPath);
+      }
     }
+
     return p.join(parentPath, Uri.parse(filePath).pathSegments.last);
   }
 

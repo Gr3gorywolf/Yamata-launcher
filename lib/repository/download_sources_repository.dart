@@ -10,7 +10,7 @@ class DownloadSourcesRepository {
 
     try {
       var res =
-          await client.get(Uri.parse(sourceUrl)).timeout(Duration(seconds: 15));
+          await client.get(Uri.parse(sourceUrl)).timeout(Duration(minutes: 15));
       if (res.statusCode == 200) {
         var responseData = json.decode(res.body);
 
@@ -33,6 +33,7 @@ class DownloadSourcesRepository {
         return null;
       }
     } catch (e) {
+      print(e);
       return null;
     }
   }

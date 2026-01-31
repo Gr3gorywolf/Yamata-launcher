@@ -249,7 +249,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     _setSetting(SettingsKeys.CLOSE_TO_SYSTEM_TRAY, v),
               ),
             _SwitchTile(
-              icon: Icons.drive_file_move,
+              icon: Icons.folder_zip,
               title: 'Extract roms after download',
               subtitle:
                   "If the downloaded file is compressed, it will be extracted automatically",

@@ -76,24 +76,24 @@ class _RomListState extends State<RomList> {
       return const Center(child: CircularProgressIndicator());
     }
     final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: widget.roms?.isEmpty ?? true
-          ? Column(
-              children: [
-                _buildTop(),
-                Expanded(
-                  child: EmptyPlaceholder(
-                      icon: Icons.search_off,
-                      title: "No ROMs Found",
-                      description:
-                          "No ROMs found matching the current criteria."),
-                ),
-              ],
-            )
-          : FadeIn(
-              duration: Duration(seconds: 1),
-              child: CustomScrollView(
+    return FadeIn(
+      duration: Duration(seconds: 1),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: widget.roms?.isEmpty ?? true
+            ? Column(
+                children: [
+                  _buildTop(),
+                  Expanded(
+                    child: EmptyPlaceholder(
+                        icon: Icons.search_off,
+                        title: "No ROMs Found",
+                        description:
+                            "No ROMs found matching the current criteria."),
+                  ),
+                ],
+              )
+            : CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
                     child: _buildTop(),
@@ -135,7 +135,7 @@ class _RomListState extends State<RomList> {
                         )),
                 ],
               ),
-            ),
+      ),
     );
   }
 }

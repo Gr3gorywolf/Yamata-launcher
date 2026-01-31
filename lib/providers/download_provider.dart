@@ -9,6 +9,9 @@ import 'package:windows_taskbar/windows_taskbar.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/database/app_database.dart';
+import 'package:yamata_launcher/database/daos/download_history_dao.dart';
+import 'package:yamata_launcher/models/download_history_item.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -52,8 +55,11 @@ class DownloadProvider extends ChangeNotifier {
   static var _currentTaskbarProgressMode = TaskbarProgressMode.noProgress;
   final Map<String?, _ActiveAria2Download> _aria2cDownloadProcesses = {};
   final List<DownloadInfo> _activeDownloadInfos = [];
+  final List<DownloadHistoryItem> _downloadHistory = [];
 
   List<DownloadInfo> get activeDownloadInfos => _activeDownloadInfos;
+  List<DownloadHistoryItem> get downloadHistory => _downloadHistory
+    ..sort((a, b) => b.downloadedAt!.compareTo(a.downloadedAt!));
 
   bool isRomDownloading(RomInfo rom) {
     return activeDownloadInfos.any((d) => d.romSlug == rom.slug);
@@ -84,6 +90,12 @@ class DownloadProvider extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  Future setDownloadHistory(List<DownloadHistoryItem> history) async {
+    _downloadHistory.clear();
+    _downloadHistory.addAll(history);
+    notifyListeners();
   }
 
   Future<void> addRomDownloadToQueue(
@@ -249,6 +261,14 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
+  _insertDownloadToHistory(DownloadInfo download, String path) async {
+    var historyItem = DownloadHistoryItem.fromDownloadInfo(download,
+        filePath: path, downloadedAt: DateTime.now());
+    await DownloadHistoryDao(db!).insert(historyItem);
+    _downloadHistory.add(historyItem);
+    notifyListeners();
+  }
+
   void _registerCompletedDownload(
       DownloadInfo download, RomInfo rom, String path) async {
     BuildContext? context = navigatorContext;
@@ -292,8 +312,9 @@ class DownloadProvider extends ChangeNotifier {
         VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
       _handleExtractRom(download, rom, path);
     } else {
-      _handleMoveContentToParentFolder(libraryItem, path,
+      var newPath = await _handleMoveContentToParentFolder(libraryItem, path,
           updateLibrary: !download.isExtraContent);
+      await _insertDownloadToHistory(download, newPath);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
     }
   }
@@ -414,8 +435,10 @@ class DownloadProvider extends ChangeNotifier {
             "Failed to delete zip file: ${e.toString()}",
             exception: e);
       }
-      _handleMoveContentToParentFolder(libraryItem!, extractedFile.path,
+      var newPath = await _handleMoveContentToParentFolder(
+          libraryItem!, extractedFile.path,
           updateLibrary: !download.isExtraContent);
+      await _insertDownloadToHistory(download, newPath);
     }
 
     NotificationsService.showNotification(
@@ -432,11 +455,12 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _handleMoveContentToParentFolder(RomLibraryItem libraryItem, String path,
+  Future<String> _handleMoveContentToParentFolder(
+      RomLibraryItem libraryItem, String path,
       {bool updateLibrary = true}) async {
     if (await SettingsService()
         .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER)) {
-      return;
+      return path;
     }
     try {
       var newPath = FileSystemService.moveFilesToParentFolder(path);
@@ -450,9 +474,10 @@ class DownloadProvider extends ChangeNotifier {
       try {
         parentFolder.deleteSync();
       } catch (e) {}
+      return newPath;
     } catch (e) {
       print("Error moving files to containing folder: ${e.toString()}");
-      return;
     }
+    return path;
   }
 }

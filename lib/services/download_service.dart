@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/database/app_database.dart';
+import 'package:yamata_launcher/database/daos/download_history_dao.dart';
 import 'package:yamata_launcher/models/aria2c.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
@@ -20,6 +22,13 @@ import 'package:path/path.dart' as p;
 import 'aria2c/aria2c_download_manager.dart';
 
 class DownloadService {
+  static initDownloadHistory() async {
+    var downloadProvider =
+        Provider.of<DownloadProvider>(navigatorContext!, listen: false);
+    var downloadHistory = await DownloadHistoryDao(db!).getLatests();
+    downloadProvider.setDownloadHistory(downloadHistory);
+  }
+
   downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
       {bool isExtraContent = false}) async {
     var downloadsPath = FileSystemService.downloadsPath;

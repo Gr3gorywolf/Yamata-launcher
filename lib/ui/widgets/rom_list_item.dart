@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/models/download_history_item.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
@@ -10,23 +11,26 @@ import 'package:yamata_launcher/ui/widgets/rom_rating.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/time_helpers.dart';
 
 enum RomListItemType { card, listItem }
 
 class RomListItem extends StatelessWidget {
   final RomInfo romItem;
   RomListItemType itemType;
+  DownloadHistoryItem? download;
   bool showConsole;
 
   RomListItem(
       {required this.romItem,
       this.showConsole = false,
+      this.download,
       this.itemType = RomListItemType.listItem});
   @override
   Widget build(BuildContext context) {
     var _provider = DownloadProvider.of(context);
     var libraryProvider = Provider.of<LibraryProvider>(context);
-    var _downloadInfo = _provider.getDownloadInfo(romItem);
+    var _currentDownloadInfo = _provider.getDownloadInfo(romItem);
     var _libraryDetails = libraryProvider.getLibraryItem(romItem.slug);
     var gameplayThumbnail = RomThumbnail(
       this.romItem!,
@@ -40,6 +44,7 @@ class RomListItem extends StatelessWidget {
       this.romItem!,
       timeout: Duration(milliseconds: 60),
     );
+    var hasDownloadInfo = _currentDownloadInfo != null || download != null;
     var console = ConsoleService.getConsoleFromName(romItem!.console);
     var isFavorite = (_libraryDetails?.isFavorite ?? false) == true;
 
@@ -66,10 +71,13 @@ class RomListItem extends StatelessWidget {
       }
     }
 
-    List<Widget> getDownloadContentInfo() {
-      if (_downloadInfo != null) {
-        var downloadType =
-            _downloadInfo.isExtraContent ? "Extra Content" : "Base Game";
+    List<Widget> buildDownloadInfoContent() {
+      if (hasDownloadInfo) {
+        var isExtraContent =
+            download?.isExtraContent ?? _currentDownloadInfo!.isExtraContent;
+        var contentTitle =
+            download?.contentTitle ?? _currentDownloadInfo!.contentTitle;
+        var downloadType = isExtraContent ? "Extra Content" : "Base Game";
         return [
           SizedBox(
             height: 5,
@@ -77,7 +85,7 @@ class RomListItem extends StatelessWidget {
           Opacity(
             opacity: 0.7,
             child: Text(
-              "(${downloadType}) ${_downloadInfo.contentTitle ?? ""}",
+              "(${downloadType}) ${contentTitle ?? ""}",
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall,
@@ -158,17 +166,20 @@ class RomListItem extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            ...(_downloadInfo != null
+                            if (hasDownloadInfo) ...[
+                              SizedBox(
+                                height: 10,
+                              ),
+                              ...buildDownloadInfoContent(),
+                            ],
+                            ...(_currentDownloadInfo != null && download == null
                                 ? [
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    ...getDownloadContentInfo(),
                                     LinearProgressIndicator(
                                       backgroundColor: Colors.grey[800],
-                                      value:
-                                          (_downloadInfo.downloadPercent ?? 0) /
-                                              100,
+                                      value: (_currentDownloadInfo
+                                                  .downloadPercent ??
+                                              0) /
+                                          100,
                                     ),
                                     SizedBox(
                                       height: 3,
@@ -176,7 +187,7 @@ class RomListItem extends StatelessWidget {
                                     Opacity(
                                       opacity: 0.7,
                                       child: Text(
-                                        _downloadInfo.downloadInfo ?? "",
+                                        _currentDownloadInfo.downloadInfo ?? "",
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelSmall,
@@ -187,26 +198,32 @@ class RomListItem extends StatelessWidget {
                             SizedBox(
                               height: 18,
                             ),
-                            RomActionButton(
-                              romItem,
-                              size: RomActionButtonSize.small,
-                            ),
+                            if (download == null)
+                              RomActionButton(
+                                romItem,
+                                size: RomActionButtonSize.small,
+                              ),
                           ],
                         ),
-                        if (_downloadInfo == null)
+                        if (_currentDownloadInfo == null || download != null)
                           Positioned(
                             right: 0,
                             bottom: 10,
                             child: Opacity(
                               opacity: 0.7,
                               child: Text(
-                                  RomService.getLastPlayedLabel(
-                                      _libraryDetails),
+                                  download != null
+                                      ? "Downloaded " +
+                                          TimeHelpers.getTimeAgo(
+                                              download?.downloadedAt ??
+                                                  DateTime.now())
+                                      : RomService.getLastPlayedLabel(
+                                          _libraryDetails),
                                   style:
                                       Theme.of(context).textTheme.labelSmall),
                             ),
                           ),
-                        if (_downloadInfo == null)
+                        if (!hasDownloadInfo)
                           Positioned(
                             right: 0,
                             top: 0,
@@ -293,13 +310,18 @@ class RomListItem extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                     ),
-                    ...(_downloadInfo != null
+                    if (hasDownloadInfo) ...[
+                      Spacer(),
+                      ...buildDownloadInfoContent(),
+                    ],
+                    ...(_currentDownloadInfo != null && download == null
                         ? [
-                            Spacer(),
-                            ...getDownloadContentInfo(),
+                            if (!hasDownloadInfo) Spacer(),
                             LinearProgressIndicator(
                               backgroundColor: Colors.grey[800],
-                              value: (_downloadInfo.downloadPercent ?? 0) / 100,
+                              value:
+                                  (_currentDownloadInfo.downloadPercent ?? 0) /
+                                      100,
                             ),
                             SizedBox(
                               height: 3,
@@ -307,7 +329,7 @@ class RomListItem extends StatelessWidget {
                             Opacity(
                               opacity: 0.7,
                               child: Text(
-                                _downloadInfo.downloadInfo ?? "",
+                                _currentDownloadInfo.downloadInfo ?? "",
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.labelSmall,
@@ -317,17 +339,19 @@ class RomListItem extends StatelessWidget {
                         : []),
                     Spacer(),
                     Row(children: [
-                      RomActionButton(
-                        romItem,
-                        size: RomActionButtonSize.small,
-                      ),
+                      if (download == null)
+                        RomActionButton(
+                          romItem,
+                          size: RomActionButtonSize.small,
+                        ),
                       Spacer(),
-                      if (_downloadInfo == null) RomLibraryActions(rom: romItem)
+                      if (_currentDownloadInfo == null)
+                        RomLibraryActions(rom: romItem)
                     ]),
                     SizedBox(
                       height: 3,
                     ),
-                    if (_downloadInfo == null)
+                    if (_currentDownloadInfo == null)
                       Opacity(
                         opacity: 0.7,
                         child: Text(

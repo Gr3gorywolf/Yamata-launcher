@@ -55,18 +55,16 @@ class _DownloadsPageState extends State<DownloadsPage> {
         initialValues: ToolbarValue(filters: [], search: ''),
         settings: ToolbarSettings(title: "Downloads", disableSearch: true),
       ),
-      body: Consumer2<DownloadProvider, LibraryProvider>(
-        builder: (context, downloadProvider, libraryProvider, _) {
+      body: Consumer<DownloadProvider>(
+        builder: (context, downloadProvider, _) {
           final ongoingDownloads = downloadProvider.activeDownloadInfos
               .where((d) => d.romInfo != null)
               .toList();
 
-          final completedDownloads = libraryProvider.libraryItems
-              .where((library) =>
-                  library.downloadedAt != null &&
-                  !getIsRomDownloading(library.rom))
-              .toList()
-            ..sort((a, b) => b.downloadedAt!.compareTo(a.downloadedAt!));
+          final completedDownloads = downloadProvider.downloadHistory
+              .where((d) => d.romInfo != null)
+              .map((d) => d)
+              .toList();
 
           final hasAnything =
               ongoingDownloads.isNotEmpty || completedDownloads.isNotEmpty;
@@ -150,7 +148,8 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
                             child: RomListItem(
-                              romItem: item.rom,
+                              romItem: item.romInfo!,
+                              download: item,
                               showConsole: true,
                             ),
                           );

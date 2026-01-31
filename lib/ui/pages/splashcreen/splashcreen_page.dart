@@ -54,6 +54,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
         .initialize();
     await UpdateService.initialize();
+    await DownloadService.initDownloadHistory();
     Future.delayed(Duration(milliseconds: 2000)).then((value) {
       Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
       context.push("/explore");

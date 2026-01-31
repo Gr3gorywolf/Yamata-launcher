@@ -5,7 +5,7 @@ import 'package:html/dom.dart';
 import 'package:yamata_launcher/models/launchbox.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/services/scrapers/constants/launchbox_consoles_mapping.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/constants/launchbox_consoles_mapping.dart';
 
 class LaunchboxScraper {
   final String baseUrl = "https://gamesdb.launchbox-app.com/";

@@ -4,7 +4,11 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/models/download_source.dart';
+import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
+
+enum DownloadSourceType { Yamata, Hydra }
 
 class DownloadSourcesPage extends StatefulWidget {
   @override
@@ -27,17 +31,45 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
   }
 
   _handleSetSource(DownloadSourceWithDownloads? sourceToUpdate) async {
+    var type = DownloadSourceType.Yamata;
     var result = sourceToUpdate == null
-        ? await AlertsService.showPrompt(context, "Add Download Source",
+        ? await AlertsService.showPrompt(
+            context,
+            "Add Download Source",
             message: "Enter the URL of the download source:",
-            inputPlaceholder: "Source URL")
+            inputPlaceholder: "Source URL",
+            extraContent: DialogSectionItem(
+              title: "Download Source Type",
+              icon: Icons.cloud,
+              actions: [],
+              content: SearchableDropdownFormField<DownloadSourceType>(
+                value: type,
+                items: [
+                  DropdownMenuItem(
+                    value: DownloadSourceType.Yamata,
+                    child: Text("Yamata Source"),
+                  ),
+                  DropdownMenuItem(
+                    value: DownloadSourceType.Hydra,
+                    child: Text("Hydra Source"),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    type = value;
+                  }
+                },
+              ),
+            ),
+          )
         : sourceToUpdate.sourceInfo!.downloadUrl;
     if (result == null || result.isEmpty) {
       return;
     }
     var loadingHandle = AlertsService.showLoadingAlert(context,
         "Fetching Source", "Please wait while the source is being fetched...");
-    final source = await DownloadSourcesRepository().fetchSource(result);
+    final source =
+        await DownloadSourcesRepository().fetchDownloadSource(result, type);
     loadingHandle.close();
     if (source != null) {
       source.sourceInfo.downloadUrl = result;

@@ -33,10 +33,18 @@ bool _isRomMatch(
   if (sourceRomNormalizedTitle[0] != romNormalizedTitle[0]) {
     return false;
   }
-  return StringHelper.hasMinConsecutiveMatch(
+  var minMatch = StringHelper.hasMinConsecutiveMatch(
     romNormalizedTitle,
     sourceRomNormalizedTitle,
     minLength: sourceRomNormalizedTitle.length,
+  );
+  if (minMatch) {
+    return true;
+  }
+  return StringHelper.hasMinConsecutiveMatch(
+    sourceRomNormalizedTitle,
+    romNormalizedTitle,
+    minLength: romNormalizedTitle.length,
   );
 }
 

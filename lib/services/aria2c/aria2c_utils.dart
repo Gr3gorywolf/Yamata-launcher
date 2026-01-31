@@ -1,6 +1,23 @@
 import 'package:yamata_launcher/models/aria2c.dart';
 
 class Aria2cUtils {
+  static String? extractHeadersFromUrl(String url) {
+    if (!url.contains("||")) return null;
+    final fragment = url.split("||")[1];
+    if (fragment.contains("headers:")) {
+      return fragment.split("headers:")[1];
+    }
+    return null;
+  }
+
+  /**
+   * Cleans the URL by removing any appended parameters after "||".
+   */
+  static String getCleanUrl(String url) {
+    if (!url.contains("||")) return url;
+    return url.split("||").first;
+  }
+
   static Aria2Progress parseProgress(String line) {
     print("aria2c: $line");
     return Aria2Progress(

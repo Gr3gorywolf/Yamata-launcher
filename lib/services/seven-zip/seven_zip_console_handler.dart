@@ -40,7 +40,7 @@ class SevenZipConsoleHandler {
           }
         }
       },
-      progressPrefix: '% -',
+      progressPrefix: '%',
     );
     onStart?.call(proc);
 

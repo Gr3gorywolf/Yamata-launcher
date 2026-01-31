@@ -71,7 +71,7 @@ class RomActionButton extends StatelessWidget {
 
       await libraryProvider.addRomToLibrary(rom);
 
-      DownloadService().downloadRom(rom, romSource);
+      DownloadService.downloadRom(rom, romSource);
       AlertsService.showSnackbar("Download started", duration: 3);
     }
 

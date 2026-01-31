@@ -232,17 +232,19 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
 
     // Direct download Http/FTP ETC
     if (uriType == DownloadUriType.direct) {
-      var certArgs = Aria2cClient.getCommonArgs(args.certPath);
-      var url = args.uri ?? "";
-      if (url.contains("http")) {
-        url = await Aria2cClient.handleRedirects(url);
-      }
-
+      var certArgs =
+          Aria2cClient.getCommonArgs(args.certPath, downloadUrl: args.uri);
       final proc = await Process.start(
         args.aria2cPath!,
-        ["--file-allocation=none", ...certArgs, args.uri!],
+        [
+          "--file-allocation=none",
+          ...certArgs,
+          Aria2cUtils.getCleanUrl(args.uri!)
+        ],
         workingDirectory: romDir.path,
       );
+
+      print(certArgs);
 
       running = proc;
       ProcessHelper.pipeProcessOutput(
@@ -254,7 +256,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       await ProcessHelper.ensureExitOk(
           proc, () => aborted, 'Direct download failed');
 
-      final fileName = p.basename(args.uri!);
+      final fileName = p.basename(Aria2cUtils.getCleanUrl(args.uri!));
       final outputPath = p.join(romDir.path, fileName);
 
       main.send({

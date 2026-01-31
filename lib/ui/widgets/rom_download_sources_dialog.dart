@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -49,6 +50,31 @@ class RomDownloadSourcesDialog extends StatelessWidget {
       AlertsService.showSnackbar("Rom file located successfully");
     }
 
+    Future handleDownloadSourceSelected(DownloadSourceRom sourceRom) async {
+      var loading = AlertsService.showLoadingAlert(
+          context,
+          "Preparing download...",
+          "Retrieving download link information please wait...");
+      var link =
+          await DownloadSourcesRepository().extractDownloadSourceUrl(sourceRom);
+      loading.close();
+      if (link == null || link.isEmpty) {
+        AlertsService.showErrorSnackbar(
+            "Could not extract download link for ${sourceRom.title}");
+        return;
+      }
+      final newSource = DownloadSourceRom(
+          console: sourceRom.console,
+          title: sourceRom.title,
+          fileSize: sourceRom.fileSize,
+          uploadDate: sourceRom.uploadDate,
+          uris: [link],
+          fileIndex: sourceRom.fileIndex,
+          filePath: sourceRom.filePath,
+          title_clean: sourceRom.title_clean);
+      Navigator.pop(context, newSource);
+    }
+
     return AlertDialog(
       title: Text("Available download options"),
       content: SizedBox(
@@ -81,7 +107,7 @@ class RomDownloadSourcesDialog extends StatelessWidget {
                       ),
                     ),
                     onTap: () {
-                      Navigator.pop(context, item.rom);
+                      handleDownloadSourceSelected(item.rom);
                     },
                   );
                 },

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/services/scrapers/constants/launchbox_consoles_mapping.dart';
-import 'package:yamata_launcher/services/scrapers/launchbox_scraper.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/constants/launchbox_consoles_mapping.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/launchbox_scraper.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 

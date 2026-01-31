@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:yamata_launcher/constants/torrents_constants.dart';
 import 'package:yamata_launcher/models/aria2c.dart';
+import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -16,7 +17,7 @@ class Aria2cClient {
     return DownloadUriType.direct;
   }
 
-  static List<String> getCommonArgs(String? certPath) {
+  static List<String> getCommonArgs(String? certPath, {String? downloadUrl}) {
     List<String> dhtSources = Platform.isAndroid
         ? [
             '--dht-entry-point=router.bittorrent.com:6881',
@@ -24,6 +25,7 @@ class Aria2cClient {
             '--dht-entry-point=router.utorrent.com:6881',
           ]
         : [];
+
     List<String> params = [
       '--bt-tracker="${BT_TRACKERS.join(',')}"',
       "--auto-file-renaming=false",
@@ -31,6 +33,13 @@ class Aria2cClient {
       "--summary-interval=3",
       "--console-log-level=info",
     ];
+    if (downloadUrl != null && downloadUrl.contains("||")) {
+      var headers = Aria2cUtils.extractHeadersFromUrl(downloadUrl);
+      if (headers != null) {
+        print('Extracted headers for aria2c:' + '--header="$headers"');
+        params.add('--header=$headers');
+      }
+    }
     if (certPath != null) {
       params.add("--ca-certificate=${certPath}");
       var dhtPath = "${p.dirname(certPath!)}/dht.dat";
@@ -206,7 +215,7 @@ class Aria2cClient {
 
     final path = p.join(cache.path, '${uriHash}.torrent');
     if (await File(path).exists()) return path;
-    var commonArgs = Aria2cClient.getCommonArgs(certPath);
+    var commonArgs = Aria2cClient.getCommonArgs(certPath, downloadUrl: uri);
     final proc = await Process.start(
       aria2cPath!,
       [
@@ -214,7 +223,7 @@ class Aria2cClient {
         '--bt-save-metadata=true',
         '--seed-time=0',
         ...commonArgs,
-        uri,
+        Aria2cUtils.getCleanUrl(uri),
       ],
       workingDirectory: cache.path,
     );

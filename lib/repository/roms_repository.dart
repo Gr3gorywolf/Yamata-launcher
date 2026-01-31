@@ -40,7 +40,9 @@ class RomsRepository {
     if (foundExternalSources.isNotEmpty) {
       for (var console in foundExternalSources) {
         var consoleSource = await ConsoleService.getConsoleSource(console);
+        print(consoleSource);
         if (consoleSource == null) continue;
+
         for (var rom in consoleSource.games) {
           roms[rom.slug ?? ""] = rom;
         }

@@ -29,7 +29,7 @@ class DownloadService {
     downloadProvider.setDownloadHistory(downloadHistory);
   }
 
-  downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
+  static downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
       {bool isExtraContent = false}) async {
     var downloadsPath = FileSystemService.downloadsPath;
     if (!await Directory(downloadsPath).exists()) {
@@ -46,7 +46,7 @@ class DownloadService {
             contentTitle: contentTitle, isExtraContent: isExtraContent);
   }
 
-  void catchRomPortrait(RomInfo romInfo) async {
+  static void catchRomPortrait(RomInfo romInfo) async {
     var portraitName = '${FileSystemService.portraitsPath}/${romInfo.slug}.png';
     var portraitUrl = romInfo.portrait ?? '';
     if (!File(portraitName).existsSync() && portraitUrl.isNotEmpty) {

@@ -92,7 +92,7 @@ class LibraryProvider extends ChangeNotifier {
     _libraryItems[item.rom.slug] = item;
     notifyListeners();
     if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
-      DownloadService().catchRomPortrait(item.rom);
+      DownloadService.catchRomPortrait(item.rom);
     }
   }
 

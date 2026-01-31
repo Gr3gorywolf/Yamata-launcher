@@ -88,6 +88,7 @@ class AlertsService {
       {String? message,
       TextInputType inputType = TextInputType.text,
       String? inputPlaceholder,
+      Widget? extraContent,
       double? minWidth = 300}) {
     var completer = Completer<String?>();
     var value = "";
@@ -100,17 +101,23 @@ class AlertsService {
             titlePadding: EdgeInsets.only(top: 20, left: 13, bottom: 5),
             content: Container(
               width: minWidth,
-              child: TextField(
-                keyboardType: inputType,
-                decoration: InputDecoration(
-                  hintText: inputPlaceholder ?? "",
-                  helperText: message ?? "",
-                  helperMaxLines: 3,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextField(
+                  keyboardType: inputType,
+                  decoration: InputDecoration(
+                    hintText: inputPlaceholder ?? "",
+                    helperText: message ?? "",
+                    helperMaxLines: 3,
+                  ),
+                  onChanged: (text) {
+                    value = text;
+                  },
                 ),
-                onChanged: (text) {
-                  value = text;
-                },
-              ),
+                if (extraContent != null) ...[
+                  SizedBox(height: 10),
+                  extraContent,
+                ],
+              ]),
             ),
             actions: [
               TextButton(

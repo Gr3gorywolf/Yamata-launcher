@@ -29,4 +29,10 @@ class DownloadHistoryDao {
         .record(item.downloadId ?? StringHelper.generateUUID())
         .add(db, item.toJson());
   }
+
+  Future<String?> update(DownloadHistoryItem item) async {
+    await downloadHistoryDbStore
+        .record(item.downloadId ?? StringHelper.generateUUID())
+        .update(db, item.toJson());
+  }
 }

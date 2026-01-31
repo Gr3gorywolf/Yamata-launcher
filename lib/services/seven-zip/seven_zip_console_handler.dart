@@ -30,7 +30,9 @@ class SevenZipConsoleHandler {
 
     ProcessHelper.pipeProcessOutput(
       process: proc,
-      onLog: (line) => {print(line)},
+      onLog: (line) {
+        print(line);
+      },
       onProgress: (line) {
         {
           print(line);

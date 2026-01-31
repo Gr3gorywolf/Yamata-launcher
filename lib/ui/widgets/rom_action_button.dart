@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:animate_do/animate_do.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
@@ -89,7 +90,7 @@ class RomActionButton extends StatelessWidget {
         var downloadInfo = provider.getDownloadInfo(rom);
         if (downloadInfo == null) return;
         AlertsService.showAlert(
-          context,
+          navigatorContext!,
           "Warning",
           "You are sure you want to cancel this ${downloadInfo.isExtracting ? "extraction" : "download"}?",
           acceptTitle: "Yes",
@@ -105,7 +106,7 @@ class RomActionButton extends StatelessWidget {
       }
 
       if (isReadyToPlay && !getFileExist()) {
-        AlertsService.showAlert(context, "File not found",
+        AlertsService.showAlert(navigatorContext!, "File not found",
             "Rom file not found. Please re-download the rom or locate the file.",
             acceptTitle: "Locate", callback: () async {
           var file = await FileSystemService.locateFile();

@@ -111,6 +111,7 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
         settings: ToolbarSettings(title: widget.console.name, sorts: [
           RomInfoSorts.nameSort,
           RomInfoSorts.releaseDateSort,
+          RomInfoSorts.popularitySort,
         ], filters: [
           ToolBarFilterGroup(
             groupName: "Availability",

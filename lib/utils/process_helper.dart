@@ -2,6 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 class ProcessHelper {
+  static Stream<String> _safeLines(Stream<List<int>> stream) {
+    return stream
+        .transform(const Utf8Decoder(allowMalformed: true))
+        .transform(const LineSplitter())
+        .where((line) => line.trim().isNotEmpty);
+  }
+
   static void pipeProcessOutput({
     required Process process,
     void Function(String)? onLog,
@@ -9,21 +16,18 @@ class ProcessHelper {
     String? progressPrefix = '[#',
   }) {
     void handle(String line) {
-      if (onProgress != null && line.contains(progressPrefix!)) {
-        onProgress(line);
+      try {
+        if (onProgress != null && line.contains(progressPrefix!)) {
+          onProgress(line);
+        }
+        onLog!(line);
+      } catch (e) {
+        print('Error processing line: $e');
       }
-      onLog!(line);
     }
 
-    process.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(handle);
-
-    process.stderr
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(handle);
+    _safeLines(process.stdout).listen(handle);
+    _safeLines(process.stderr).listen(handle);
   }
 
   static Future<void> ensureExitOk(

@@ -72,11 +72,25 @@ class FilterHelpers {
         final aValue = _getValueByPath(a.toJson(), sort.field);
         final bValue = _getValueByPath(b.toJson(), sort.field);
 
+        bool hasValue(dynamic v) {
+          if (v == null) return false;
+          if (v == "None" || v == "Unknown") return false;
+          if (v is String) return v.trim().isNotEmpty;
+          if (v is Iterable) return v.isNotEmpty;
+          return true;
+        }
+
+        final aHasValue = hasValue(aValue);
+        final bHasValue = hasValue(bValue);
+
+        if (aHasValue && !bHasValue) return -1;
+        if (!aHasValue && bHasValue) return 1;
         if (aValue is Comparable && bValue is Comparable) {
           return sort.value == ToolBarSortByType.ascending
               ? aValue.compareTo(bValue)
               : bValue.compareTo(aValue);
         }
+
         return 0;
       });
     }

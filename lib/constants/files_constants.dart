@@ -131,3 +131,10 @@ const VALID_COMPRESSED_EXTENSIONS = [
   'tbz2',
   'txz',
 ];
+
+const PLATFORMS_WITH_DIRECTORY_TYPE_GAMES = [
+  'windows',
+  'ps3',
+  'linux',
+  'macos'
+];

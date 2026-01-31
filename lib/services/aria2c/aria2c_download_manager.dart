@@ -42,6 +42,7 @@ class IsolateActiveJob {
 }
 
 class IsolateArgs {
+  final RomInfo? rom;
   final SendPort? sendPort;
   final String? aria2cPath;
   final String? uri;
@@ -52,6 +53,7 @@ class IsolateArgs {
   final String? certPath;
 
   IsolateArgs({
+    this.rom,
     this.sendPort,
     this.aria2cPath,
     this.uri,
@@ -99,6 +101,7 @@ class Aria2cDownloadManager {
     final isolate = await Isolate.spawn<IsolateArgs>(
       _downloadIsolateMain,
       IsolateArgs(
+        rom: rom,
         sendPort: receivePort.sendPort,
         aria2cPath: aria2cPath,
         uri: Uri.decodeComponent(uri),
@@ -310,6 +313,9 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       isAborted: () => aborted,
     );
     String? outputPath = args.downloadPath;
+    var canDeleteDirectories = args?.rom != null &&
+        !PLATFORMS_WITH_DIRECTORY_TYPE_GAMES
+            .contains(args.rom!.console.toLowerCase());
     if (relPath != null) {
       outputPath = p.join(romDir.path, p.basename(relPath));
       final src = File(p.join(args.downloadPath!, relPath));
@@ -317,7 +323,9 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       await src.rename(dst.path);
     } else {
       var romOutputPath = Directory(outputPath!);
-      await FileSystemService.flattenDirectoryFiles(romOutputPath.path);
+      if (canDeleteDirectories) {
+        await FileSystemService.flattenDirectoryFiles(romOutputPath.path);
+      }
       var outputFile = RomService.locateRomFile(romOutputPath);
       if (outputFile != null) {
         outputPath = outputFile.path;
@@ -325,17 +333,19 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
     }
 
     // Cleanup residual folders
-    await for (var entity in Directory(args.downloadPath!).list()) {
-      try {
-        if (entity is Directory) {
-          var isFolderEmpty =
-              entity.listSync(recursive: true).whereType<File>().isEmpty;
-          if (isFolderEmpty) {
-            await entity.delete(recursive: true);
+    if (canDeleteDirectories) {
+      await for (var entity in Directory(args.downloadPath!).list()) {
+        try {
+          if (entity is Directory) {
+            var isFolderEmpty =
+                entity.listSync(recursive: true).whereType<File>().isEmpty;
+            if (isFolderEmpty) {
+              await entity.delete(recursive: true);
+            }
           }
+        } catch (e) {
+          print('Error deleting extra directories: $e');
         }
-      } catch (e) {
-        print('Error deleting extra directories: $e');
       }
     }
 

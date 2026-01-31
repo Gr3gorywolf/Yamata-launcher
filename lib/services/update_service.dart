@@ -24,13 +24,15 @@ class UpdateService {
   static Future<void> initialize() async {
     await cleanupOldDownloads();
     var foundUpdate = await checkForUpdate();
-    if (foundUpdate != null) {
+    if (foundUpdate == null) {
       startUpdatesWatch();
     }
   }
 
   static startUpdatesWatch() {
-    Timer.periodic(Duration(minutes: 10), (timer) async {
+    print("Starting update checks...");
+    Timer.periodic(Duration(minutes: 30), (timer) async {
+      print("Checking for updates...");
       var foundUpdate = await checkForUpdate();
       if (foundUpdate != null) {
         timer.cancel();

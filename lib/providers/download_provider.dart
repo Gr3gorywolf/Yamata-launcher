@@ -88,7 +88,7 @@ class DownloadProvider extends ChangeNotifier {
 
   Future<void> addRomDownloadToQueue(
       RomInfo rom, DownloadSourceRom source, Aria2DownloadHandle handle,
-      {bool isExtraContent = false}) async {
+      {bool isExtraContent = false, String? contentTitle}) async {
     final downloadId = handle.id;
     final info = DownloadInfo(
       romSlug: rom.slug,
@@ -96,6 +96,7 @@ class DownloadProvider extends ChangeNotifier {
       downloadPercent: 0,
       romInfo: rom,
       isExtraContent: isExtraContent,
+      contentTitle: contentTitle,
       downloadInfo: 'Starting download...',
     );
 

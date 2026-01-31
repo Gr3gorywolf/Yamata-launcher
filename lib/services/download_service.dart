@@ -21,7 +21,7 @@ import 'aria2c/aria2c_download_manager.dart';
 
 class DownloadService {
   downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
-      {isExtraContent = false}) async {
+      {bool isExtraContent = false}) async {
     var downloadsPath = FileSystemService.downloadsPath;
     if (!await Directory(downloadsPath).exists()) {
       await Directory(downloadsPath).create();
@@ -31,9 +31,10 @@ class DownloadService {
       source: sourceRom,
       aria2cPath: FileSystemService.aria2cPath,
     );
+    var contentTitle = sourceRom.title;
     Provider.of<DownloadProvider>(navigatorContext!, listen: false)
         .addRomDownloadToQueue(rom, sourceRom, handle,
-            isExtraContent: isExtraContent);
+            contentTitle: contentTitle, isExtraContent: isExtraContent);
   }
 
   void catchRomPortrait(RomInfo romInfo) async {

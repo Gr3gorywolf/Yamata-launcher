@@ -66,6 +66,31 @@ class RomListItem extends StatelessWidget {
       }
     }
 
+    List<Widget> getDownloadContentInfo() {
+      if (_downloadInfo != null) {
+        var downloadType =
+            _downloadInfo.isExtraContent ? "Extra Content" : "Base Game";
+        return [
+          SizedBox(
+            height: 5,
+          ),
+          Opacity(
+            opacity: 0.7,
+            child: Text(
+              "(${downloadType}) ${_downloadInfo.contentTitle ?? ""}",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+          SizedBox(
+            height: 7,
+          ),
+        ];
+      }
+      return [];
+    }
+
     /// List Item View
     if (itemType == RomListItemType.listItem) {
       return InkWell(
@@ -138,20 +163,7 @@ class RomListItem extends StatelessWidget {
                                     SizedBox(
                                       height: 10,
                                     ),
-                                    if (_downloadInfo.isExtraContent) ...[
-                                      Opacity(
-                                        opacity: 0.7,
-                                        child: Text(
-                                          "Extra Content",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 5,
-                                      ),
-                                    ],
+                                    ...getDownloadContentInfo(),
                                     LinearProgressIndicator(
                                       backgroundColor: Colors.grey[800],
                                       value:
@@ -181,21 +193,25 @@ class RomListItem extends StatelessWidget {
                             ),
                           ],
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 10,
-                          child: Opacity(
-                            opacity: 0.7,
-                            child: Text(
-                                RomService.getLastPlayedLabel(_libraryDetails),
-                                style: Theme.of(context).textTheme.labelSmall),
+                        if (_downloadInfo == null)
+                          Positioned(
+                            right: 0,
+                            bottom: 10,
+                            child: Opacity(
+                              opacity: 0.7,
+                              child: Text(
+                                  RomService.getLastPlayedLabel(
+                                      _libraryDetails),
+                                  style:
+                                      Theme.of(context).textTheme.labelSmall),
+                            ),
                           ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: RomLibraryActions(rom: romItem),
-                        )
+                        if (_downloadInfo == null)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: RomLibraryActions(rom: romItem),
+                          )
                       ],
                     ),
                   ),
@@ -280,18 +296,7 @@ class RomListItem extends StatelessWidget {
                     ...(_downloadInfo != null
                         ? [
                             Spacer(),
-                            if (_downloadInfo.isExtraContent) ...[
-                              Opacity(
-                                opacity: 0.7,
-                                child: Text(
-                                  "Extra Content",
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              ),
-                              SizedBox(
-                                height: 5,
-                              ),
-                            ],
+                            ...getDownloadContentInfo(),
                             LinearProgressIndicator(
                               backgroundColor: Colors.grey[800],
                               value: (_downloadInfo.downloadPercent ?? 0) / 100,
@@ -317,17 +322,18 @@ class RomListItem extends StatelessWidget {
                         size: RomActionButtonSize.small,
                       ),
                       Spacer(),
-                      RomLibraryActions(rom: romItem)
+                      if (_downloadInfo == null) RomLibraryActions(rom: romItem)
                     ]),
                     SizedBox(
                       height: 3,
                     ),
-                    Opacity(
-                      opacity: 0.7,
-                      child: Text(
-                          RomService.getLastPlayedLabel(_libraryDetails),
-                          style: Theme.of(context).textTheme.labelSmall),
-                    )
+                    if (_downloadInfo == null)
+                      Opacity(
+                        opacity: 0.7,
+                        child: Text(
+                            RomService.getLastPlayedLabel(_libraryDetails),
+                            style: Theme.of(context).textTheme.labelSmall),
+                      )
                   ]))),
     );
   }

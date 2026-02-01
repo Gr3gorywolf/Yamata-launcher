@@ -1,5 +1,6 @@
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
 import 'package:yamata_launcher/models/download_info.dart';
+import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 
@@ -9,6 +10,7 @@ class DownloadHistoryItem implements JsonSerializable {
   RomInfo? romInfo;
   String? contentTitle;
   String? filePath;
+  String? downloadSize;
   String? downloadId;
   bool isExtraContent;
 
@@ -19,11 +21,12 @@ class DownloadHistoryItem implements JsonSerializable {
     this.isExtraContent = false,
     this.downloadedAt,
     this.filePath,
+    this.downloadSize,
     this.downloadId,
   });
 
   factory DownloadHistoryItem.fromDownloadInfo(DownloadInfo info,
-      {String? filePath, DateTime? downloadedAt}) {
+      {String? filePath, DateTime? downloadedAt, String? downloadSize}) {
     return DownloadHistoryItem(
       romSlug: info.romSlug,
       romInfo: info.romInfo,
@@ -32,6 +35,7 @@ class DownloadHistoryItem implements JsonSerializable {
       downloadedAt: downloadedAt ?? DateTime.now(),
       filePath: filePath,
       downloadId: info.downloadId,
+      downloadSize: downloadSize,
     );
   }
 
@@ -50,6 +54,7 @@ class DownloadHistoryItem implements JsonSerializable {
               Map<String, dynamic>.from(json['romInfo']),
             )
           : null,
+      downloadSize: json['downloadSize'] as String?,
     );
   }
 
@@ -62,6 +67,7 @@ class DownloadHistoryItem implements JsonSerializable {
       'downloadedAt': downloadedAt?.toIso8601String(),
       'downloadId': downloadId,
       'romInfo': romInfo?.toJson(),
+      'downloadSize': downloadSize,
     };
   }
 }

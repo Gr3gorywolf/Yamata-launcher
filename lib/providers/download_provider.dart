@@ -110,6 +110,7 @@ class DownloadProvider extends ChangeNotifier {
       isExtraContent: isExtraContent,
       contentTitle: contentTitle,
       downloadInfo: 'Starting download...',
+      totalSize: source.fileSize,
     );
 
     if (Platform.isAndroid) {
@@ -268,7 +269,9 @@ class DownloadProvider extends ChangeNotifier {
 
   _insertDownloadToHistory(DownloadInfo download, String path) async {
     var historyItem = DownloadHistoryItem.fromDownloadInfo(download,
-        filePath: path, downloadedAt: DateTime.now());
+        filePath: path,
+        downloadedAt: DateTime.now(),
+        downloadSize: download.totalSize);
     await DownloadHistoryDao(db!).insert(historyItem);
     _downloadHistory.add(historyItem);
     notifyListeners();

@@ -12,7 +12,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
-import 'package:yamata_launcher/ui/pages/settings/console_sources/console_sources_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/console_sources/platform_catalog_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -189,9 +189,9 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _NavigationTile(
               icon: Icons.gamepad,
-              title: 'Console Sources',
-              subtitle: 'Manage your console sources',
-              onTap: () => context.push("/settings/console-sources"),
+              title: 'Game Catalog Sources',
+              subtitle: 'Manage your game catalog sources',
+              onTap: () => context.push("/settings/platform-catalog-sources"),
             ),
             const _SectionHeader(title: 'Notifications'),
             _SwitchTile(

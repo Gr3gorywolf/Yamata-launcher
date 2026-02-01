@@ -16,15 +16,16 @@ class ConsoleSourcesPage extends StatefulWidget {
 
 class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
   handleSetConsoleSource() async {
-    var result = await AlertsService.showPrompt(context, 'Add Console Source',
-        inputPlaceholder: 'Enter console source URL',
+    var result = await AlertsService.showPrompt(
+        context, 'Add Game Catalog Source',
+        inputPlaceholder: 'Enter game catalog source URL',
         message:
-            "The console source must be a valid URL pointing to a JSON file containing console definitions.");
+            "The game catalog source must be a valid URL pointing to a JSON file containing game catalog definitions.");
     if (result != null && result.isNotEmpty) {
       var loading = AlertsService.showLoadingAlert(
           context,
-          "Downloading console source...",
-          "Please wait while the console source is being downloaded...");
+          "Downloading game catalog source...",
+          "Please wait while the game catalog source is being downloaded...");
       final source = await ConsoleSourcesRepository().fetchSource(result);
       loading.close();
       if (source != null) {
@@ -32,14 +33,14 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
         bool added = await ConsoleService.addConsoleSource(source);
         if (added) {
           setState(() {});
-          AlertsService.showSnackbar("Console source added successfully.",
+          AlertsService.showSnackbar("Game catalog source added successfully.",
               ctx: context);
         } else {
-          AlertsService.showErrorSnackbar("Console source already exists.",
+          AlertsService.showErrorSnackbar("Game catalog source already exists.",
               ctx: context);
         }
       } else {
-        AlertsService.showErrorSnackbar("Failed to fetch console source.",
+        AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
             ctx: context);
       }
     }
@@ -48,14 +49,14 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
   handleUpdateConsoleSource(Console sourceToUpdate) async {
     var source = await ConsoleService.getConsoleSource(sourceToUpdate);
     if (source == null) {
-      AlertsService.showErrorSnackbar("Failed to fetch console source.",
+      AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
           ctx: context);
       return;
     }
     var loading = AlertsService.showLoadingAlert(
         context,
-        "Updating console source...",
-        "Please wait while the console source is being updated...");
+        "Updating game catalog source...",
+        "Please wait while the game catalog source is being updated...");
     final updatedSource =
         await ConsoleSourcesRepository().fetchSource(source.downloadUrl ?? "");
     loading.close();
@@ -64,14 +65,14 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
       bool added = await ConsoleService.updateConsoleSource(updatedSource);
       if (added) {
         setState(() {});
-        AlertsService.showSnackbar("Console source updated successfully.",
+        AlertsService.showSnackbar("Game catalog source updated successfully.",
             ctx: context);
       } else {
-        AlertsService.showErrorSnackbar("Console source doesn't exist.",
+        AlertsService.showErrorSnackbar("Game catalog source doesn't exist.",
             ctx: context);
       }
     } else {
-      AlertsService.showErrorSnackbar("Failed to fetch console source.",
+      AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
           ctx: context);
     }
   }
@@ -80,16 +81,16 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Console Sources'),
+        title: const Text('Game Catalog Sources'),
       ),
       body: Builder(
         builder: (builder) {
           if (ConsoleService.consolesFromExternalSources.isEmpty) {
             return EmptyPlaceholder(
               icon: Icons.gamepad,
-              title: 'No console sources',
+              title: 'No catalog sources',
               description:
-                  "You have not added any console sources yet. Add a source to view more game catalogs.",
+                  "You have not added any catalog sources yet. Add a source to view more game catalogs on the explore section.",
               action: PlaceHolderAction(
                 label: 'Add Source',
                 onPressed: () => handleSetConsoleSource(),
@@ -135,7 +136,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
           ? FloatingActionButton.extended(
               onPressed: handleSetConsoleSource,
               icon: const Icon(Icons.add),
-              label: const Text('Add Console Source'),
+              label: const Text('Add Catalog Source'),
             )
           : null,
     );

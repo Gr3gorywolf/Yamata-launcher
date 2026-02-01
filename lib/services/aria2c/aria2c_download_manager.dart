@@ -7,6 +7,8 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/constants/torrents_constants.dart';
+import 'package:yamata_launcher/database/app_database.dart';
+import 'package:yamata_launcher/database/daos/custom_path_dao.dart';
 import 'package:yamata_launcher/models/aria2c.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
@@ -87,14 +89,17 @@ class Aria2cDownloadManager {
     final receivePort = ReceivePort();
     final controller = StreamController<Aria2Event>.broadcast();
     final doneCompleter = Completer<Aria2DoneEvent>();
-    var downloadSubFolder = StringHelper.removeInvalidPathCharacters(rom.name);
-    final downloadPath = p.join(
-      FileSystemService.downloadsPath,
-      includeConsolePrefix ? rom.console : "",
-      downloadSubFolder.isEmpty
-          ? "ROM_${StringHelper.generateUUID()}"
-          : downloadSubFolder,
-    );
+    var sanitizedRomName = StringHelper.removeInvalidPathCharacters(rom.name);
+    var romSubFolder = sanitizedRomName.isEmpty
+        ? "ROM_${StringHelper.generateUUID()}"
+        : sanitizedRomName;
+    var downloadPath = p.join(FileSystemService.downloadsPath,
+        includeConsolePrefix ? rom.console : "", romSubFolder);
+    var customDownloadPath = await CustomPathDao(db!).get(rom.console);
+    if (customDownloadPath != null &&
+        customDownloadPath.folderPath.isNotEmpty) {
+      downloadPath = p.join(customDownloadPath.folderPath, romSubFolder);
+    }
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
     }

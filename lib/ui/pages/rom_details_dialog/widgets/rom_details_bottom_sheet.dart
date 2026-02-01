@@ -272,6 +272,9 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
+          SizedBox(
+            height: 7,
+          ),
           LinearProgressIndicator(
             backgroundColor: Colors.grey[800],
             value: (downloadInfo.downloadPercent ?? 0) / 100,

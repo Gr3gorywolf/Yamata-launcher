@@ -27,7 +27,6 @@ class SearchableDropdownFormField<T> extends FormField<T> {
             final effectiveDecoration = decoration
                 .applyDefaults(Theme.of(state.context).inputDecorationTheme)
                 .copyWith(errorText: state.errorText);
-
             return _SearchableDropdownBody<T>(
               state: state,
               items: items,

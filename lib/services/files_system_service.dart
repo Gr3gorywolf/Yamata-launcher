@@ -162,6 +162,26 @@ class FileSystemService {
     }
   }
 
+  /**
+   * Tests if the specified directory is writable and readable.
+   */
+  static bool testDirectory(String path) {
+    try {
+      var dir = Directory(path);
+      if (dir.existsSync()) {
+        var testFile = File(p.join(path, "test"));
+        testFile.writeAsStringSync("test");
+        var content = testFile.readAsStringSync();
+        testFile.deleteSync();
+        return content == "test";
+      }
+      return false;
+    } catch (e) {
+      print("Error testing directory: " + e.toString());
+      return false;
+    }
+  }
+
   /*
   * Moves the content of the specified file to its containing folder.
   */

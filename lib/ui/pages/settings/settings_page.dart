@@ -101,22 +101,17 @@ class _SettingsPageState extends State<SettingsPage> {
     final selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
     if (selectedDirectory == null) return;
-
-    final testFile = File('$selectedDirectory/test');
-
-    try {
-      await testFile.writeAsString('test');
-      await testFile.readAsString();
-      await testFile.delete();
-
-      await _setSetting<String>(
-        SettingsKeys.DOWNLOAD_PATH,
-        selectedDirectory,
-      );
-    } catch (_) {
+    var isValidDirectory =
+        await FileSystemService.testDirectory(selectedDirectory);
+    if (!isValidDirectory) {
       AlertsService.showErrorSnackbar(
           'Cannot write/read in the selected directory');
+      return;
     }
+    await _setSetting<String>(
+      SettingsKeys.DOWNLOAD_PATH,
+      selectedDirectory,
+    );
   }
 
   Future<void> _updateEmulatorIntents() async {
@@ -231,10 +226,17 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.folder_copy,
               title: 'Move roms to named subfolder',
               subtitle:
-                  "After the download and extraction, move rom files to a subfolder with the rom name.",
+                  "After the download and extraction, move rom files to a subfolder with the rom name (Games that have more than one dependant file will always be on a subfolder).",
               value: _moveRomToSubfolder,
               onChanged: (v) =>
                   _setSetting(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER, v),
+            ),
+            _NavigationTile(
+              icon: Icons.folder_special,
+              title: 'Custom download paths',
+              subtitle:
+                  "Override the default download path for specific consoles.",
+              onTap: () => context.push("/settings/custom-download-paths"),
             ),
             // Behavior section
             const _SectionHeader(title: 'Behavior'),

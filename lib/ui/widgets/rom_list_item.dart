@@ -223,11 +223,12 @@ class RomListItem extends StatelessWidget {
                                       Theme.of(context).textTheme.labelSmall),
                             ),
                           ),
-                        if (!hasDownloadInfo)
+                        if (_currentDownloadInfo == null)
                           Positioned(
                             right: 0,
                             top: 0,
-                            child: RomLibraryActions(rom: romItem),
+                            child: RomLibraryActions(
+                                rom: romItem, downloadHistoryItem: download),
                           )
                       ],
                     ),

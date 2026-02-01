@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sembast/sembast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/models/download_history_item.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
@@ -36,9 +37,11 @@ enum _RomMenuAction {
 
 class RomLibraryActions extends StatelessWidget {
   final RomInfo rom;
+  final DownloadHistoryItem? downloadHistoryItem;
   RomLibraryActionSize? size = RomLibraryActionSize.medium;
 
-  RomLibraryActions({super.key, required this.rom, this.size});
+  RomLibraryActions(
+      {super.key, required this.rom, this.size, this.downloadHistoryItem});
 
   handleExtractRom(RomLibraryItem rom) async {
     RomService.extractRom(rom);
@@ -130,6 +133,18 @@ class RomLibraryActions extends StatelessWidget {
           padding: EdgeInsets.all(4),
           minimumSize:
               minimumSize != null ? Size(minimumSize!, minimumSize!) : null);
+    }
+
+    if (downloadHistoryItem != null) {
+      return IconButton(
+        iconSize: iconSize,
+        style: iconButtonStyle(),
+        icon: Icon(Icons.folder),
+        onPressed: () {
+          FileSystemService.openFileFolder(downloadHistoryItem!.filePath ?? "");
+        },
+        color: Colors.grey,
+      );
     }
 
     if (libraryItem == null) {

@@ -45,6 +45,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await initPlugins();
     await initDb();
     await ConsoleService.loadConsoleSources();
+
     if (Platform.isAndroid) {
       await FileSystemService.setupAndroidIntents();
       await EmulatorService.loadEmulatorIntents();
@@ -55,6 +56,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
         .initialize();
     await UpdateService.initialize();
     await DownloadService.initDownloadHistory();
+    RomService.initializeGameFilenames();
     Future.delayed(Duration(milliseconds: 2000)).then((value) {
       Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
       context.push("/explore");

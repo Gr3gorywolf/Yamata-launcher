@@ -112,4 +112,26 @@ class RomsRepository {
       return null;
     }
   }
+
+  Future<List<String>> fetchWindowsExecutableNames() async {
+    const url =
+        "https://raw.githubusercontent.com/Roblox-Thot/discord-activitys/refs/heads/main/json/executables.json";
+    final result = await CachedFetch.withContentLengthSignature<List<String>>(
+        key: "executables",
+        url: url,
+        parser: (json) {
+          List<String> executables = [];
+          for (final item in json) {
+            if (item.contains("unitycrashhandler")) {
+              continue;
+            }
+            var executableName =
+                item.contains("/") ? item.split("/").last : item;
+            executables.add(executableName.toLowerCase());
+          }
+          return executables;
+        },
+        timeout: Duration(seconds: 10));
+    return result ?? [];
+  }
 }

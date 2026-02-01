@@ -1,33 +1,27 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:collection/collection.dart';
-import 'package:device_apps/device_apps.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:media_scanner/media_scanner.dart';
-import 'package:text_search/text_search.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
-import 'package:yamata_launcher/database/app_database.dart';
-import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
-import 'package:yamata_launcher/database/daos/library_dao.dart';
-import 'package:yamata_launcher/main.dart';
-import 'package:yamata_launcher/models/emulator_intent.dart';
-import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
-import 'package:yamata_launcher/services/console_service.dart';
-import 'package:yamata_launcher/services/emulator_service.dart';
-import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/ui/widgets/extraction_dialog.dart';
-import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
 
 class RomService {
+  static List<String> windowsGamesFileNames = [];
+  static Future initializeGameFilenames() async {
+    var repository = RomsRepository();
+    var filenames = await repository.fetchWindowsExecutableNames();
+    windowsGamesFileNames = filenames;
+  }
+
   static Future extractRom(RomLibraryItem downloadedRom) async {
     var resultFile = await ExtractionDialog.show(
         navigatorContext!, File(downloadedRom.filePath ?? ""));
@@ -117,10 +111,13 @@ class RomService {
         files.sort(
           (a, b) => b.lengthSync().compareTo(a.lengthSync()),
         );
-
-        var foundSetup = files.firstWhereOrNull((file) =>
-            SETUP_FILE_NAMES.contains(p.basename(file.path).toLowerCase()));
-        outputPath = foundSetup?.path ?? files.first.path;
+        var foundFilename = files.firstWhereOrNull((file) {
+          print(file.path);
+          print(p.basename(file.path));
+          return [...SETUP_FILE_NAMES, ...windowsGamesFileNames]
+              .contains(p.basename(file.path).toLowerCase());
+        });
+        outputPath = foundFilename?.path ?? files.first.path;
       }
     }
     if (outputPath == null) {

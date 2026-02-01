@@ -17,6 +17,7 @@ class CachedFetch {
     required FromRawJson<T> parser,
     Duration? ttl,
     Client? client,
+    Duration? timeout,
   }) async {
     client ??= Client();
 
@@ -39,7 +40,9 @@ class CachedFetch {
         }
       }
 
-      final res = await client.get(Uri.parse(url));
+      final res = await client
+          .get(Uri.parse(url))
+          .timeout(timeout ?? Duration(seconds: 25));
       if (res.statusCode != 200) return null;
 
       await CacheService.writeCacheFile(fullKey, res.body, ttl: ttl);

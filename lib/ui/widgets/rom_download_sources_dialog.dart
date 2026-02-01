@@ -102,6 +102,9 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   }
 
   Future handleDownloadSourceSelected(DownloadSourceRom sourceRom) async {
+    const loadingTitle = "Preparing download...";
+    const loadingMessage =
+        "Retrieving download link information please wait...";
     if (sourceRom.uris == null || sourceRom.uris!.isEmpty) {
       AlertsService.showErrorSnackbar(
           "No download links available for ${sourceRom.title}");
@@ -123,14 +126,17 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
               ));
           return;
         }
-
+        var loading = AlertsService.showLoadingAlert(
+            context, loadingTitle, loadingMessage);
         var directDownloadLink = await DownloadSourcesRepository()
             .extractDirectDownloadUrl(selectedHoster.uri);
+        loading.close();
         if (directDownloadLink == null || directDownloadLink.isEmpty) {
           AlertsService.showErrorSnackbar(
               "Could not extract download link for ${sourceRom.title}");
           return;
         }
+
         Navigator.pop(
             context,
             sourceRom.copyWith(
@@ -142,10 +148,8 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       return;
     }
 
-    var loading = AlertsService.showLoadingAlert(
-        context,
-        "Preparing download...",
-        "Retrieving download link information please wait...");
+    var loading =
+        AlertsService.showLoadingAlert(context, loadingTitle, loadingMessage);
     var link = await DownloadSourcesRepository()
         .extractDirectDownloadUrl(sourceRom.uris!.first);
     loading.close();

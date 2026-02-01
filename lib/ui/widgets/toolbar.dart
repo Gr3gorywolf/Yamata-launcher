@@ -64,7 +64,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
             setState(() {
               searchText = value;
             });
-            Future.delayed(const Duration(milliseconds: 200), () {
+            Future.delayed(const Duration(milliseconds: 700), () {
               if (value == searchText) {
                 _notifyChange();
               }

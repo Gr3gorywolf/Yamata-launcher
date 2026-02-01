@@ -423,7 +423,7 @@ class DownloadProvider extends ChangeNotifier {
     download.downloadPercent = 100;
     download.downloadInfo = "Extraction completed.";
     File? extractedFile =
-        RomService.locateRomFile(outputDir, skipCompressedFiles: true);
+        RomService.searchRomFile(outputDir, skipCompressedFiles: true);
     if (extractedFile != null) {
       if (Platform.isAndroid) {
         MediaScanner.loadMedia(path: extractedFile.path);

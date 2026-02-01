@@ -153,6 +153,15 @@ class StringHelper {
     return cleaned;
   }
 
+  static String getDomainName(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.host;
+    } catch (_) {
+      return "";
+    }
+  }
+
   static String truncateWithEllipsis(String input, int maxLength) {
     if (input.length <= maxLength) {
       return input;

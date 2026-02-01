@@ -7,6 +7,9 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class RootzHoster implements Hoster {
+  @override
+  String get name => 'Rootz';
+
   static const List<String> _rootzDomains = [
     'rootz.so',
     'www.rootz.so',

@@ -6,6 +6,8 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class FuckingFastHoster implements Hoster {
+  @override
+  String get name => 'FuckingFast';
   static const List<String> _fuckingfastDomains = [
     'fuckingfast.co',
     'fuckingfast.net',

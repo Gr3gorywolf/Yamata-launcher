@@ -6,6 +6,9 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class PixelDrainHoster implements Hoster {
+  @override
+  String get name => 'PixelDrain';
+
   static const List<String> _pixeldrainDomains = [
     'pixeldrain.com',
     'pd.cybar.xyz',

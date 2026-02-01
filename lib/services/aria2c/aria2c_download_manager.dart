@@ -326,7 +326,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       if (canDeleteDirectories) {
         await FileSystemService.flattenDirectoryFiles(romOutputPath.path);
       }
-      var outputFile = RomService.locateRomFile(romOutputPath);
+      var outputFile = RomService.searchRomFile(romOutputPath);
       if (outputFile != null) {
         outputPath = outputFile.path;
       }

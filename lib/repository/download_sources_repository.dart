@@ -12,6 +12,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart'
 import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
 class DownloadSourcesRepository {
   var _allHosters = [
@@ -23,6 +24,46 @@ class DownloadSourcesRepository {
     PixelDrainHoster(),
     RootzHoster(),
   ];
+  static Map<String, bool> directDownloadUris = {};
+
+  bool _isDownloadContentType(String? contentType) {
+    if (contentType == null) return false;
+    final ct = contentType.toLowerCase();
+
+    return ct.startsWith('application/') &&
+        !ct.contains('json') &&
+        !ct.contains('xml') &&
+        !ct.contains('html');
+  }
+
+  bool _isUrlTorrent(String url) {
+    return url.toLowerCase().endsWith('.torrent') ||
+        url.toLowerCase().startsWith('magnet:');
+  }
+
+  Future<bool> isDirectDownload(String url) async {
+    if (directDownloadUris.containsKey(url)) {
+      return directDownloadUris[url]!;
+    }
+    try {
+      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 3));
+      final contentDisposition = res.headers['content-disposition'];
+      final contentType = res.headers['content-type'];
+
+      final isAttachment = contentDisposition != null &&
+          contentDisposition.toLowerCase().contains('attachment');
+
+      final isDownloadType =
+          contentType != null && _isDownloadContentType(contentType);
+
+      if (isAttachment || isDownloadType) {
+        directDownloadUris[url] = true;
+        return true;
+      }
+    } catch (_) {}
+    directDownloadUris[url] = false;
+    return false;
+  }
 
   String getSourceTitle(dynamic responseData, DownloadSourceType type) {
     if (type == DownloadSourceType.Hydra) {
@@ -71,65 +112,48 @@ class DownloadSourcesRepository {
     }
   }
 
-  bool _isDownloadContentType(String? contentType) {
-    if (contentType == null) return false;
-    final ct = contentType.toLowerCase();
-
-    return ct.startsWith('application/') &&
-        !ct.contains('json') &&
-        !ct.contains('xml') &&
-        !ct.contains('html');
+  /**
+   * Gets the third party hoster name for a given download source URL.
+   */
+  String? getDownloadSourceUrlHosterName(String url) {
+    for (var hoster in _allHosters) {
+      if (hoster.canHandleUrl(url)) {
+        return hoster.name;
+      }
+    }
+    if (_isUrlTorrent(url)) {
+      return "Torrent";
+    }
+    return null;
   }
 
-  Future<String?> extractDownloadSourceUrl(DownloadSourceRom sourceRom) async {
-    if (sourceRom.uris == null || sourceRom.uris!.isEmpty) {
+  /**
+   * Extracts the direct download URL from a given source URL by checking against known hosters.
+   */
+  Future<String?> extractDirectDownloadUrl(String url) async {
+    if (url.isEmpty) return null;
+
+    if (_isUrlTorrent(url)) {
+      return url;
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
       return null;
     }
-    for (final rawUrl in sourceRom.uris!) {
-      final url = rawUrl.trim();
-      if (url.isEmpty) continue;
 
-      if (url.toLowerCase().startsWith('magnet:?')) {
-        return url;
-      }
-
-      final uri = Uri.tryParse(url);
-      if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
-        continue;
-      }
-
-      try {
-        for (var hoster in _allHosters) {
-          if (hoster.canHandleUrl(url)) {
-            final directUrl = await hoster.extractDownloadUrl(url);
-            if (directUrl != null && directUrl.isNotEmpty) {
-              return directUrl;
-            }
+    try {
+      for (var hoster in _allHosters) {
+        if (hoster.canHandleUrl(url)) {
+          final directUrl = await hoster.extractDownloadUrl(url);
+          if (directUrl != null && directUrl.isNotEmpty) {
+            return directUrl;
           }
         }
-      } catch (_) {
-        print(
-            '[DownloadSourcesRepository] Error processing hoster for url: $url ${_.toString()}');
       }
-
-      try {
-        final res = await http.head(uri);
-        print(res.headers);
-        final contentDisposition = res.headers['content-disposition'];
-        final contentType = res.headers['content-type'];
-
-        final isAttachment = contentDisposition != null &&
-            contentDisposition.toLowerCase().contains('attachment');
-
-        final isDownloadType =
-            contentType != null && _isDownloadContentType(contentType);
-
-        if (isAttachment || isDownloadType) {
-          return url;
-        }
-      } catch (_) {}
+    } catch (_) {
+      print(
+          '[DownloadSourcesRepository] Error processing hoster for url: $url ${_.toString()}');
     }
-
-    return null;
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
+import 'package:yamata_launcher/models/hoster_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
@@ -12,8 +13,10 @@ import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/ui/widgets/download_source_hoster_select_dialog.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
-class RomDownloadSourcesDialog extends StatelessWidget {
+class RomDownloadSourcesDialog extends StatefulWidget {
   final RomInfo rom;
   final bool showRomLocate;
 
@@ -24,13 +27,51 @@ class RomDownloadSourcesDialog extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<DownloadSourcesProvider>();
+  State<RomDownloadSourcesDialog> createState() =>
+      _RomDownloadSourcesDialogState();
+}
 
-    final List<DownloadSourceWithDownloads> results =
-        provider.findRomSourcesWithDownloads(rom);
+class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
+  Map<String, HosterInfo> urlHosters = {};
+  List<_Result> results = [];
+
+  Future fetchSingleSourcesHosters() async {
+    for (final result in results) {
+      if (result.rom.uris!.length == 1) {
+        var uri = result.rom.uris!.first;
+        var hosterName =
+            DownloadSourcesRepository().getDownloadSourceUrlHosterName(uri);
+        if (hosterName != null) {
+          urlHosters[uri] = HosterInfo(
+              uri: uri,
+              domain: hosterName,
+              isDirect: false,
+              canExtractLink: true);
+          setState(() {});
+          continue;
+        }
+        DownloadSourcesRepository().isDirectDownload(uri).then((isDirect) {
+          final domain =
+              isDirect ? "Direct download" : StringHelper.getDomainName(uri);
+          urlHosters[uri] = HosterInfo(
+              uri: uri,
+              domain: domain,
+              isDirect: isDirect,
+              canExtractLink: isDirect);
+          setState(() {});
+        });
+      }
+    }
+  }
+
+  loadResults() {
+    var provider = Provider.of<DownloadSourcesProvider>(context, listen: false);
+    List<DownloadSourceWithDownloads> sourcesWithDownloads =
+        provider.findRomSourcesWithDownloads(widget.rom);
+
     final List<_Result> filteredResults = [];
-    for (final source in results) {
+
+    for (final source in sourcesWithDownloads) {
       for (final sourceDownload in source.downloads!) {
         filteredResults.add(_Result(
           rom: sourceDownload,
@@ -38,43 +79,90 @@ class RomDownloadSourcesDialog extends StatelessWidget {
         ));
       }
     }
+    results = filteredResults;
+    setState(() {});
+  }
 
-    locateAndAddToLibrary() async {
-      final file = await FileSystemService.locateFile();
-      if (file == null) return;
-      var provider = Provider.of<LibraryProvider>(context, listen: false);
-      var item = provider.addRomToLibrary(rom);
-      item.filePath = file;
-      await provider.updateLibraryItem(item);
-      await Navigator.of(context).maybePop();
-      AlertsService.showSnackbar("Rom file located successfully");
+  @override
+  void initState() {
+    super.initState();
+    loadResults();
+    fetchSingleSourcesHosters();
+  }
+
+  locateAndAddToLibrary() async {
+    final file = await FileSystemService.locateFile();
+    if (file == null) return;
+    var provider = Provider.of<LibraryProvider>(context, listen: false);
+    var item = provider.addRomToLibrary(widget.rom);
+    item.filePath = file;
+    await provider.updateLibraryItem(item);
+    await Navigator.of(context).maybePop();
+    AlertsService.showSnackbar("Rom file located successfully");
+  }
+
+  Future handleDownloadSourceSelected(DownloadSourceRom sourceRom) async {
+    if (sourceRom.uris == null || sourceRom.uris!.isEmpty) {
+      AlertsService.showErrorSnackbar(
+          "No download links available for ${sourceRom.title}");
+      return;
     }
+    if (sourceRom.uris!.length > 1) {
+      var selectedHoster = await showDialog<HosterInfo>(
+        context: context,
+        builder: (_) => DownloadSourceHosterSelectDialog(
+          uris: sourceRom.uris!,
+        ),
+      );
+      if (selectedHoster != null) {
+        if (selectedHoster.isDirect) {
+          Navigator.pop(
+              context,
+              sourceRom.copyWith(
+                uris: [selectedHoster.uri],
+              ));
+          return;
+        }
 
-    Future handleDownloadSourceSelected(DownloadSourceRom sourceRom) async {
-      var loading = AlertsService.showLoadingAlert(
-          context,
-          "Preparing download...",
-          "Retrieving download link information please wait...");
-      var link =
-          await DownloadSourcesRepository().extractDownloadSourceUrl(sourceRom);
-      loading.close();
-      if (link == null || link.isEmpty) {
-        AlertsService.showErrorSnackbar(
-            "Could not extract download link for ${sourceRom.title}");
+        var directDownloadLink = await DownloadSourcesRepository()
+            .extractDirectDownloadUrl(selectedHoster.uri);
+        if (directDownloadLink == null || directDownloadLink.isEmpty) {
+          AlertsService.showErrorSnackbar(
+              "Could not extract download link for ${sourceRom.title}");
+          return;
+        }
+        Navigator.pop(
+            context,
+            sourceRom.copyWith(
+              uris: [directDownloadLink],
+            ));
         return;
       }
-      final newSource = DownloadSourceRom(
-          console: sourceRom.console,
-          title: sourceRom.title,
-          fileSize: sourceRom.fileSize,
-          uploadDate: sourceRom.uploadDate,
-          uris: [link],
-          fileIndex: sourceRom.fileIndex,
-          filePath: sourceRom.filePath,
-          title_clean: sourceRom.title_clean);
-      Navigator.pop(context, newSource);
+
+      return;
     }
 
+    var loading = AlertsService.showLoadingAlert(
+        context,
+        "Preparing download...",
+        "Retrieving download link information please wait...");
+    var link = await DownloadSourcesRepository()
+        .extractDirectDownloadUrl(sourceRom.uris!.first);
+    loading.close();
+    if (link == null || link.isEmpty) {
+      AlertsService.showErrorSnackbar(
+          "Could not extract download link for ${sourceRom.title}");
+      return;
+    }
+    Navigator.pop(
+        context,
+        sourceRom.copyWith(
+          uris: [link],
+        ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AlertDialog(
       title: Text("Available download options"),
       content: SizedBox(
@@ -83,16 +171,21 @@ class RomDownloadSourcesDialog extends StatelessWidget {
         child: results.isEmpty
             ? const Center(
                 child: Text(
-                  'No matching ROMs found',
+                  'No matching sources found',
                   style: TextStyle(color: Colors.grey),
                 ),
               )
             : ListView.builder(
-                itemCount: filteredResults.length,
+                itemCount: results.length,
                 itemBuilder: (_, index) {
-                  final item = filteredResults[index];
+                  final item = results[index];
+                  var prefix = item.rom.uris!.length > 1
+                      ? '${item.rom.uris!.length} hosters'
+                      : urlHosters.containsKey(item.rom.uris!.first)
+                          ? urlHosters[item.rom.uris!.first]!.domain
+                          : 'Loading...';
                   return ListTile(
-                    leading: const Icon(Icons.gamepad),
+                    leading: const Icon(Icons.cloud),
                     title: Text(
                       item.rom.title!,
                       maxLines: 2,
@@ -101,7 +194,7 @@ class RomDownloadSourcesDialog extends StatelessWidget {
                     subtitle: Opacity(
                       opacity: 0.7,
                       child: Text(
-                        '${item.sourceTitle} • ${item.rom.fileSize}',
+                        ' ${item.sourceTitle} • $prefix  • ${item.rom.fileSize}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -114,7 +207,7 @@ class RomDownloadSourcesDialog extends StatelessWidget {
               ),
       ),
       actions: [
-        if (showRomLocate)
+        if (widget.showRomLocate)
           TextButton(
             onPressed: locateAndAddToLibrary,
             child: const Text('Locate rom file'),

@@ -69,7 +69,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   _handleComplete() async {
     var dir = widget.zipFile.parent;
     File? extractedFile =
-        RomService.locateRomFile(dir, skipCompressedFiles: true);
+        RomService.searchRomFile(dir, skipCompressedFiles: true);
     if (extractedFile != null) {
       if (Platform.isAndroid) {
         MediaScanner.loadMedia(path: extractedFile.path);

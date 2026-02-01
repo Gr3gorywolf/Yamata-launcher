@@ -6,6 +6,8 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class MediafireHoster implements Hoster {
+  @override
+  String get name => 'Mediafire';
   // =========================
   // DOMAINS
   // =========================

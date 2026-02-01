@@ -260,6 +260,18 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
               ),
         const SizedBox(height: 20),
         if (downloadInfo != null) ...[
+          SizedBox(
+            height: 5,
+          ),
+          Opacity(
+            opacity: 0.7,
+            child: Text(
+              "(${downloadInfo.isExtraContent ? "Extra Content" : "Base Game"}) ${downloadInfo.contentTitle ?? ""}",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
           LinearProgressIndicator(
             backgroundColor: Colors.grey[800],
             value: (downloadInfo.downloadPercent ?? 0) / 100,

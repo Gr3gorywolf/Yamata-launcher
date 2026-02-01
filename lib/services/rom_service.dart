@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:media_scanner/media_scanner.dart';
@@ -24,6 +25,7 @@ import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
+import 'package:path/path.dart' as p;
 
 class RomService {
   static Future extractRom(RomLibraryItem downloadedRom) async {
@@ -94,7 +96,7 @@ class RomService {
   }
 
   /// Locate the largest valid ROM or compressed file in the given directory
-  static File? locateRomFile(Directory directory,
+  static File? searchRomFile(Directory directory,
       {bool skipCompressedFiles = false}) {
     String? outputPath;
     if (directory.existsSync()) {
@@ -116,7 +118,9 @@ class RomService {
           (a, b) => b.lengthSync().compareTo(a.lengthSync()),
         );
 
-        outputPath = files.first.path;
+        var foundSetup = files.firstWhereOrNull((file) =>
+            SETUP_FILE_NAMES.contains(p.basename(file.path).toLowerCase()));
+        outputPath = foundSetup?.path ?? files.first.path;
       }
     }
     if (outputPath == null) {

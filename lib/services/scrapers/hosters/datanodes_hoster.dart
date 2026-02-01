@@ -7,6 +7,8 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class DatanodesHoster implements Hoster {
+  @override
+  String get name => 'Datanodes';
   static const List<String> _datanodesDomains = [
     'datanodes.to',
   ];

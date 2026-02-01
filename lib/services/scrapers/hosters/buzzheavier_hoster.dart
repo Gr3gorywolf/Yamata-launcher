@@ -6,6 +6,9 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class BuzzHeavierHoster implements Hoster {
+  @override
+  String get name => 'BuzzHeavier';
+
   static const List<String> _buzzheavierDomains = [
     'buzzheavier.com',
     'bzzhr.co',

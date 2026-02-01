@@ -1,3 +1,16 @@
+const SETUP_FILE_NAMES = [
+  "setup.exe",
+  "install.exe",
+  "setup.msi",
+  "install.msi",
+  "setup.pkg",
+  "install.pkg",
+  "setup.sh",
+  "install.sh",
+  "setup.app",
+  "install.app",
+];
+
 const VALID_EXECUTABLE_EXTENSIONS = [
   "exe",
   "com",

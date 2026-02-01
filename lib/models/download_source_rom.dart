@@ -18,6 +18,28 @@ class DownloadSourceRom {
       this.uploadDate,
       this.console});
 
+  DownloadSourceRom copyWith({
+    String? fileSize,
+    String? title_clean,
+    List<String>? uris,
+    String? title,
+    String? filePath,
+    int? fileIndex,
+    String? uploadDate,
+    String? console,
+  }) {
+    return DownloadSourceRom(
+      fileSize: fileSize ?? this.fileSize,
+      title_clean: title_clean ?? this.title_clean,
+      uris: uris ?? (this.uris != null ? List<String>.from(this.uris!) : null),
+      title: title ?? this.title,
+      filePath: filePath ?? this.filePath,
+      fileIndex: fileIndex ?? this.fileIndex,
+      uploadDate: uploadDate ?? this.uploadDate,
+      console: console ?? this.console,
+    );
+  }
+
   DownloadSourceRom.fromJson(Map<String, dynamic> json) {
     fileSize = json['fileSize'];
     uris = json['uris'].cast<String>();

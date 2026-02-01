@@ -7,6 +7,8 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class GofileHoster implements Hoster {
+  @override
+  String get name => 'GoFile';
   static const List<String> _gofileDomains = [
     'gofile.io',
   ];

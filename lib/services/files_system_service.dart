@@ -304,7 +304,14 @@ class FileSystemService {
     await file.writeAsBytes(bytes, flush: true);
     if (!Platform.isWindows) {
       await Process.run('chmod', ['+x', file.path]);
+    } else {
+      const dllFileName = "7z.dll";
+      final dllFile = File("${sevenZipDir.path}/$dllFileName");
+      final byteData = await rootBundle.load("assets/bin/7z/$dllFileName");
+      final bytes = byteData.buffer.asUint8List();
+      await dllFile.writeAsBytes(bytes, flush: true);
     }
+
     return file.path;
   }
 

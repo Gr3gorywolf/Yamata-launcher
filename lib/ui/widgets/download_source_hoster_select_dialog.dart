@@ -37,11 +37,15 @@ class _DownloadSourceHosterSelectDialogState
       var hosterName =
           DownloadSourcesRepository().getDownloadSourceUrlHosterName(uri);
       if (hosterName != null) {
-        hosters.add(HosterInfo(
-            uri: uri,
-            domain: hosterName,
-            isDirect: false,
-            canExtractLink: true));
+        DownloadSourcesRepository().getHosterFileName(uri).then((fileName) {
+          hosters.add(HosterInfo(
+              uri: uri,
+              domain: hosterName,
+              fileName: fileName,
+              isDirect: false,
+              canExtractLink: true));
+          setState(() {});
+        });
         setState(() {});
         continue;
       }
@@ -58,6 +62,16 @@ class _DownloadSourceHosterSelectDialogState
     }
   }
 
+  List<HosterInfo> get sortedHosters {
+    final sorted = List<HosterInfo>.from(hosters);
+    sorted.sort((a, b) {
+      if (a.canExtractLink && !b.canExtractLink) return -1;
+      if (!a.canExtractLink && b.canExtractLink) return 1;
+      return a.domain.compareTo(b.domain);
+    });
+    return sorted;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -71,21 +85,21 @@ class _DownloadSourceHosterSelectDialogState
       content: SizedBox(
         width: 300,
         height: 300,
-        child: hosters.isEmpty
+        child: sortedHosters.isEmpty
             ? const Center(
                 child: CircularProgressIndicator(),
               )
             : Column(
                 children: [
-                  if (hosters.length != widget.uris.length)
+                  if (sortedHosters.length != widget.uris.length)
                     LinearProgressIndicator(
                       value: null,
                     ),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: hosters.length,
+                      itemCount: sortedHosters.length,
                       itemBuilder: (_, index) {
-                        final item = hosters[index];
+                        final item = sortedHosters[index];
                         return ListTile(
                           leading: Icon(
                             Icons.dns,

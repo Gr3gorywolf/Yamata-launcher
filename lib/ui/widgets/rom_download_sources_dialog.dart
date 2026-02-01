@@ -110,6 +110,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
           "No download links available for ${sourceRom.title}");
       return;
     }
+    // When there's more than 1 uri, show the hoster selection dialog
     if (sourceRom.uris!.length > 1) {
       var selectedHoster = await showDialog<HosterInfo>(
         context: context,
@@ -140,6 +141,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         Navigator.pop(
             context,
             sourceRom.copyWith(
+              fileName: selectedHoster.fileName,
               uris: [directDownloadLink],
             ));
         return;
@@ -148,10 +150,23 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       return;
     }
 
+    // When there's just one uri, try to extract the direct download link
     var loading =
         AlertsService.showLoadingAlert(context, loadingTitle, loadingMessage);
+    if (await DownloadSourcesRepository()
+        .isDirectDownload(sourceRom.uris!.first)) {
+      loading.close();
+      Navigator.pop(
+          context,
+          sourceRom.copyWith(
+            uris: [sourceRom.uris!.first],
+          ));
+      return;
+    }
     var link = await DownloadSourcesRepository()
         .extractDirectDownloadUrl(sourceRom.uris!.first);
+    var fileName = await DownloadSourcesRepository()
+        .getHosterFileName(sourceRom.uris!.first);
     loading.close();
     if (link == null || link.isEmpty) {
       AlertsService.showErrorSnackbar(
@@ -162,6 +177,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         context,
         sourceRom.copyWith(
           uris: [link],
+          fileName: fileName,
         ));
   }
 

@@ -152,11 +152,6 @@ class DownloadProvider extends ChangeNotifier {
       }
       _activeDownloadInfos
           .removeWhere((element) => element.downloadId == info.downloadId);
-
-      var libraryItem =
-          Provider.of<LibraryProvider>(navigatorContext!, listen: false)
-              .getLibraryItem(info.romSlug!);
-      await _insertDownloadToHistory(info, libraryItem!.filePath!);
       notifyListeners();
       _handleProgressChanged();
       return;
@@ -267,11 +262,24 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  _insertDownloadToHistory(DownloadInfo download, String path) async {
+  /**
+   * Sets the download info to the download history database and local list
+   */
+  _setDownloadToHistory(DownloadInfo download, String path) async {
     var historyItem = DownloadHistoryItem.fromDownloadInfo(download,
         filePath: path,
         downloadedAt: DateTime.now(),
         downloadSize: download.totalSize);
+    var foundDownloadIndex = _downloadHistory
+        .indexWhere((item) => item.downloadId == download.downloadId);
+    // If its already registered, update it
+    if (foundDownloadIndex != -1) {
+      await DownloadHistoryDao(db!).update(historyItem);
+      _downloadHistory[foundDownloadIndex] = historyItem;
+      notifyListeners();
+      return;
+    }
+
     await DownloadHistoryDao(db!).insert(historyItem);
     _downloadHistory.add(historyItem);
     notifyListeners();
@@ -316,13 +324,14 @@ class DownloadProvider extends ChangeNotifier {
     var fileExtension = SystemHelpers.getFileExtension(path).toLowerCase();
     var extractionEnabled =
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
+    await _setDownloadToHistory(download, path);
     if (extractionEnabled == true &&
         VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
       _handleExtractRom(download, rom, path);
     } else {
       var newPath = await _handleMoveContentToParentFolder(libraryItem, path,
           updateLibrary: !download.isExtraContent);
-      await _insertDownloadToHistory(download, newPath);
+      await _setDownloadToHistory(download, newPath);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
     }
   }
@@ -446,7 +455,7 @@ class DownloadProvider extends ChangeNotifier {
       var newPath = await _handleMoveContentToParentFolder(
           libraryItem!, extractedFile.path,
           updateLibrary: !download.isExtraContent);
-      await _insertDownloadToHistory(download, newPath);
+      await _setDownloadToHistory(download, newPath);
     }
 
     NotificationsService.showNotification(

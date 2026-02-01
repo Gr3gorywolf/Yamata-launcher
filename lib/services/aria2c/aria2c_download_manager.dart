@@ -45,6 +45,7 @@ class IsolateActiveJob {
 
 class IsolateArgs {
   final RomInfo? rom;
+  final DownloadSourceRom? source;
   final SendPort? sendPort;
   final String? aria2cPath;
   final String? uri;
@@ -57,6 +58,7 @@ class IsolateArgs {
   IsolateArgs({
     this.rom,
     this.sendPort,
+    this.source,
     this.aria2cPath,
     this.uri,
     this.fileIndex,
@@ -107,6 +109,7 @@ class Aria2cDownloadManager {
       _downloadIsolateMain,
       IsolateArgs(
         rom: rom,
+        source: source,
         sendPort: receivePort.sendPort,
         aria2cPath: aria2cPath,
         uri: Uri.decodeComponent(uri),
@@ -252,7 +255,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
         workingDirectory: romDir.path,
       );
 
-      print(certArgs);
+      print(Aria2cUtils.getCleanUrl(args.uri!));
 
       running = proc;
       ProcessHelper.pipeProcessOutput(
@@ -264,7 +267,21 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       await ProcessHelper.ensureExitOk(
           proc, () => aborted, 'Direct download failed');
 
-      final fileName = p.basename(Aria2cUtils.getCleanUrl(args.uri!));
+      var fileName = p.basename(
+          args?.source?.fileName ?? Aria2cUtils.getCleanUrl(args.uri!));
+      var validExtensions = [
+        ...VALID_COMPRESSED_EXTENSIONS,
+        ...VALID_EXECUTABLE_EXTENSIONS,
+        ...VALID_ROM_EXTENSIONS
+      ];
+      if (validExtensions
+              .firstWhereOrNull((extension) => fileName.endsWith(extension)) ==
+          null) {
+        var foundFile = RomService.searchRomFile(romDir)?.path;
+        if (foundFile != null) {
+          fileName = p.basename(foundFile);
+        }
+      }
       final outputPath = p.join(romDir.path, fileName);
 
       main.send({

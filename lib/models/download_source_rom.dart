@@ -4,6 +4,7 @@ class DownloadSourceRom {
   List<String>? uris;
   String? title;
   String? filePath;
+  String? fileName;
   int? fileIndex;
   String? uploadDate;
   String? console;
@@ -15,6 +16,7 @@ class DownloadSourceRom {
       this.title_clean,
       this.filePath,
       this.fileIndex,
+      this.fileName,
       this.uploadDate,
       this.console});
 
@@ -24,20 +26,22 @@ class DownloadSourceRom {
     List<String>? uris,
     String? title,
     String? filePath,
+    String? fileName,
     int? fileIndex,
     String? uploadDate,
     String? console,
   }) {
     return DownloadSourceRom(
-      fileSize: fileSize ?? this.fileSize,
-      title_clean: title_clean ?? this.title_clean,
-      uris: uris ?? (this.uris != null ? List<String>.from(this.uris!) : null),
-      title: title ?? this.title,
-      filePath: filePath ?? this.filePath,
-      fileIndex: fileIndex ?? this.fileIndex,
-      uploadDate: uploadDate ?? this.uploadDate,
-      console: console ?? this.console,
-    );
+        fileSize: fileSize ?? this.fileSize,
+        title_clean: title_clean ?? this.title_clean,
+        uris:
+            uris ?? (this.uris != null ? List<String>.from(this.uris!) : null),
+        title: title ?? this.title,
+        filePath: filePath ?? this.filePath,
+        fileIndex: fileIndex ?? this.fileIndex,
+        uploadDate: uploadDate ?? this.uploadDate,
+        console: console ?? this.console,
+        fileName: fileName ?? this.fileName);
   }
 
   DownloadSourceRom.fromJson(Map<String, dynamic> json) {
@@ -49,6 +53,7 @@ class DownloadSourceRom {
     uploadDate = json['uploadDate'];
     console = json['console'];
     title_clean = json['title_clean'] ?? null;
+    fileName = json['fileName'] ?? null;
   }
 
   Map<String, dynamic> toJson() {
@@ -61,6 +66,7 @@ class DownloadSourceRom {
     data['uploadDate'] = this.uploadDate;
     data['console'] = this.console;
     data['title_clean'] = this.title_clean;
+    data['fileName'] = this.fileName;
     return data;
   }
 }

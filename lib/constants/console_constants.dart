@@ -56,6 +56,7 @@ class ConsoleConstants {
     // =========================
     Console(name: "Xbox", altName: "Microsoft - Xbox", slug: "xbox"),
     Console(name: "Xbox 360", altName: "Microsoft - Xbox 360", slug: "xbox360"),
+    Console(name: "Windows", altName: "Windows", slug: "windows"),
     // =========================
     // Sega
     // =========================
@@ -444,7 +445,6 @@ class ConsoleConstants {
         altName: "Watara Supervision",
         slug: "supervision"),
     Console(name: "Web Browser", altName: "Web Browser", slug: "web"),
-    Console(name: "Windows", altName: "Windows", slug: "windows"),
     Console(name: "Windows 3.X", altName: "Windows 3.X", slug: "win3x"),
     Console(
         name: "WoW Action Max", altName: "WoW Action Max", slug: "actionmax"),

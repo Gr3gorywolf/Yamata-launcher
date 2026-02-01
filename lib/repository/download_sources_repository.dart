@@ -86,15 +86,19 @@ class DownloadSourcesRepository {
       if (res.statusCode == 200) {
         var responseData = json.decode(res.body);
 
-        List<DownloadSourceRom> downloads =
-            (responseData['downloads'] as List).map((download) {
+        List<DownloadSourceRom> downloads = (responseData['downloads'] as List)
+            .where((download) =>
+                download is Map<String, dynamic> &&
+                download['title'] != null &&
+                download['uris']?.isNotEmpty)
+            .map((download) {
           if (type == DownloadSourceType.Hydra) {
             download['console'] = "windows";
           }
           return DownloadSourceRom.fromJson(download);
         }).toList();
         DateTime lastDownloadDate = downloads
-            .map((e) => DateTime.parse(e.uploadDate!))
+            .map((e) => DateTime.tryParse(e.uploadDate!) ?? DateTime.now())
             .reduce((a, b) => a.isAfter(b) ? a : b);
 
         return DownloadSourceWithDownloads(
@@ -123,6 +127,21 @@ class DownloadSourcesRepository {
     }
     if (_isUrlTorrent(url)) {
       return "Torrent";
+    }
+    return null;
+  }
+
+  /**
+   * Gets the file name from a given source URL by checking against known hosters.
+   */
+  Future<String?> getHosterFileName(String url) async {
+    for (var hoster in _allHosters) {
+      if (hoster.canHandleUrl(url)) {
+        final fileName = await hoster.extractFileName(url);
+        if (fileName != null && fileName.isNotEmpty) {
+          return fileName;
+        }
+      }
     }
     return null;
   }

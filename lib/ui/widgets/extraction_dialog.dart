@@ -6,7 +6,9 @@ import 'package:media_scanner/media_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
+import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
@@ -40,9 +42,12 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   }
 
   Future<void> _unzip() async {
+    var tempFolder = Directory(
+        p.join(widget.zipFile.parent.path, StringHelper.generateUUID()));
+    await tempFolder.create(recursive: true);
     var (stream, cancelFn) = await ExtractionService.extractOnce(
         input: widget.zipFile,
-        output: widget.zipFile.parent,
+        output: tempFolder,
         onError: (data) {
           if (!isCanceling) {
             Navigator.of(context).pop();
@@ -61,22 +66,31 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         status = "Unzipping… ${progress.toStringAsFixed(2)}%";
       });
       if (progress >= 100) {
-        _handleComplete();
+        _handleComplete(tempFolder.path);
       }
     });
   }
 
-  _handleComplete() async {
-    var dir = widget.zipFile.parent;
+  _handleComplete(String tempFolderPath) async {
+    var dir = Directory(tempFolderPath);
     File? extractedFile =
         RomService.searchRomFile(dir, skipCompressedFiles: true);
+
     if (extractedFile != null) {
-      if (Platform.isAndroid) {
-        MediaScanner.loadMedia(path: extractedFile.path);
-        MediaScanner.loadMedia(path: extractedFile.parent.path);
+      var newFilePath =
+          File(FileSystemService.moveFilesToParentFolder(extractedFile.path));
+      if (newFilePath.existsSync()) {
+        extractedFile = newFilePath;
+        if (Platform.isAndroid && extractedFile != null) {
+          MediaScanner.loadMedia(path: extractedFile.path);
+          MediaScanner.loadMedia(path: extractedFile.parent.path);
+        }
+        try {
+          await widget.zipFile.delete();
+        } catch (e) {}
       }
       try {
-        await widget.zipFile.delete();
+        dir.deleteSync(recursive: true);
       } catch (e) {}
     }
     Navigator.of(context).pop(extractedFile);

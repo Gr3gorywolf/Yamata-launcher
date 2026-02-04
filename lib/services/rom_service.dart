@@ -91,7 +91,7 @@ class RomService {
 
   /// Locate the largest valid ROM or compressed file in the given directory
   static File? searchRomFile(Directory directory,
-      {bool skipCompressedFiles = false}) {
+      {bool skipCompressedFiles = false, String? specificFileName}) {
     String? outputPath;
     if (directory.existsSync()) {
       // Find the largest valid ROM / compressed file
@@ -114,8 +114,11 @@ class RomService {
         var foundFilename = files.firstWhereOrNull((file) {
           print(file.path);
           print(p.basename(file.path));
-          return [...SETUP_FILE_NAMES, ...windowsGamesFileNames]
-              .contains(p.basename(file.path).toLowerCase());
+          return [
+            if (specificFileName != null) specificFileName.toLowerCase(),
+            ...SETUP_FILE_NAMES,
+            ...windowsGamesFileNames
+          ].contains(p.basename(file.path).toLowerCase());
         });
         outputPath = foundFilename?.path ?? files.first.path;
       }

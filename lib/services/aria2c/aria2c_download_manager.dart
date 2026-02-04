@@ -104,6 +104,10 @@ class Aria2cDownloadManager {
     }
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
+    } else {
+      downloadPath =
+          downloadPath + "_${StringHelper.generateUUID().substring(0, 5)}";
+      await Directory(downloadPath).create(recursive: true);
     }
     final isolate = await Isolate.spawn<IsolateArgs>(
       _downloadIsolateMain,

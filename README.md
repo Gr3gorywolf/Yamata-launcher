@@ -23,6 +23,9 @@
 [![Github All Releases](https://img.shields.io/github/downloads/Gr3gorywolf/Yamata-launcher/total.svg)]()
 ![GitHub last commit](https://img.shields.io/github/last-commit/Gr3gorywolf/Yamata-launcher)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Gr3gorywolf/Yamata-launcher?label=latest%20release)
+![Discord](https://img.shields.io/discord/1469115593025130578)
+![Website](https://img.shields.io/website?url=https://yamata-launcher.gregoryc.dev)
+
 
 </h6>
 

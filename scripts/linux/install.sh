@@ -17,7 +17,7 @@ DESKTOP_FILENAME="yamata-launcher.desktop"
 
 APPIMAGE_PATH_ARG=""
 DOWNLOAD_TOOL=""
-
+VARIANT=""
 # -------------------------------------------------
 # Helpers
 # -------------------------------------------------
@@ -75,10 +75,17 @@ download_file() {
 # Argument parsing
 # -------------------------------------------------
 
+APPIMAGE_PATH_ARG=""
+VARIANT_ARG="default"
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --appimage)
       APPIMAGE_PATH_ARG="$2"
+      shift 2
+      ;;
+    --variant)
+      VARIANT_ARG="$2"
       shift 2
       ;;
     *)
@@ -175,18 +182,7 @@ else
   log "System-wide desktop install skipped (no permissions)"
 fi
 
-
-VARIANT=""
-
-for arg in "$@"; do
-  case $arg in
-    --variant=*)
-      VARIANT="${arg#*=}"
-      ;;
-  esac
-done
-
-
+ 
 if [ "$VARIANT" = "steamos" ]; then
   PY_SCRIPT_URL="https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/refs/heads/master/scripts/linux/steamos-shortcut-setup.py"
   echo "SteamOS variant detected. Running SteamOS shortcut setup..."

@@ -83,13 +83,13 @@ curl -sSL https://links.gregoryc.dev/yamata-launcher | sh
 #### SteamOs:
 This command will install the app and create a steam shortcut
 ```sh 
-curl -sSL https://links.gregoryc.dev/yamata-launcher | sh
+curl -sSL https://links.gregoryc.dev/yamata-launcher | sh -s -- --variant=steamos
 ```
 
 #### Batocera:
 This command will install the app and create a ports shortcut
 ```sh 
-curl -sSL https://links.gregoryc.dev/yamata-launcher | sh
+curl -sSL https://links.gregoryc.dev/yamata-launcher | sh -s -- --variant=batocera
 ```
 
 ## Documentation

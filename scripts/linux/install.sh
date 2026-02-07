@@ -175,4 +175,34 @@ else
   log "System-wide desktop install skipped (no permissions)"
 fi
 
+
+VARIANT=""
+
+for arg in "$@"; do
+  case $arg in
+    --variant=*)
+      VARIANT="${arg#*=}"
+      ;;
+  esac
+done
+
+
+if [ "$VARIANT" = "steamos" ]; then
+  PY_SCRIPT_URL="https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/refs/heads/master/scripts/linux/steamos-shortcut-setup.py"
+  echo "SteamOS variant detected. Running SteamOS shortcut setup..."
+
+  TEMP_FILE=$(mktemp /tmp/setup-steam-shortcut.py)
+
+  echo "Downloading Python script..."
+  curl -fsSL "$PY_SCRIPT_URL" -o "$TEMP_FILE"
+
+  echo "Executing script..."
+  python3 "$TEMP_FILE"
+
+  echo "Cleaning up..."
+  rm -f "$TEMP_FILE"
+
+  echo "SteamOS setup completed."
+fi
+
 log "Installation completed successfully"

@@ -12,9 +12,9 @@ EXEC_PATH = os.path.expanduser("~/Applications/yamata-launcher-x86.AppImage")
 ARGS = "--fullscreen"
 
 # Usa JPG para mejor compatibilidad con Gaming Mode
-ART_VERTICAL = "https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/steamgrid/Portrait.png"
+ART_VERTICAL = "https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/steamgrid/LargePortrait.png"
 ART_ICON = "https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/refs/heads/master/assets/icons/app.ico"
-ART_HORIZONTAL ="https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/steamgrid/LargePortrait.png"
+ART_HORIZONTAL ="https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/steamgrid/Portrait.png"
 ART_HERO = "https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/steamgrid/Wallpaper.png"
 ART_LOGO = "https://github.com/Gr3gorywolf/Yamata-launcher/raw/master/assets/images/logo.png"
 

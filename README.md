@@ -70,7 +70,7 @@ The application binaries are on the [Releases page](https://github.com/Gr3gorywo
 
 
 - <strong>Windows</strong>: Download the installer and follow the setup steps.
-- <strong>MacOS</strong>: Download the DMG file, open it, and install the application.
+- <strong>MacOS</strong>: Download the DMG file, open it, and install the application. Note: Note: You may need to allow installations from unidentified developers in your security settings. [Tutorial](https://youtube.com/shorts/scdAMJDGJvA?si=TfStdBNlNlEgILfT)
 - <strong>Android</strong>: Download and install the APK file.
 
 ### Linux install

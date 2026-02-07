@@ -58,8 +58,7 @@ def add_artwork(userid, appid):
 
     for filename, url in artwork.items():
         path = os.path.join(grid_path, filename)
-        if not os.path.exists(path):
-            download(url, path)
+        download(url, path)
 
 
 def add_shortcut(userid, appid, exe_string):

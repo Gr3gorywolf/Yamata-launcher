@@ -75,18 +75,15 @@ download_file() {
 # Argument parsing
 # -------------------------------------------------
 
-APPIMAGE_PATH_ARG=""
-VARIANT_ARG="default"
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --appimage)
       APPIMAGE_PATH_ARG="$2"
       shift 2
       ;;
-    --variant)
-      VARIANT_ARG="$2"
-      shift 2
+    --variant=*)
+      VARIANT="${1#*=}"
+      shift 
       ;;
     *)
       error "Unknown argument: $1"
@@ -187,7 +184,7 @@ if [ "$VARIANT" = "steamos" ]; then
   PY_SCRIPT_URL="https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/refs/heads/master/scripts/linux/steamos-shortcut-setup.py"
   echo "SteamOS variant detected. Running SteamOS shortcut setup..."
 
-  TEMP_FILE=$(mktemp /tmp/setup-steam-shortcut.py)
+  TEMP_FILE="$HOME/Documents/steamos_shortcut_setup.py"
 
   echo "Downloading Python script..."
   curl -fsSL "$PY_SCRIPT_URL" -o "$TEMP_FILE"

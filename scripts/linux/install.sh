@@ -127,7 +127,7 @@ else
 fi
 
 chmod +x "$APPIMAGE_TARGET"
-log "AppImage installed at $APPIMAGE_TARGET"
+echo "AppImage installed at $APPIMAGE_TARGET"
 
 # -------------------------------------------------
 # Icon download (from repo assets)
@@ -140,7 +140,7 @@ ICON_TARGET="$ICON_BASE_DIR/$ICON_FILE_NAME"
 
 download_file "$ICON_URL" "$ICON_TARGET"
 
-log "Icon installed at $ICON_TARGET"
+echo "Icon installed at $ICON_TARGET"
 
 # -------------------------------------------------
 # Desktop file
@@ -166,7 +166,7 @@ DESKTOP_FILE_USER="$DESKTOP_DIR_USER/$DESKTOP_FILENAME"
 echo "$DESKTOP_CONTENT" > "$DESKTOP_FILE_USER"
 chmod 644 "$DESKTOP_FILE_USER"
 
-log "Desktop entry installed at $DESKTOP_FILE_USER"
+echo "Desktop entry installed at $DESKTOP_FILE_USER"
 
 # -------------------------------------------------
 # Optional system-wide desktop install
@@ -174,9 +174,9 @@ log "Desktop entry installed at $DESKTOP_FILE_USER"
 
 if [ -w "$DESKTOP_DIR_SYSTEM" ]; then
   cp "$DESKTOP_FILE_USER" "$DESKTOP_DIR_SYSTEM/$DESKTOP_FILENAME"
-  log "Desktop entry also installed system-wide"
+  echo "Desktop entry also installed system-wide"
 else
-  log "System-wide desktop install skipped (no permissions)"
+  echo "System-wide desktop install skipped (no permissions)"
 fi
 
  
@@ -204,4 +204,4 @@ if [ "$VARIANT" = "batocera" ]; then
   echo "Batocera setup completed."
 fi
 
-log "Installation completed successfully"
+echo "Installation completed successfully"

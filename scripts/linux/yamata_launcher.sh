@@ -1,0 +1,1 @@
+chmod +x /userdata/system/Applications/yamata-launcher-x86.AppImage  && /userdata/system/Applications/yamata-launcher-x86.AppImage

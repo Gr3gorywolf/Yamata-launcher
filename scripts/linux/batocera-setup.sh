@@ -3,6 +3,9 @@
 set -e
 
 # Define paths
+APP_NAME="Yamata Launcher"
+REPO_OWNER="Gr3gorywolf"
+REPO_NAME="Yamata-launcher"
 TEMP_FOLDER="/userdata/system/temp"
 ROMS_PORTS_FOLDER="/userdata/roms/ports"
 IMAGE_FOLDER="$ROMS_PORTS_FOLDER/images"

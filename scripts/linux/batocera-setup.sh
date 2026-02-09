@@ -16,6 +16,7 @@ YAMATA_EXEC="$HOME/Applications/yamata-launcher-x86.AppImage"
 download_file() {
   local url="$1"
   local output="$2"
+  echo "Downloading $url to $output..."
   if [ "$DOWNLOAD_TOOL" = "wget" ]; then
     wget -O "$output" "$url"
   else
@@ -26,16 +27,16 @@ download_file() {
 
 # Download image and put it in the specified location
 mkdir -p "$IMAGE_FOLDER"
-ICON_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/refs/heads/master/assets/images/logo.png"
+ICON_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/assets/images/logo.png"
 ICON_TARGET="$IMAGE_FOLDER/yamata_launcher.png"
 
 download_file "$ICON_URL" "$ICON_TARGET"
 
 #download launch script
-download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/refs/heads/master/scripts/linux/yamata_launcher.sh" "/userdata/roms/ports/yamata_launcher.sh"
+download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/scripts/linux/yamata_launcher.sh" "/userdata/roms/ports/yamata_launcher.sh"
 
 #download pad2key script
-download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/refs/heads/master/scripts/linux/pad2key.json" "/userdata/roms/ports/yamata_launcher.sh.keys"
+download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/scripts/linux/pad2key.json" "/userdata/roms/ports/yamata_launcher.sh.keys"
 
 # inserts the batocera wine shortcut to the corresponding path
 if [ ! -f "$xml_file" ]; then

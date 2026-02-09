@@ -200,7 +200,7 @@ fi
 
 if [ "$VARIANT" = "batocera" ]; then
   echo "Batocera variant detected. Running Batocera shortcut setup..."
-  curl -sSL "https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/refs/heads/master/scripts/linux/batocera-setup.sh" | sh
+  curl -sSL "https://raw.githubusercontent.com/Gr3gorywolf/Yamata-launcher/master/scripts/linux/batocera-setup.sh" | sh
   echo "Batocera setup completed."
 fi
 

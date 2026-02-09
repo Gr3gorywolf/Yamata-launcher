@@ -1,1 +1,1 @@
-chmod +x $HOME/Applications/yamata-launcher-x86.AppImage  && $HOME/Applications/yamata-launcher-x86.AppImage
+chmod +x $HOME/Applications/yamata-launcher-x86.AppImage  && $HOME/Applications/yamata-launcher-x86.AppImage --fullscreen

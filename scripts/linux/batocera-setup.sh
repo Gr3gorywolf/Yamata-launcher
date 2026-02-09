@@ -8,7 +8,7 @@ ROMS_PORTS_FOLDER="/userdata/roms/ports"
 IMAGE_FOLDER="$ROMS_PORTS_FOLDER/images"
 DESKTOP_FOLDER="/usr/share/applications"
 xml_file="/userdata/roms/ports/gamelist.xml"
-YAMATA_EXEC="/userdata/system/Applications/yamata-launcher-x86.AppImage"
+YAMATA_EXEC="$HOME/Applications/yamata-launcher-x86.AppImage"
 
 download_file() {
   local url="$1"

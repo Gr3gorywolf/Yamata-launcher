@@ -13,9 +13,6 @@ YAMATA_EXEC="/userdata/system/Applications/yamata-launcher-x86.AppImage"
 download_file() {
   local url="$1"
   local output="$2"
-
-  log "Downloading $url"
-
   if [ "$DOWNLOAD_TOOL" = "wget" ]; then
     wget -O "$output" "$url"
   else

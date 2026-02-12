@@ -249,7 +249,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                         extractAfterDownload = checked ?? false;
                       })
                     },
-                    title: Text("Extract after download"),
+                    title: Text("Extract contents after download"),
                   )
                 ],
               ),

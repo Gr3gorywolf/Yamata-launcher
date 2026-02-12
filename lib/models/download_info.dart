@@ -10,6 +10,7 @@ class DownloadInfo {
   RomInfo? romInfo;
   String? contentTitle;
   bool isExtraContent;
+  bool? shouldExtract;
   String? totalSize;
   bool get isCompleted {
     return downloadPercent == 100;
@@ -21,6 +22,7 @@ class DownloadInfo {
       this.downloadId,
       this.romInfo,
       this.contentTitle,
+      this.shouldExtract,
       this.isExtraContent = false,
       this.isExtracting = false,
       this.totalSize,

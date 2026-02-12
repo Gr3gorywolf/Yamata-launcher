@@ -63,16 +63,17 @@ class RomActionButton extends StatelessWidget {
     }
 
     handleDownloadRom() async {
-      final romSource = await showDialog<DownloadSourceRom>(
+      final result = await showDialog<RomDownloadSourcesDialogResult>(
         context: context,
         builder: (_) => RomDownloadSourcesDialog(rom: rom),
       );
 
-      if (romSource == null) return;
+      if (result == null) return;
 
       await libraryProvider.addRomToLibrary(rom);
 
-      DownloadService.downloadRom(rom, romSource);
+      DownloadService.downloadRom(rom, result.rom,
+          shouldExtract: result.extractAfterDownload);
       AlertsService.showSnackbar("Download started", duration: 3);
     }
 

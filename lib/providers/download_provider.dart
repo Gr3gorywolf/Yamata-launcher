@@ -100,7 +100,9 @@ class DownloadProvider extends ChangeNotifier {
 
   Future<void> addRomDownloadToQueue(
       RomInfo rom, DownloadSourceRom source, Aria2DownloadHandle handle,
-      {bool isExtraContent = false, String? contentTitle}) async {
+      {bool isExtraContent = false,
+      String? contentTitle,
+      bool? shouldExtract}) async {
     final downloadId = handle.id;
     final info = DownloadInfo(
       romSlug: rom.slug,
@@ -109,6 +111,7 @@ class DownloadProvider extends ChangeNotifier {
       romInfo: rom,
       isExtraContent: isExtraContent,
       contentTitle: contentTitle,
+      shouldExtract: shouldExtract,
       downloadInfo: 'Starting download...',
       totalSize: source.fileSize,
     );
@@ -326,7 +329,8 @@ class DownloadProvider extends ChangeNotifier {
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     await _setDownloadToHistory(download, path);
     if (extractionEnabled == true &&
-        VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
+        VALID_COMPRESSED_EXTENSIONS.contains(fileExtension) &&
+        download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {
       var newPath = await _handleMoveContentToParentFolder(libraryItem, path,

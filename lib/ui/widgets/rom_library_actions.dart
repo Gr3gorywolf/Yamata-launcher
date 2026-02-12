@@ -114,7 +114,7 @@ class RomLibraryActions extends StatelessWidget {
     }
 
     handleDownloadExtraContent() async {
-      final romSource = await showDialog<DownloadSourceRom>(
+      final result = await showDialog<RomDownloadSourcesDialogResult>(
         context: context,
         builder: (_) => RomDownloadSourcesDialog(
           rom: rom,
@@ -122,8 +122,9 @@ class RomLibraryActions extends StatelessWidget {
         ),
       );
 
-      if (romSource == null) return;
-      DownloadService.downloadRom(rom, romSource, isExtraContent: true);
+      if (result == null) return;
+      DownloadService.downloadRom(rom, result.rom,
+          isExtraContent: true, shouldExtract: result.extractAfterDownload);
       AlertsService.showSnackbar("Download started", duration: 3);
     }
 

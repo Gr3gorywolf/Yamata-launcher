@@ -475,7 +475,7 @@ class DownloadProvider extends ChangeNotifier {
   Future<String> _handleMoveContentToParentFolder(
       RomLibraryItem libraryItem, String path,
       {bool updateLibrary = true}) async {
-    if (await SettingsService()
+    if (!await SettingsService()
             .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER) ||
         PLATFORMS_WITH_DIRECTORY_TYPE_GAMES.contains(libraryItem.rom.console)) {
       return path;

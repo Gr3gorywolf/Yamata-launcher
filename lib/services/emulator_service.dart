@@ -130,7 +130,7 @@ class EmulatorService {
    */
   static Future<String> _resolveMacAppExecutable(String appPath) async {
     if (!appPath.endsWith('.app')) {
-      throw ArgumentError('Expected a .app bundle path, got: $appPath');
+      return appPath;
     }
 
     final macOSDir = Directory(p.join(appPath, 'Contents', 'MacOS'));

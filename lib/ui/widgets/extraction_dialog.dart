@@ -5,23 +5,29 @@ import 'package:archive/archive.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
   final File zipFile;
-  static Future<File?> show(BuildContext context, File zipFile) {
+  bool moveToParentFolder = false;
+  static Future<File?> show(BuildContext context, File zipFile,
+      {moveToParentFolder = false}) {
     return showDialog<File?>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ExtractionDialog(zipFile: zipFile),
+      builder: (_) => ExtractionDialog(
+          zipFile: zipFile, moveToParentFolder: moveToParentFolder),
     );
   }
 
-  const ExtractionDialog({super.key, required this.zipFile});
+  ExtractionDialog(
+      {super.key, required this.zipFile, this.moveToParentFolder = false});
 
   @override
   State<ExtractionDialog> createState() => _ExtractionDialogState();
@@ -77,8 +83,11 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         RomService.searchRomFile(dir, skipCompressedFiles: true);
 
     if (extractedFile != null) {
-      var newFilePath =
-          File(FileSystemService.moveFilesToParentFolder(extractedFile.path));
+      var newFilePath = File(extractedFile.path);
+      if (widget.moveToParentFolder) {
+        newFilePath =
+            File(FileSystemService.moveFilesToParentFolder(extractedFile.path));
+      }
       if (newFilePath.existsSync()) {
         extractedFile = newFilePath;
         if (Platform.isAndroid && extractedFile != null) {

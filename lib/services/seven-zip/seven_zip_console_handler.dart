@@ -37,6 +37,7 @@ class SevenZipConsoleHandler {
         {
           print(line);
           final progressVal = parseProgress(line);
+          print(progressVal);
           if (progressVal != null) {
             progressCallback(progressVal.toDouble());
           }

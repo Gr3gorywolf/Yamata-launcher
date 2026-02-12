@@ -48,12 +48,9 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   }
 
   Future<void> _unzip() async {
-    var tempFolder = Directory(
-        p.join(widget.zipFile.parent.path, StringHelper.generateUUID()));
-    await tempFolder.create(recursive: true);
     var (stream, cancelFn) = await ExtractionService.extractOnce(
         input: widget.zipFile,
-        output: tempFolder,
+        output: widget.zipFile.parent,
         onError: (data) {
           if (!isCanceling) {
             Navigator.of(context).pop();
@@ -72,13 +69,13 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         status = "Unzipping… ${progress.toStringAsFixed(2)}%";
       });
       if (progress >= 100) {
-        _handleComplete(tempFolder.path);
+        _handleComplete(widget.zipFile.parent.path);
       }
     });
   }
 
-  _handleComplete(String tempFolderPath) async {
-    var dir = Directory(tempFolderPath);
+  _handleComplete(String outputFolderPath) async {
+    var dir = Directory(outputFolderPath);
     File? extractedFile =
         RomService.searchRomFile(dir, skipCompressedFiles: true);
 
@@ -98,9 +95,6 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
           await widget.zipFile.delete();
         } catch (e) {}
       }
-      try {
-        dir.deleteSync(recursive: true);
-      } catch (e) {}
     }
     Navigator.of(context).pop(extractedFile);
   }

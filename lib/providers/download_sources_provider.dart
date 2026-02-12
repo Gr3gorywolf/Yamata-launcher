@@ -33,20 +33,20 @@ bool _isRomMatch(
   if (sourceRomNormalizedTitle[0] != romNormalizedTitle[0]) {
     return false;
   }
-  var minMatch = StringHelper.hasMinConsecutiveMatch(
-    romNormalizedTitle,
-    sourceRomNormalizedTitle,
-    minLength: sourceRomNormalizedTitle.length,
-  );
-  if (minMatch) {
-    return true;
-  }
-  return StringHelper.hasMinConsecutiveMatch(
-    sourceRomNormalizedTitle,
-    romNormalizedTitle,
-    minLength: romNormalizedTitle.length,
-  );
+
+  final short = sourceRomNormalizedTitle.length <= romNormalizedTitle.length
+      ? sourceRomNormalizedTitle
+      : romNormalizedTitle;
+
+  final long = sourceRomNormalizedTitle.length > romNormalizedTitle.length
+      ? sourceRomNormalizedTitle
+      : romNormalizedTitle;
+  var minMatch =
+      StringHelper.hasMinConsecutiveMatch(long, short, minLength: short.length);
+  return minMatch;
 }
+
+String _prefix3(String s) => s.length <= 3 ? s : s.substring(0, 3);
 
 /**
  * Remove words that are commonly misplaced in titles to improve matching accuracy.
@@ -64,51 +64,81 @@ String _removeMisplacedWords(String input) {
 Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
   _CompilePayload payload,
 ) {
-  final Map<String, List<DownloadSource>> result = {};
-  Stopwatch stopwatch = new Stopwatch()..start();
-  print("Isolate: Compiling download sources for ${payload.roms.length} roms");
-  var romConsoles = payload.roms.map((e) => e.console).toSet();
+  final result = <String, List<DownloadSource>>{};
+  final stopwatch = Stopwatch()..start();
 
-  Map<String, List<DownloadSourceWithDownloads>> sourcesByConsole = {};
-  for (final console in romConsoles) {
-    sourcesByConsole[console] = payload.sources.map((source) {
-      return DownloadSourceWithDownloads(
-          sourceInfo: source.sourceInfo,
-          downloads: source.downloads!
-              .where((sourceRom) => sourceRom.console == console)
-              .map((download) {
-            download.title_clean = RomService.normalizeRomTitle(
-                _removeMisplacedWords(download.title ?? ""));
-            return download;
-          }).toList());
-    }).toList();
+  print("Isolate: Compiling ${payload.roms.length} roms");
+
+  for (final rom in payload.roms) {
+    rom.name = RomService.normalizeRomTitle(
+      _removeMisplacedWords(rom.name),
+    );
   }
 
-  var normalizedRoms = payload.roms.map((rom) {
-    rom.name = RomService.normalizeRomTitle(_removeMisplacedWords(rom.name));
-    return rom;
-  }).toList();
-  for (final rom in normalizedRoms) {
-    var sourcesForConsole = sourcesByConsole[rom.console];
-    if (sourcesForConsole == null) continue;
-    for (final source in sourcesForConsole) {
-      final hasMatch = source.downloads.any(
-          (sourceRom) => _isRomMatch(sourceRom.title_clean ?? "", rom.name));
+  final Map<String, Map<String, List<DownloadSourceWithDownloads>>> index = {};
 
-      if (hasMatch) {
-        var foundSource = result[rom.slug];
-        if (foundSource == null) {
-          result[rom.slug] = [source.sourceInfo!];
-          continue;
+  for (final source in payload.sources) {
+    for (final d in source.downloads ?? const []) {
+      final console = d.console;
+
+      d.title_clean ??= RomService.normalizeRomTitle(
+        _removeMisplacedWords(d.title ?? ""),
+      );
+
+      if (d.title_clean!.isEmpty) continue;
+
+      final prefix = _prefix3(d.title_clean!);
+
+      final consoleMap = index.putIfAbsent(console, () => {});
+      final list = consoleMap.putIfAbsent(prefix, () => []);
+
+      DownloadSourceWithDownloads? wrapper;
+      for (final s in list) {
+        if (s.sourceInfo == source.sourceInfo) {
+          wrapper = s;
+          break;
         }
-        result[rom.slug] = [...foundSource, source.sourceInfo];
-      } else if (result[rom.slug] == null) {
-        result[rom.slug] = [];
+      }
+
+      wrapper ??= DownloadSourceWithDownloads(
+        sourceInfo: source.sourceInfo,
+        downloads: [],
+      );
+
+      if (!list.contains(wrapper)) {
+        list.add(wrapper);
+      }
+
+      wrapper.downloads.add(d);
+    }
+  }
+
+  print("Index built in ${stopwatch.elapsedMilliseconds} ms");
+
+  for (final rom in payload.roms) {
+    final name = rom.name;
+    if (name.isEmpty) continue;
+
+    final consoleMap = index[rom.console];
+    if (consoleMap == null) continue;
+
+    final prefix = _prefix3(name);
+    final candidates = consoleMap[prefix];
+    if (candidates == null) continue;
+
+    final romResult = result.putIfAbsent(rom.slug, () => []);
+
+    for (final source in candidates) {
+      if (source.downloads.any(
+        (d) => _isRomMatch(d.title_clean!, name),
+      )) {
+        romResult.add(source.sourceInfo!);
       }
     }
   }
-  print("Finished compiling download sources in isolate in "
-      "${stopwatch.elapsed.inMilliseconds} milliseconds");
+
+  print("Finished in ${stopwatch.elapsedMilliseconds} ms");
+
   return result;
 }
 

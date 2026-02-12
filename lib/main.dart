@@ -17,6 +17,7 @@ import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 
+var isFullScreen = false;
 void main(List<String> args) {
   initWindow(args);
   runApp(MyApp());
@@ -26,10 +27,11 @@ void initWindow(List<String> args) async {
   if (FileSystemService.isDesktop) {
     WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
+    isFullScreen = args.contains("--fullscreen");
     WindowOptions windowOptions = WindowOptions(
       skipTaskbar: false,
       minimumSize: Size(800, 800),
-      fullScreen: args.contains("--fullscreen"),
+      fullScreen: isFullScreen,
       title: "Yamata Launcher",
       titleBarStyle: TitleBarStyle.normal,
     );
@@ -52,7 +54,7 @@ class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
   void onWindowClose() async {
     var closeToTray =
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
-    if (closeToTray) {
+    if (closeToTray && !isFullScreen) {
       windowManager.hide();
       if (!showedTrayNotification) {
         await NotificationsService.showNotification(

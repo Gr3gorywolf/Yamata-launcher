@@ -87,6 +87,9 @@ class _SettingsPageState extends State<SettingsPage> {
         case SettingsKeys.ENABLE_EXTRACTION:
           _extractRomsAfterDownload = value as bool;
           break;
+        case SettingsKeys.CLOSE_TO_SYSTEM_TRAY:
+          _closeToSystemTray = value as bool;
+          break;
         default:
           break;
       }

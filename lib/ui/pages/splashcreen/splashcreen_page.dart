@@ -38,8 +38,6 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
 
   initApp() async {
     WidgetsFlutterBinding.ensureInitialized();
-    PaintingBinding.instance.imageCache.maximumSize = 100;
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20;
     await Provider.of<AppProvider>(context, listen: false).setupTheme();
     await FileSystemService.initPaths();
     await initPlugins();
@@ -51,16 +49,13 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
       await EmulatorService.loadEmulatorIntents();
     }
     await Provider.of<LibraryProvider>(context, listen: false).init();
-    Provider.of<DownloadProvider>(context, listen: false);
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
         .initialize();
-    await UpdateService.initialize();
     await DownloadService.initDownloadHistory();
+    UpdateService.initialize();
     RomService.initializeGameFilenames();
-    Future.delayed(Duration(milliseconds: 2000)).then((value) {
-      Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
-      context.push("/explore");
-    });
+    Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
+    context.push("/explore");
   }
 
   Future initPlugins() async {
@@ -78,7 +73,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     return Scaffold(
         body: Center(
             child: FadeOut(
-      duration: Duration(milliseconds: 2000),
+      duration: Duration(milliseconds: 1000),
       manualTrigger: true,
       controller: (controller) => AnimationHelper.handleAnimation(controller),
       child: AssetsService.getSvgImage("logo-orig", size: 330),

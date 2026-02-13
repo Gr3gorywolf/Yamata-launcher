@@ -10,90 +10,96 @@ import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class RomThumbnail extends StatefulWidget {
-  RomInfo info;
-  double height;
-  double width;
-  String? customUrl;
-  Duration? timeout;
-  RomThumbnail(this.info,
-      {this.height = 50, this.width = 50, this.timeout, this.customUrl});
+class RomThumbnail extends StatelessWidget {
+  final RomInfo info;
+  final double height;
+  final double width;
+  final String? customUrl;
+  final Duration? timeout;
 
-  @override
-  State<RomThumbnail> createState() => _RomThumbnailState();
-}
-
-class _RomThumbnailState extends State<RomThumbnail> {
-  var timeoutEnded = false;
-  File? getCatchedImage() {
-    var path =
-        "${FileSystemService.portraitsPath}/${this.widget.info.slug}.png";
-    if (File(path).existsSync()) {
-      return File(path);
-    } else {
-      return null;
-    }
-  }
-
-  @override
-  void initState() {
-    if (widget.timeout != null) {
-      Future.delayed(widget.timeout!, () {
-        if (this.mounted) {
-          setState(() {
-            timeoutEnded = true;
-          });
-        }
-      });
-    } else {
-      timeoutEnded = true;
-    }
-  }
+  const RomThumbnail(
+    this.info, {
+    super.key,
+    this.height = 50,
+    this.width = 50,
+    this.customUrl,
+    this.timeout,
+  });
 
   @override
   Widget build(BuildContext context) {
-    var url = widget.customUrl ?? widget.info.portrait;
-    if (!timeoutEnded) {
-      return Skeletonizer.zone(
-        enabled: true,
-        child: Bone(height: double.infinity, width: double.infinity),
-      );
-    }
-    if (Uri.tryParse(widget.info.portrait ?? "") == null) {
-      return AssetsService.getConsoleIcon(
-        widget.info.console,
-        size: widget.width,
-      );
-    }
-    var cachedImg = getCatchedImage();
-    if (cachedImg != null) {
+    final url = customUrl ?? info.portrait;
+    final slug = info.slug;
+
+    final cachedFile = RomThumbnailCache.get(slug);
+
+    if (cachedFile != null) {
       return Image.file(
-        cachedImg,
-        height: this.widget.height,
-        width: this.widget.width,
-        cacheWidth: this.widget.width.toInt() * 4,
-        cacheHeight: this.widget.height.toInt() * 4,
+        cachedFile,
+        height: height,
+        width: width,
         fit: BoxFit.cover,
+        cacheWidth: width.toInt(),
+        cacheHeight: height.toInt(),
+        filterQuality: FilterQuality.low,
       );
     }
+
+    if (url == null || url.isEmpty || !url.startsWith("http")) {
+      return AssetsService.getConsoleIcon(
+        info.console,
+        size: width,
+      );
+    }
+
     return Image.network(
-      url ?? "",
-      errorBuilder: (context, obj, trace) {
-        return AssetsService.getConsoleIcon(widget.info.console,
-            size: widget.width);
+      url,
+      height: height,
+      width: width,
+      fit: BoxFit.cover,
+      cacheWidth: width.toInt() * 3,
+      cacheHeight: height.toInt() * 3,
+      filterQuality: FilterQuality.low,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const _ThumbnailSkeleton();
       },
-      loadingBuilder: (child, widget, progress) {
-        if (progress == null) return widget;
-        return Skeletonizer.zone(
-          enabled: true,
-          child: Bone(height: double.infinity, width: double.infinity),
+      errorBuilder: (context, error, stack) {
+        return AssetsService.getConsoleIcon(
+          info.console,
+          size: width,
         );
       },
-      height: this.widget.height,
-      width: this.widget.width,
-      cacheWidth: this.widget.width.toInt() * 4,
-      cacheHeight: this.widget.height.toInt() * 4,
-      fit: BoxFit.cover,
     );
+  }
+}
+
+class _ThumbnailSkeleton extends StatelessWidget {
+  const _ThumbnailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.zone(
+      enabled: true,
+      child: const Bone(
+        height: double.infinity,
+        width: double.infinity,
+      ),
+    );
+  }
+}
+
+class RomThumbnailCache {
+  static final Map<String, File?> _cache = {};
+
+  static File? get(String slug) {
+    if (_cache.containsKey(slug)) return _cache[slug];
+
+    final path = "${FileSystemService.portraitsPath}/$slug.png";
+    final file = File(path);
+    final exists = file.existsSync();
+
+    _cache[slug] = exists ? file : null;
+    return _cache[slug];
   }
 }

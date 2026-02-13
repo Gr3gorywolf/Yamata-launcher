@@ -105,7 +105,6 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: CustomScrollView(
-        cacheExtent: 2000, // Prefetch ~2 screens
         slivers: [
           SliverToBoxAdapter(child: _buildTop()),
           if (viewMode == ViewModeToggleMode.list)

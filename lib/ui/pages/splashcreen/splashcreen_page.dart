@@ -55,7 +55,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     UpdateService.initialize();
     RomService.initializeGameFilenames();
     Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
-    context.push("/explore");
+    context.replace("/explore");
   }
 
   Future initPlugins() async {

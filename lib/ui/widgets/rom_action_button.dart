@@ -25,46 +25,104 @@ import '../../services/alerts_service.dart';
 
 enum RomActionButtonSize { small, large, medium }
 
-class RomActionButton extends StatelessWidget {
-  RomInfo rom;
-  RomActionButtonSize size;
-  RomActionButton(this.rom, {this.size = RomActionButtonSize.medium});
+class FileExistCache {
+  static final Map<String, bool> _cache = {};
+
+  static bool? get(String path) => _cache[path];
+
+  static void set(String path, bool exists) {
+    _cache[path] = exists;
+  }
+}
+
+class RomActionButton extends StatefulWidget {
+  final RomInfo rom;
+  final RomActionButtonSize size;
+
+  const RomActionButton(this.rom,
+      {super.key, this.size = RomActionButtonSize.medium});
+
+  @override
+  State<RomActionButton> createState() => _RomActionButtonState();
+}
+
+class _RomActionButtonState extends State<RomActionButton> {
+  bool? _fileExists; // null = loading
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFileExists();
+  }
+
+  Future<void> _checkFileExists() async {
+    final libraryProvider =
+        Provider.of<LibraryProvider>(context, listen: false);
+
+    final libraryItem = libraryProvider.getLibraryItem(widget.rom.slug);
+
+    if (libraryItem == null || libraryItem.filePath == null) {
+      _fileExists = false;
+      return;
+    }
+
+    final path = libraryItem.filePath!;
+
+    final cached = FileExistCache.get(path);
+    if (cached != null) {
+      _fileExists = cached;
+      if (mounted) setState(() {});
+      return;
+    }
+
+    bool exists;
+    if (Platform.isMacOS && path.endsWith(".app")) {
+      exists = await Directory(path).exists();
+    } else {
+      exists = await File(path).exists();
+    }
+
+    FileExistCache.set(path, exists);
+
+    if (mounted) {
+      setState(() {
+        _fileExists = exists;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var provider = DownloadProvider.of(context);
-    var libraryProvider = Provider.of<LibraryProvider>(context);
-    var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
+    final provider = DownloadProvider.of(context);
+    final libraryProvider = Provider.of<LibraryProvider>(context);
+    final downloadSourcesProvider =
+        Provider.of<DownloadSourcesProvider>(context);
 
-    var libraryItem = libraryProvider.getLibraryItem(rom.slug);
+    final rom = widget.rom;
 
-    var isCompilingSource =
+    final libraryItem = libraryProvider.getLibraryItem(rom.slug);
+
+    final isCompilingSource =
         downloadSourcesProvider.isRomCompilingDownloadSources(rom.slug);
 
-    var isDownloading = provider.isRomDownloading(rom);
-    var isPlaying = libraryProvider.isGameRunning(rom.slug);
-    var isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
-    var hasDownloadSources =
+    final isDownloading = provider.isRomDownloading(rom);
+    final isPlaying = libraryProvider.isGameRunning(rom.slug);
+    final isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
+    final hasDownloadSources =
         downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty;
 
     bool getFileIsCompressed() {
-      var filePath = libraryItem!.filePath!;
+      if (libraryItem?.filePath == null) return false;
+      final filePath = libraryItem!.filePath!;
       return VALID_COMPRESSED_EXTENSIONS
-          .where((ext) => filePath.toLowerCase().endsWith(ext))
-          .isNotEmpty;
-    }
-
-    bool getFileExist() {
-      if (isReadyToPlay) {
-        var filePath = libraryItem!.filePath!;
-        if (Platform.isMacOS && filePath.endsWith(".app")) {
-          return Directory(filePath).existsSync();
-        }
-        return File(filePath).existsSync();
-      }
-      return false;
+          .any((ext) => filePath.toLowerCase().endsWith(ext));
     }
 
     handleUpdateRomInLibrary(String filePath) async {
+      final libraryProvider =
+          Provider.of<LibraryProvider>(context, listen: false);
+      final libraryItem = libraryProvider.getLibraryItem(widget.rom.slug);
+
       if (libraryItem == null) return;
       libraryItem.filePath = filePath;
       await libraryProvider.updateLibraryItem(libraryItem);
@@ -73,14 +131,11 @@ class RomActionButton extends StatelessWidget {
     handleDownloadRom() async {
       final result = await showDialog<RomDownloadSourcesDialogResult>(
         context: context,
-        builder: (_) => RomDownloadSourcesDialog(rom: rom),
+        builder: (_) => RomDownloadSourcesDialog(rom: widget.rom),
       );
-
       if (result == null) return;
-
-      await libraryProvider.addRomToLibrary(rom);
-
-      DownloadService.downloadRom(rom, result.rom,
+      await libraryProvider.addRomToLibrary(widget.rom);
+      DownloadService.downloadRom(widget.rom, result.rom,
           shouldExtract: result.extractAfterDownload);
       AlertsService.showSnackbar("Download started", duration: 3);
     }
@@ -91,10 +146,8 @@ class RomActionButton extends StatelessWidget {
           EmulatorService.closeRunningRom(rom.slug);
           AlertsService.showSnackbar("Closing ${rom.name}...");
         }
-
         return;
       }
-
       if (isDownloading) {
         var downloadInfo = provider.getDownloadInfo(rom);
         if (downloadInfo == null) return;
@@ -113,8 +166,7 @@ class RomActionButton extends StatelessWidget {
         );
         return;
       }
-
-      if (isReadyToPlay && !getFileExist()) {
+      if (isReadyToPlay && !_fileExists!) {
         AlertsService.showAlert(navigatorContext!, "File not found",
             "Rom file not found. Please re-download the rom or locate the file.",
             acceptTitle: "Locate", callback: () async {
@@ -137,7 +189,6 @@ class RomActionButton extends StatelessWidget {
                 : null);
         return;
       }
-
       if (isReadyToPlay && libraryItem != null) {
         if (getFileIsCompressed()) {
           await RomService.extractRom(libraryItem);
@@ -147,11 +198,26 @@ class RomActionButton extends StatelessWidget {
         AlertsService.showSnackbar("Rom launched");
         return;
       }
-
       if (hasDownloadSources) {
         handleDownloadRom();
       }
     }
+
+    if (isReadyToPlay && _fileExists == null) {
+      return const SizedBox(
+        height: 36,
+        width: 36,
+        child: Center(
+          child: SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    final fileExists = _fileExists ?? false;
 
     double horizontalPadding;
     double verticalPadding;
@@ -159,7 +225,7 @@ class RomActionButton extends StatelessWidget {
     double fontSize;
     double spacing;
 
-    switch (size) {
+    switch (widget.size) {
       case RomActionButtonSize.small:
         horizontalPadding = 10;
         verticalPadding = 10;
@@ -174,14 +240,12 @@ class RomActionButton extends StatelessWidget {
         fontSize = 16;
         spacing = 5;
         break;
-      case RomActionButtonSize.medium:
       default:
         horizontalPadding = 15;
         verticalPadding = 16;
         iconSize = 24;
         fontSize = 13;
         spacing = 3;
-        break;
     }
 
     final padding = EdgeInsets.symmetric(
@@ -189,8 +253,8 @@ class RomActionButton extends StatelessWidget {
       vertical: verticalPadding,
     );
 
-    var icon = Icons.cloud_off_rounded;
-    var text = "No downloads";
+    IconData icon = Icons.cloud_off_rounded;
+    String text = "No downloads";
 
     if (isPlaying) {
       icon = FileSystemService.isDesktop ? Icons.close : Icons.videogame_asset;
@@ -199,10 +263,11 @@ class RomActionButton extends StatelessWidget {
       icon = Icons.stop;
       text = "Cancel";
     } else if (isReadyToPlay) {
-      if (getFileExist()) {
-        icon = Icons.folder_zip;
-        text = "Extract";
-        if (!getFileIsCompressed()) {
+      if (fileExists) {
+        if (getFileIsCompressed()) {
+          icon = Icons.folder_zip;
+          text = "Extract";
+        } else {
           icon = Icons.play_arrow_outlined;
           text = "Play";
         }

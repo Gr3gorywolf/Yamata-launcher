@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
@@ -44,6 +45,13 @@ class RomActionButton extends StatelessWidget {
     var isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
     var hasDownloadSources =
         downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty;
+
+    bool getFileIsCompressed() {
+      var filePath = libraryItem!.filePath!;
+      return VALID_COMPRESSED_EXTENSIONS
+          .where((ext) => filePath.toLowerCase().endsWith(ext))
+          .isNotEmpty;
+    }
 
     bool getFileExist() {
       if (isReadyToPlay) {
@@ -131,6 +139,10 @@ class RomActionButton extends StatelessWidget {
       }
 
       if (isReadyToPlay && libraryItem != null) {
+        if (getFileIsCompressed()) {
+          await RomService.extractRom(libraryItem);
+          return;
+        }
         EmulatorService.openRom(libraryItem);
         AlertsService.showSnackbar("Rom launched");
         return;
@@ -188,8 +200,12 @@ class RomActionButton extends StatelessWidget {
       text = "Cancel";
     } else if (isReadyToPlay) {
       if (getFileExist()) {
-        icon = Icons.play_arrow_outlined;
-        text = "Play";
+        icon = Icons.folder_zip;
+        text = "Extract";
+        if (!getFileIsCompressed()) {
+          icon = Icons.play_arrow_outlined;
+          text = "Play";
+        }
       } else {
         icon = Icons.folder_off;
         text = "File not found";

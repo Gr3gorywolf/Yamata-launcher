@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/library_dao.dart';
 import 'package:yamata_launcher/models/console.dart';
@@ -122,7 +123,9 @@ class RomsRepository {
         parser: (json) {
           List<String> executables = [];
           for (final item in json) {
-            if (item.contains("unitycrashhandler")) {
+            if (REDIST_FILE_MATCHES
+                .where((match) => item.toLowerCase().contains(match))
+                .isNotEmpty) {
               continue;
             }
             var executableName =

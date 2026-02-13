@@ -15,19 +15,16 @@ import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
   final File zipFile;
-  bool moveToParentFolder = false;
   static Future<File?> show(BuildContext context, File zipFile,
       {moveToParentFolder = false}) {
     return showDialog<File?>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ExtractionDialog(
-          zipFile: zipFile, moveToParentFolder: moveToParentFolder),
+      builder: (_) => ExtractionDialog(zipFile: zipFile),
     );
   }
 
-  ExtractionDialog(
-      {super.key, required this.zipFile, this.moveToParentFolder = false});
+  ExtractionDialog({super.key, required this.zipFile});
 
   @override
   State<ExtractionDialog> createState() => _ExtractionDialogState();
@@ -37,6 +34,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   double progress = 0.0;
   String status = "Preparing…";
   Function? cancel;
+  var _tempDir = null;
   bool isCanceling = false;
 
   @override
@@ -48,9 +46,12 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   }
 
   Future<void> _unzip() async {
+    var tempFolder = Directory(
+        p.join(widget.zipFile.parent.path, StringHelper.generateUUID()));
+    await tempFolder.create(recursive: true);
     var (stream, cancelFn) = await ExtractionService.extractOnce(
         input: widget.zipFile,
-        output: widget.zipFile.parent,
+        output: tempFolder,
         onError: (data) {
           if (!isCanceling) {
             Navigator.of(context).pop();
@@ -68,26 +69,26 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         progress = event.ceilToDouble();
         status = "Unzipping… ${progress.toStringAsFixed(2)}%";
       });
+      _tempDir = tempFolder.path;
       if (progress >= 100) {
-        _handleComplete(widget.zipFile.parent.path);
+        _handleComplete(tempFolder.path);
       }
     });
   }
 
-  _handleComplete(String outputFolderPath) async {
-    var dir = Directory(outputFolderPath);
+  _handleComplete(String tempFolderPath) async {
+    var dir = Directory(tempFolderPath);
     File? extractedFile =
         RomService.searchRomFile(dir, skipCompressedFiles: true);
 
     if (extractedFile != null) {
-      var newFilePath = File(extractedFile.path);
-      if (widget.moveToParentFolder) {
-        newFilePath =
-            File(FileSystemService.moveFilesToParentFolder(extractedFile.path));
-      }
-      if (newFilePath.existsSync()) {
+      var movingResult = FileSystemService.moveFilesToParentFolder(
+          tempFolderPath,
+          filePath: extractedFile.path);
+      var newFilePath = File(movingResult.filePath ?? "");
+      if (newFilePath.existsSync() && movingResult.filePath != null) {
         extractedFile = newFilePath;
-        if (Platform.isAndroid && extractedFile != null) {
+        if (Platform.isAndroid) {
           MediaScanner.loadMedia(path: extractedFile.path);
           MediaScanner.loadMedia(path: extractedFile.parent.path);
         }
@@ -95,8 +96,19 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
           await widget.zipFile.delete();
         } catch (e) {}
       }
+      try {
+        dir.deleteSync(recursive: true);
+      } catch (e) {}
     }
     Navigator.of(context).pop(extractedFile);
+  }
+
+  _cleanupTempDir() {
+    if (_tempDir != null) {
+      try {
+        Directory(_tempDir).deleteSync(recursive: true);
+      } catch (e) {}
+    }
   }
 
   @override
@@ -115,6 +127,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         TextButton(
           onPressed: () {
             cancel!();
+            _cleanupTempDir();
             isCanceling = true;
             Navigator.of(context).pop();
           },

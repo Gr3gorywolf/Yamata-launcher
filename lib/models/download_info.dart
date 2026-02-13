@@ -4,6 +4,7 @@ import 'package:yamata_launcher/models/rom_library_item.dart';
 class DownloadInfo {
   String romSlug;
   int? downloadPercent;
+  String? downloadFolder;
   String? downloadId;
   String? downloadInfo;
   bool isExtracting;
@@ -21,6 +22,7 @@ class DownloadInfo {
       this.downloadPercent,
       this.downloadId,
       this.romInfo,
+      this.downloadFolder,
       this.contentTitle,
       this.shouldExtract,
       this.isExtraContent = false,

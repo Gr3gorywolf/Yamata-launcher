@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:yamata_launcher/models/download_history_item.dart';
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
@@ -102,6 +103,40 @@ class RomListItem extends StatelessWidget {
       return [];
     }
 
+    Widget buildDownloadInfoProgress() {
+      return Consumer<DownloadProvider>(
+        builder: (context, provider, child) {
+          final downloadInfo = provider.getDownloadInfo(romItem);
+          if (downloadInfo != null && download == null) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(
+                  backgroundColor: Colors.grey[800],
+                  value: (downloadInfo.downloadPercent ?? 0) / 100,
+                ),
+                SizedBox(
+                  height: 3,
+                ),
+                Opacity(
+                  opacity: 0.7,
+                  child: Text(
+                    downloadInfo.downloadInfo ?? "",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                )
+              ],
+            );
+          }
+          return SizedBox.shrink();
+        },
+      );
+    }
+
     /// List Item View
     if (itemType == RomListItemType.listItem) {
       return RepaintBoundary(
@@ -180,28 +215,7 @@ class RomListItem extends StatelessWidget {
                               ],
                               ...(_currentDownloadInfo != null &&
                                       download == null
-                                  ? [
-                                      LinearProgressIndicator(
-                                        backgroundColor: Colors.grey[800],
-                                        value: (_currentDownloadInfo
-                                                    .downloadPercent ??
-                                                0) /
-                                            100,
-                                      ),
-                                      SizedBox(
-                                        height: 3,
-                                      ),
-                                      Opacity(
-                                        opacity: 0.7,
-                                        child: Text(
-                                          _currentDownloadInfo.downloadInfo ??
-                                              "",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall,
-                                        ),
-                                      )
-                                    ]
+                                  ? [buildDownloadInfoProgress()]
                                   : []),
                               SizedBox(
                                 height: 18,
@@ -249,12 +263,9 @@ class RomListItem extends StatelessWidget {
     }
 
     //Card View
-
     return RepaintBoundary(
       child: InkWell(
-        onTap: () {
-          navigateToDetails();
-        },
+        onTap: navigateToDetails,
         child: Card(
             elevation: 5,
             shape: RoundedRectangleBorder(
@@ -329,24 +340,7 @@ class RomListItem extends StatelessWidget {
                       ...(_currentDownloadInfo != null && download == null
                           ? [
                               if (!hasDownloadInfo) Spacer(),
-                              LinearProgressIndicator(
-                                backgroundColor: Colors.grey[800],
-                                value: (_currentDownloadInfo.downloadPercent ??
-                                        0) /
-                                    100,
-                              ),
-                              SizedBox(
-                                height: 3,
-                              ),
-                              Opacity(
-                                opacity: 0.7,
-                                child: Text(
-                                  _currentDownloadInfo.downloadInfo ?? "",
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              )
+                              buildDownloadInfoProgress()
                             ]
                           : []),
                       Spacer(),

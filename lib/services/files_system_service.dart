@@ -185,21 +185,50 @@ class FileSystemService {
   /*
   * Moves the content of the specified file to its containing folder.
   */
-  static String moveFilesToParentFolder(String filePath) {
-    var fileDir = Directory(p.dirname(filePath));
-    var parentPath = fileDir.parent.path;
-    if (Platform.isAndroid) {
-      MediaScanner.loadMedia(path: parentPath);
-    }
-    for (var item in fileDir.listSync()) {
-      var newPath = p.join(parentPath, item.uri.pathSegments.last);
-      item.renameSync(newPath);
-      if (Platform.isAndroid) {
-        MediaScanner.loadMedia(path: newPath);
-      }
+  static ContentMoveResult moveFilesToParentFolder(
+    String folderPath, {
+    String? filePath,
+  }) {
+    final sourceDir = Directory(folderPath);
+
+    if (!sourceDir.existsSync()) {
+      throw Exception("Folder does not exist: $folderPath");
     }
 
-    return p.join(parentPath, Uri.parse(filePath).pathSegments.last);
+    final parentPath = sourceDir.parent.path;
+
+    final items = sourceDir.listSync();
+
+    for (final item in items) {
+      final name = p.basename(item.path);
+      var newPath = p.join(parentPath, name);
+
+      if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
+        item.deleteSync(recursive: true);
+      }
+
+      item.renameSync(newPath);
+    }
+
+    try {
+      sourceDir.deleteSync();
+    } catch (_) {}
+
+    if (Platform.isAndroid) {
+      try {
+        MediaScanner.loadMedia(path: parentPath);
+      } catch (_) {}
+    }
+
+    String? newFilePath;
+
+    if (filePath != null) {
+      newFilePath = filePath.replaceAll(folderPath, parentPath);
+    }
+    return ContentMoveResult(
+      parentFolder: parentPath,
+      filePath: newFilePath,
+    );
   }
 
   /**
@@ -376,4 +405,14 @@ class FileSystemService {
       }
     }
   }
+}
+
+class ContentMoveResult {
+  final String parentFolder;
+  final String? filePath;
+
+  ContentMoveResult({
+    required this.parentFolder,
+    required this.filePath,
+  });
 }

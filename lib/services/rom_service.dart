@@ -25,13 +25,8 @@ class RomService {
   }
 
   static Future extractRom(RomLibraryItem downloadedRom) async {
-    var shouldMoveToParentFolder = await SettingsService()
-            .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER) &&
-        !PLATFORMS_WITH_DIRECTORY_TYPE_GAMES
-            .contains(downloadedRom.rom.console);
     var resultFile = await ExtractionDialog.show(
-        navigatorContext!, File(downloadedRom.filePath ?? ""),
-        moveToParentFolder: shouldMoveToParentFolder);
+        navigatorContext!, File(downloadedRom.filePath ?? ""));
     if (resultFile == null) {
       AlertsService.showErrorSnackbar("Failed to extract ROM from zip file.");
       return;

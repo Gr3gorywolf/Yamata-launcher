@@ -10,6 +10,7 @@ class RomInfo implements JsonSerializable {
   String? rating;
   String? releaseDate;
   String? titleImage;
+  List<String>? categories;
   List<String>? gameplayCovers;
   String console = "";
 
@@ -22,6 +23,7 @@ class RomInfo implements JsonSerializable {
     this.rating,
     this.titleImage,
     this.releaseDate,
+    this.categories,
     this.gameplayCovers,
     required this.console,
   });
@@ -39,6 +41,9 @@ class RomInfo implements JsonSerializable {
     detailsUrl = json['detailsUrl'];
     releaseDate = json['releaseDate'];
     rating = json['rating'];
+    categories = json['categories'] != null
+        ? List<String>.from(json['categories'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -53,6 +58,7 @@ class RomInfo implements JsonSerializable {
     data['detailsUrl'] = this.detailsUrl;
     data['releaseDate'] = this.releaseDate;
     data['rating'] = this.rating;
+    data['categories'] = this.categories;
     return data;
   }
 }

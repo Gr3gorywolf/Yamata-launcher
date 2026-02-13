@@ -11,6 +11,21 @@ const SETUP_FILE_NAMES = [
   "install.app",
 ];
 
+const REDIST_FILE_MATCHES = [
+  "unitycrashhandler",
+  "redist",
+  "dotnet",
+  "vcredist",
+  "oalinst",
+  "dxwebsetup",
+  "install",
+  "umdf",
+  "physx",
+  "wmfdist",
+  "wmpappcompat",
+  ".net"
+];
+
 const VALID_EXECUTABLE_EXTENSIONS = [
   "exe",
   "com",

@@ -188,9 +188,12 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     }
     Navigator.pop(
         context,
-        sourceRom.copyWith(
-          uris: [link],
-          fileName: fileName,
+        RomDownloadSourcesDialogResult(
+          rom: sourceRom.copyWith(
+            fileName: fileName,
+            uris: [link],
+          ),
+          extractAfterDownload: extractAfterDownload,
         ));
   }
 

@@ -333,7 +333,8 @@ class DownloadProvider extends ChangeNotifier {
         download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {
-      var newPath = await _handleMoveContentToParentFolder(libraryItem, path,
+      var newPath = await _handleMoveContentToParentFolder(
+          libraryItem, path, File(path).parent.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
@@ -457,7 +458,7 @@ class DownloadProvider extends ChangeNotifier {
             exception: e);
       }
       var newPath = await _handleMoveContentToParentFolder(
-          libraryItem!, extractedFile.path,
+          libraryItem!, extractedFile.path, outputDir.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
     }
@@ -477,18 +478,19 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   Future<String> _handleMoveContentToParentFolder(
-      RomLibraryItem libraryItem, String path,
+      RomLibraryItem libraryItem, String path, String downloadFolder,
       {bool updateLibrary = true}) async {
-    if (!await SettingsService()
+    if (await SettingsService()
             .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER) ||
         PLATFORMS_WITH_DIRECTORY_TYPE_GAMES.contains(libraryItem.rom.console)) {
       return path;
     }
     try {
-      var newPath = FileSystemService.moveFilesToParentFolder(path);
+      var moveResult = FileSystemService.moveFilesToParentFolder(downloadFolder,
+          filePath: path);
 
       if (updateLibrary) {
-        libraryItem.filePath = newPath;
+        libraryItem.filePath = moveResult.filePath;
         Provider.of<LibraryProvider>(navigatorContext!, listen: false)
             .updateLibraryItem(libraryItem);
       }
@@ -496,7 +498,7 @@ class DownloadProvider extends ChangeNotifier {
       try {
         parentFolder.deleteSync();
       } catch (e) {}
-      return newPath;
+      return moveResult.filePath ?? moveResult.parentFolder;
     } catch (e) {
       print("Error moving files to containing folder: ${e.toString()}");
     }

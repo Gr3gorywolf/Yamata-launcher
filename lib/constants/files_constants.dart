@@ -166,3 +166,5 @@ const PLATFORMS_WITH_DIRECTORY_TYPE_GAMES = [
   'linux',
   'macos'
 ];
+
+const DOWNLOAD_MARK_FILENAME = ".yldownload";

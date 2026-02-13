@@ -202,7 +202,10 @@ class FileSystemService {
     for (final item in items) {
       final name = p.basename(item.path);
       var newPath = p.join(parentPath, name);
-
+      if (item.path.endsWith(".aria2")) {
+        item.deleteSync();
+        continue;
+      }
       if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
         item.deleteSync(recursive: true);
       }

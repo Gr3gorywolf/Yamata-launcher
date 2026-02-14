@@ -26,7 +26,10 @@ class ExplorePage_State extends State<ExplorePage> {
     return FilterHelpers.handleDynamicFilter<Console>(_consoles, filterValues!);
   }
 
-  Map<String, List<Console>> _groupByVendor(List<Console> consoles) {
+  Map<String, List<Console>> _groupByVendor(
+    List<Console> consoles, {
+    List<String> priorityVendors = const [],
+  }) {
     final Map<String, List<Console>> grouped = {};
 
     for (final console in consoles) {
@@ -36,8 +39,15 @@ class ExplorePage_State extends State<ExplorePage> {
 
     final sortedKeys = grouped.keys.toList()..sort();
 
+    final priorityKeys =
+        priorityVendors.where((vendor) => grouped.containsKey(vendor)).toList();
+    final remainingKeys =
+        sortedKeys.where((k) => !priorityKeys.contains(k)).toList();
+
+    final orderedKeys = [...priorityKeys, ...remainingKeys];
+
     return {
-      for (final key in sortedKeys) key: grouped[key]!,
+      for (final key in orderedKeys) key: grouped[key]!,
     };
   }
 
@@ -45,7 +55,14 @@ class ExplorePage_State extends State<ExplorePage> {
   Widget build(BuildContext bldContext) {
     final axisCount = max(2, (MediaQuery.of(context).size.width / 220).floor());
 
-    final grouped = _groupByVendor(filteredConsoles);
+    final grouped = _groupByVendor(filteredConsoles, priorityVendors: [
+      "Nintendo",
+      "Sony",
+      "Microsoft",
+      "Sega",
+      "Atari",
+      "Bandai",
+    ]);
 
     return Scaffold(
       appBar: Toolbar<Console>(

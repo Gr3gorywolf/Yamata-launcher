@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:yamata_launcher/models/console.dart';
-import 'package:yamata_launcher/models/console_source.dart';
-import 'package:yamata_launcher/repository/console_sources_repository.dart';
+import 'package:yamata_launcher/models/platform_catalog_source.dart';
+import 'package:yamata_launcher/repository/platform_catalog_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
-import 'package:provider/provider.dart';
-import 'package:yamata_launcher/providers/download_sources_provider.dart';
-import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:path/path.dart' as p;
 
 class ConsoleSourcesPage extends StatefulWidget {
   @override
@@ -30,6 +27,12 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
       loading.close();
       if (source != null) {
         source.downloadUrl = result;
+        var validationError =
+            ConsoleService.validatePlatformCatalogSource(source);
+        if (validationError != null) {
+          AlertsService.showErrorSnackbar(validationError, ctx: context);
+          return;
+        }
         bool added = await ConsoleService.addConsoleSource(source);
         if (added) {
           setState(() {});
@@ -46,7 +49,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
     }
   }
 
-  handleUpdateConsoleSource(Console sourceToUpdate) async {
+  handleUpdateConsoleSource(PlatformCatalogSource sourceToUpdate) async {
     var source = await ConsoleService.getConsoleSource(sourceToUpdate);
     if (source == null) {
       AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
@@ -62,6 +65,12 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
     loading.close();
     if (updatedSource != null) {
       updatedSource.downloadUrl = source.downloadUrl;
+      var validationError =
+          ConsoleService.validatePlatformCatalogSource(source);
+      if (validationError != null) {
+        AlertsService.showErrorSnackbar(validationError, ctx: context);
+        return;
+      }
       bool added = await ConsoleService.updateConsoleSource(updatedSource);
       if (added) {
         setState(() {});
@@ -85,7 +94,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
       ),
       body: Builder(
         builder: (builder) {
-          if (ConsoleService.consolesFromExternalSources.isEmpty) {
+          if (ConsoleService.externalplatformCatalogs.isEmpty) {
             return EmptyPlaceholder(
               icon: Icons.gamepad,
               title: 'No catalog sources',
@@ -99,16 +108,16 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
           }
 
           return ListView.builder(
-            itemCount: ConsoleService.consolesFromExternalSources.length,
+            itemCount: ConsoleService.externalplatformCatalogs.length,
             itemBuilder: (_, index) {
-              final source = ConsoleService.consolesFromExternalSources[index];
+              final source = ConsoleService.externalplatformCatalogs[index];
               return Card(
                   margin:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
-                    title: Text((source.altName ?? "")),
-                    subtitle:
-                        Opacity(opacity: 0.7, child: Text(source.slug ?? "")),
+                    title: Text((source.sourceName ?? "")),
+                    subtitle: Opacity(
+                        opacity: 0.7, child: Text(source.console.name ?? "")),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -132,7 +141,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
           );
         },
       ),
-      floatingActionButton: !ConsoleService.consolesFromExternalSources.isEmpty
+      floatingActionButton: !ConsoleService.externalplatformCatalogs.isEmpty
           ? FloatingActionButton.extended(
               onPressed: handleSetConsoleSource,
               icon: const Icon(Icons.add),

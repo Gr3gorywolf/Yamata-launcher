@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/ui/pages/console_roms/console_roms_page.dart';
 import 'package:yamata_launcher/ui/pages/explore/search_results/search_results_page.dart';
-import 'package:yamata_launcher/ui/pages/settings/console_sources/platform_catalog_sources_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_catalog_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/custom_paths/custom_paths_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';

@@ -67,6 +67,10 @@ class RomService {
     return buffer.toString();
   }
 
+  static String getRomSlug(String consoleSlug, String romName) {
+    return consoleSlug + "-" + normalizeRomTitle(romName, deleteRunes: true);
+  }
+
   static String getLastPlayedLabel(RomLibraryItem? downloadedRom) {
     if (downloadedRom == null) {
       return "Not installed";

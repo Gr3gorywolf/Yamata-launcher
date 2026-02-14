@@ -50,7 +50,7 @@ class LaunchboxScraper {
         }
 
         results.add(RomInfo(
-            slug: consoleSlug + "-" + RomService.normalizeRomTitle(name),
+            slug: RomService.getRomSlug(consoleSlug, name),
             detailsUrl: baseUrl + (detailsUrl ?? ''),
             name: name,
             console: consoleSlug,

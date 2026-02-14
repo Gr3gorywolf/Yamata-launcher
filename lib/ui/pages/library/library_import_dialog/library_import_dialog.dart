@@ -108,8 +108,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
 
-    final romSlug =
-        '${console.toLowerCase()}-${RomService.normalizeRomTitle(title, deleteRunes: true)}';
+    final romSlug = RomService.getRomSlug(console.toLowerCase(), title);
 
     final romInfo = RomInfo(
       slug: romSlug,

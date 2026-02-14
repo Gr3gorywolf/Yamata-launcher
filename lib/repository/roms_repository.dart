@@ -21,9 +21,9 @@ class RomsRepository {
   Future<List<RomInfo>> fetchRoms(Console console) async {
     Map<String, RomInfo> roms = {};
     final url = "${AppConstants.apiBasePath}/Data/Roms/${console.slug}.json";
-    var externalConsoles = ConsoleService.consolesFromExternalSources;
+    var externalConsoles = ConsoleService.externalplatformCatalogs;
     var foundExternalSources =
-        externalConsoles.where((c) => c.slug == console.slug).toList();
+        externalConsoles.where((c) => c.console.slug == console.slug).toList();
     final result =
         await CachedFetch.withContentLengthSignature<Map<String, RomInfo>>(
       key: console.slug ?? "unknown_console",
@@ -39,9 +39,8 @@ class RomsRepository {
 
     if (result != null) roms.addAll(result);
     if (foundExternalSources.isNotEmpty) {
-      for (var console in foundExternalSources) {
-        var consoleSource = await ConsoleService.getConsoleSource(console);
-        print(consoleSource);
+      for (var source in foundExternalSources) {
+        var consoleSource = await ConsoleService.getConsoleSource(source);
         if (consoleSource == null) continue;
 
         for (var rom in consoleSource.games) {
@@ -67,7 +66,7 @@ class RomsRepository {
   }
 
   Future<List<RomInfo>> searchFromExternalSources(String query) async {
-    var externalConsoles = ConsoleService.consolesFromExternalSources;
+    var externalConsoles = ConsoleService.externalplatformCatalogs;
     var allRoms = <RomInfo>[];
     if (externalConsoles.isNotEmpty) {
       for (var console in externalConsoles) {

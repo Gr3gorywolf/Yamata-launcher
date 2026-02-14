@@ -7,6 +7,7 @@ import 'package:yamata_launcher/services/cache_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
 const sourcesFile = "download-sources.json";
 
@@ -14,7 +15,8 @@ class DownloadSourcesService {
   static String _getDownloadSourcePath(DownloadSourceWithDownloads source) {
     return FileSystemService.downloadSourcesPath +
         "/" +
-        source.sourceInfo.title.replaceAll(RegExp(r'\s+'), '_') +
+        StringHelper.removeInvalidPathCharacters(
+            source.sourceInfo.title.replaceAll(RegExp(r'\s+'), '_')) +
         ".json";
   }
 

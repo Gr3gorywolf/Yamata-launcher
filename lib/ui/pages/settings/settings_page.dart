@@ -12,7 +12,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
-import 'package:yamata_launcher/ui/pages/settings/console_sources/platform_catalog_sources_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_catalog_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';

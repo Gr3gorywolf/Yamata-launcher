@@ -15,7 +15,7 @@ class ExplorePage extends StatefulWidget {
 }
 
 class ExplorePage_State extends State<ExplorePage> {
-  List<Console> _consoles = ConsoleService.getConsoles(unique: true)
+  List<Console> _consoles = ConsoleService.getConsoles()
     ..sort((a, b) => a.name?.compareTo(b.name ?? "") ?? 0);
 
   ToolbarValue<Console>? filterValues;

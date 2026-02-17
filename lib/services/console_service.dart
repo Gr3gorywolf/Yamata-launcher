@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/platform_catalog_source.dart';
@@ -9,7 +10,7 @@ import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
 class ConsoleService {
-  static List<PlatformCatalogSource> externalplatformCatalogs = [];
+  static List<PlatformCatalogSource> externalPlatformCatalogs = [];
 
   static PlatformCatalogSource _processExternalSource(
       PlatformCatalogSource source) {
@@ -31,7 +32,7 @@ class ConsoleService {
   }
 
   static Future deleteConsoleSource(PlatformCatalogSource source) async {
-    externalplatformCatalogs
+    externalPlatformCatalogs
         .removeWhere((element) => element.console.slug == source.console.slug);
     File sourceFile = File(_getSourceFilePath(source));
     if (await sourceFile.exists()) {
@@ -74,7 +75,7 @@ class ConsoleService {
     }
 
     var processedSource = _processExternalSource(source);
-    externalplatformCatalogs.add(processedSource);
+    externalPlatformCatalogs.add(processedSource);
     String jsonString = json.encode(_processExternalSource(source).toJson());
     await consoleFile.writeAsString(jsonString);
     return true;
@@ -85,9 +86,9 @@ class ConsoleService {
     if (!consoleFile.existsSync()) {
       return false;
     }
-    var index = externalplatformCatalogs
+    var index = externalPlatformCatalogs
         .indexWhere((element) => element.downloadUrl == source.downloadUrl);
-    externalplatformCatalogs[index] = _processExternalSource(source);
+    externalPlatformCatalogs[index] = _processExternalSource(source);
 
     String jsonString = json.encode(_processExternalSource(source).toJson());
     await consoleFile.writeAsString(jsonString);
@@ -95,7 +96,7 @@ class ConsoleService {
   }
 
   static Future loadConsoleSources() async {
-    externalplatformCatalogs = [];
+    externalPlatformCatalogs = [];
     Directory consoleSourcesDir =
         Directory(FileSystemService.consoleSourcesPath);
     if (await consoleSourcesDir.exists()) {
@@ -112,7 +113,7 @@ class ConsoleService {
             continue;
           }
 
-          externalplatformCatalogs.add(_processExternalSource(consoleSource));
+          externalPlatformCatalogs.add(_processExternalSource(consoleSource));
         }
       }
     }
@@ -127,54 +128,65 @@ class ConsoleService {
     return additional.vendor ?? "Other";
   }
 
-  static List<Console> getConsoles(
-      {bool unique = false, bool includeAdditional = false}) {
-    var allConsoles = [
-      ...ConsoleConstants.defaultConsoles,
-      ...externalplatformCatalogs.map((source) => source.console),
-    ];
-    if (includeAdditional) {
-      allConsoles.addAll(ConsoleConstants.additionalConsoles);
-    }
-    if (!unique) {
-      return allConsoles;
-    }
-    var uniqueConsoles = <String, Console>{};
+  static Console _getMergedConsole(Console existing, Console newConsole) {
     String? getNonEmptyStringValue(String? a, String? b) {
       if (a != null && a.isNotEmpty) return a;
       if (b != null && b.isNotEmpty) return b;
       return null;
     }
 
-    Console getMergedConsole(Console existing, Console newConsole) {
-      return Console(
-        name: getNonEmptyStringValue(newConsole.name, existing.name),
-        altName: getNonEmptyStringValue(newConsole.altName, existing.altName),
-        slug: getNonEmptyStringValue(newConsole.slug, existing.slug),
-        vendor: getNonEmptyStringValue(newConsole.vendor, existing.vendor),
-        description: getNonEmptyStringValue(
-            newConsole.description, existing.description),
-        logoUrl: getNonEmptyStringValue(newConsole.logoUrl, existing.logoUrl),
-      );
+    return Console(
+      name: getNonEmptyStringValue(existing.name, newConsole.name),
+      altName: getNonEmptyStringValue(existing.altName, newConsole.altName),
+      slug: getNonEmptyStringValue(existing.slug, newConsole.slug),
+      vendor: getNonEmptyStringValue(existing.vendor, newConsole.vendor),
+      description:
+          getNonEmptyStringValue(existing.description, newConsole.description),
+      logoUrl: getNonEmptyStringValue(existing.logoUrl, newConsole.logoUrl),
+    );
+  }
+
+  static List<Console> getConsoles({bool includeUnsupported = false}) {
+    var officialConsolesMap = <String, Console>{};
+    for (var console in ConsoleConstants.defaultConsoles) {
+      officialConsolesMap[console.slug ?? ""] = console;
     }
 
-    for (var console in allConsoles) {
-      if (uniqueConsoles[console.slug ?? ""] != null) {
-        var existing = uniqueConsoles[console.slug ?? ""];
-        uniqueConsoles[console.slug ?? ""] =
-            existing != null ? getMergedConsole(existing, console) : console;
-        continue;
-      }
-      if (console.vendor == null || console.vendor!.isEmpty) {
-        console.vendor = getConsoleVendor(console);
-      }
-      uniqueConsoles[console.slug ?? ""] = console;
+    var additionalConsolesMap = <String, Console>{};
+    for (var console in ConsoleConstants.additionalConsoles) {
+      additionalConsolesMap[console.slug ?? ""] = console;
     }
+
+    var uniqueConsoles = <String, Console>{};
+    uniqueConsoles.addAll(officialConsolesMap);
+    if (includeUnsupported) {
+      uniqueConsoles.addAll(additionalConsolesMap);
+    }
+
+    // Merges the external platform catalogs to be just one console entry per slug
+    var externalPlatformSources =
+        externalPlatformCatalogs.map((source) => source.console);
+    var uniqueExternalPlatformCatalogs = <String, Console>{};
+    for (var console in externalPlatformSources) {
+      var foundConsole = uniqueConsoles[console.slug];
+      //If found a built in console with the same slug just merge the external data
+      if (foundConsole != null) {
+        uniqueExternalPlatformCatalogs[console.slug ?? ""] =
+            _getMergedConsole(foundConsole, console);
+      } else {
+        var existingAdditional = additionalConsolesMap[console.slug];
+        uniqueExternalPlatformCatalogs[console.slug ?? ""] =
+            existingAdditional != null
+                ? _getMergedConsole(existingAdditional, console)
+                : console;
+      }
+    }
+    uniqueConsoles.addAll(uniqueExternalPlatformCatalogs);
     return uniqueConsoles.values.toList();
   }
 
   static Console? getConsoleFromName(String? name) {
-    var consoles = getConsoles(includeAdditional: true);
+    var consoles = getConsoles(includeUnsupported: true);
     var results = consoles.where((element) =>
         element.altName == name ||
         element.name == name ||

@@ -63,8 +63,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
   @override
   void initState() {
     super.initState();
-    consoles =
-        ConsoleService.getConsoles(includeAdditional: true, unique: true);
+    consoles = ConsoleService.getConsoles(includeUnsupported: true);
   }
 
   @override

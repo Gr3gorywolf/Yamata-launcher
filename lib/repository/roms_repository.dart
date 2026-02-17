@@ -21,7 +21,7 @@ class RomsRepository {
   Future<List<RomInfo>> fetchRoms(Console console) async {
     Map<String, RomInfo> roms = {};
     final url = "${AppConstants.apiBasePath}/Data/Roms/${console.slug}.json";
-    var externalConsoles = ConsoleService.externalplatformCatalogs;
+    var externalConsoles = ConsoleService.externalPlatformCatalogs;
     var foundExternalSources =
         externalConsoles.where((c) => c.console.slug == console.slug).toList();
     final result =
@@ -66,7 +66,7 @@ class RomsRepository {
   }
 
   Future<List<RomInfo>> searchFromExternalSources(String query) async {
-    var externalConsoles = ConsoleService.externalplatformCatalogs;
+    var externalConsoles = ConsoleService.externalPlatformCatalogs;
     var allRoms = <RomInfo>[];
     if (externalConsoles.isNotEmpty) {
       for (var console in externalConsoles) {

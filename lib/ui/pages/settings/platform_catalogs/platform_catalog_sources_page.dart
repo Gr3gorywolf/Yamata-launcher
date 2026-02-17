@@ -94,7 +94,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
       ),
       body: Builder(
         builder: (builder) {
-          if (ConsoleService.externalplatformCatalogs.isEmpty) {
+          if (ConsoleService.externalPlatformCatalogs.isEmpty) {
             return EmptyPlaceholder(
               icon: Icons.gamepad,
               title: 'No catalog sources',
@@ -108,9 +108,9 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
           }
 
           return ListView.builder(
-            itemCount: ConsoleService.externalplatformCatalogs.length,
+            itemCount: ConsoleService.externalPlatformCatalogs.length,
             itemBuilder: (_, index) {
-              final source = ConsoleService.externalplatformCatalogs[index];
+              final source = ConsoleService.externalPlatformCatalogs[index];
               return Card(
                   margin:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -141,7 +141,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
           );
         },
       ),
-      floatingActionButton: !ConsoleService.externalplatformCatalogs.isEmpty
+      floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
           ? FloatingActionButton.extended(
               onPressed: handleSetConsoleSource,
               icon: const Icon(Icons.add),

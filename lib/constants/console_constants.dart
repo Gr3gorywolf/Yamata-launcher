@@ -383,6 +383,7 @@ class ConsoleConstants {
         vendor: "GCE"),
   ];
 
+  // Consoles that are not officially supported but are included in external platform catalogs or requested by users
   static List<Console> additionalConsoles = [
     // =========================
     // Computers & Others

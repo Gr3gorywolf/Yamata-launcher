@@ -93,7 +93,7 @@ class DownloadSourcesRepository {
                 download['uris']?.isNotEmpty)
             .map((download) {
           if (type == DownloadSourceType.Hydra) {
-            download['console'] = "windows";
+            download['console'] = CONSOLE_SLUGS.windows.value;
           }
           return DownloadSourceRom.fromJson(download);
         }).toList();

@@ -145,7 +145,7 @@ class _CustomPathsPageState extends State<CustomPathsPage> {
           );
         },
       ),
-      floatingActionButton: !ConsoleService.externalplatformCatalogs.isEmpty
+      floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
           ? FloatingActionButton.extended(
               onPressed: handleAddPath,
               icon: const Icon(Icons.add),

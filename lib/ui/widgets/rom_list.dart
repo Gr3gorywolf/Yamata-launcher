@@ -108,8 +108,7 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
         slivers: [
           SliverToBoxAdapter(child: _buildTop()),
           if (viewMode == ViewModeToggleMode.list)
-            SliverFixedExtentList(
-              itemExtent: 145,
+            SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final rom = roms[index];

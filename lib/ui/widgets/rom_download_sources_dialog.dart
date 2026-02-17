@@ -99,7 +99,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   }
 
   locateAndAddToLibrary() async {
-    final file = await FileSystemService.locateFile();
+    final file = await FileSystemService.showFilePicker();
     if (file == null) return;
     var provider = Provider.of<LibraryProvider>(context, listen: false);
     var item = provider.addRomToLibrary(widget.rom);

@@ -6,6 +6,7 @@ import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_scanner/media_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
@@ -96,8 +97,11 @@ class FileSystemService {
     return cachePath + "/updates";
   }
 
-  static Future<String?> locateFile() async {
+  static Future<String?> showFilePicker() async {
     if (Platform.isAndroid) {
+      if (!await Permission.manageExternalStorage.isGranted) {
+        await Permission.manageExternalStorage.request();
+      }
       var internalDirectory = _systemPaths?.internalPath != null
           ? Directory(_systemPaths!.internalPath)
           : Directory("/storage/emulated/0/");

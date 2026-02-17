@@ -15,16 +15,17 @@ import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
   final File zipFile;
+  final Function(String)? onError;
   static Future<File?> show(BuildContext context, File zipFile,
-      {moveToParentFolder = false}) {
+      {Function(String)? onError, bool moveToParentFolder = false}) {
     return showDialog<File?>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ExtractionDialog(zipFile: zipFile),
+      builder: (_) => ExtractionDialog(zipFile: zipFile, onError: onError),
     );
   }
 
-  ExtractionDialog({super.key, required this.zipFile});
+  ExtractionDialog({super.key, required this.zipFile, this.onError});
 
   @override
   State<ExtractionDialog> createState() => _ExtractionDialogState();
@@ -53,6 +54,11 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         input: widget.zipFile,
         output: tempFolder,
         onError: (data) {
+          print("Extraction error: $data");
+          Future.microtask(() {
+            widget?.onError?.call(data as String);
+          }).then((_) {});
+
           if (!isCanceling) {
             Navigator.of(context).pop();
           }

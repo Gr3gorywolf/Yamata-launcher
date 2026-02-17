@@ -16,7 +16,7 @@ class SevenZipAndroidInterface {
 
   static Future<String> extract(
       String input, String output, Function(double) onProgress,
-      {String? taskIdentifier}) async {
+      {String? taskIdentifier, List<String> passwords = const []}) async {
     final taskId =
         taskIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -43,6 +43,7 @@ class SevenZipAndroidInterface {
 
         case "extractError":
           if (!completer.isCompleted) {
+            print("Extraction error for task $taskId: ${args["message"]}");
             completer.completeError(
               Exception(args["message"] ?? "Unknown extract error"),
             );
@@ -50,11 +51,11 @@ class SevenZipAndroidInterface {
           break;
       }
     });
-
     await _channel.invokeMethod("extractArchive", {
       "inputPath": input,
       "outputPath": output,
       "taskId": taskId,
+      "passwords": passwords
     });
 
     return taskId;

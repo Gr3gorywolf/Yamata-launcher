@@ -130,8 +130,8 @@ class ConsoleService {
   static List<Console> getConsoles(
       {bool unique = false, bool includeAdditional = false}) {
     var allConsoles = [
+      ...ConsoleConstants.defaultConsoles,
       ...externalplatformCatalogs.map((source) => source.console),
-      ...ConsoleConstants.defaultConsoles
     ];
     if (includeAdditional) {
       allConsoles.addAll(ConsoleConstants.additionalConsoles);

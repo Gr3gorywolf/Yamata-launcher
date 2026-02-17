@@ -74,7 +74,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
   }
 
   Future<void> _pickRomPath() async {
-    final file = await FileSystemService.locateFile();
+    final file = await FileSystemService.showFilePicker();
     if (file == null) return;
 
     form.control('romPath').value = file;

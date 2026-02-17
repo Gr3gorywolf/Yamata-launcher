@@ -168,3 +168,5 @@ const PLATFORMS_WITH_DIRECTORY_TYPE_GAMES = [
 ];
 
 const DOWNLOAD_MARK_FILENAME = ".yldownload";
+
+const COMMON_ZIP_PASSWORDS = ["online-fix.me", "steamrip.com"];

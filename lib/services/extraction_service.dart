@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:io';
 
+import 'package:provider/provider.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/seven_zip_android_interface.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
@@ -28,6 +31,16 @@ class ExtractionService {
   static int _running = 0;
 
   ExtractionService();
+
+  static getZipPasswords() {
+    final passwords = <String>{};
+    passwords.addAll(COMMON_ZIP_PASSWORDS);
+    final sourcesPasswords =
+        Provider.of<DownloadSourcesProvider>(navigatorContext!, listen: false)
+            .downloadSourcesPasswords;
+    passwords.addAll(sourcesPasswords);
+    return passwords.toList();
+  }
 
   /// Adds an extraction task to the queue.
   static Future<(String id, Stream<double> progress)> enqueueExtraction({
@@ -101,12 +114,13 @@ class ExtractionService {
       output: output,
       events: receivePort.sendPort,
       control: controlPort.sendPort,
+      passwords: getZipPasswords(),
     );
 
     if (Platform.isAndroid) {
-      _uncompressAndroid(params);
+      _extractAndroid(params);
     } else {
-      isolate = await Isolate.spawn(_uncompress, params);
+      isolate = await Isolate.spawn(_extract, params);
     }
 
     Future.microtask(() {
@@ -199,13 +213,14 @@ class ExtractionService {
       output: job.output,
       events: receivePort.sendPort,
       control: controlPort.sendPort,
+      passwords: getZipPasswords(),
     );
 
     Isolate? isolate;
     if (Platform.isAndroid) {
-      _uncompressAndroid(params);
+      _extractAndroid(params);
     } else {
-      isolate = await Isolate.spawn(_uncompress, params);
+      isolate = await Isolate.spawn(_extract, params);
     }
 
     await _listenToExtractionEvents(
@@ -227,6 +242,7 @@ class ExtractionService {
     required Directory output,
     required SendPort events,
     required SendPort control,
+    required List<String> passwords,
   }) {
     return {
       "events": events,
@@ -235,6 +251,7 @@ class ExtractionService {
       "input": input.path,
       "output": output.path,
       "sevenZipBinary": FileSystemService.sevenZipPath,
+      "passwords": passwords,
     };
   }
 
@@ -248,17 +265,14 @@ class ExtractionService {
     required bool closeProgressOnDone,
   }) async {
     await for (final message in receivePort) {
-      if (message is! double) continue;
-
-      progressController.add(message);
-
       // Failure
       if (ExtractionProgress.isError(message)) {
         isolate?.kill(priority: Isolate.immediate);
         receivePort.close();
         _controlPorts.remove(id);
 
-        const error = 'Extraction failed';
+        var error =
+            message['message'] ?? "Extraction failed with unknown error";
 
         if (completer != null && !completer.isCompleted) {
           completer.completeError(error);
@@ -272,6 +286,8 @@ class ExtractionService {
         onError?.call(error);
         return;
       }
+
+      progressController.add(message);
 
       // Completed
       if (ExtractionProgress.isComplete(message)) {
@@ -294,12 +310,12 @@ class ExtractionService {
 
   // ---------------- Platform specific ----------------
 
-  static Future<void> _uncompressAndroid(Map data) async {
+  static Future<void> _extractAndroid(Map data) async {
     final events = data["events"] as SendPort;
     final inputPath = data["input"] as String;
     final outputPath = data["output"] as String;
     final taskId = data["id"] as String;
-
+    final passwords = data["passwords"] as List<String>;
     try {
       await SevenZipAndroidInterface.extract(
         inputPath,
@@ -311,6 +327,7 @@ class ExtractionService {
 
           events.send(progressInt.toDouble());
         },
+        passwords: passwords,
         taskIdentifier: taskId,
       );
 
@@ -319,18 +336,22 @@ class ExtractionService {
       events.send(ExtractionSignal.complete.value);
     } catch (e) {
       print("Extraction error: $e");
-      events.send(ExtractionSignal.error.value);
+      events.send({
+        "type": "error",
+        "message": e.toString(),
+      });
     }
 
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-  static Future<void> _uncompress(Map data) async {
+  static Future<void> _extract(Map data) async {
     final events = data["events"] as SendPort;
     final controlAnnounce = data["control"] as SendPort;
     final sevenZipBinary = data["sevenZipBinary"] as String;
     final inputPath = data["input"] as String;
     final outputPath = data["output"] as String;
+    final passwords = data["passwords"] as List<String>;
 
     final controlReceiver = ReceivePort();
     Process? extractionProcess;
@@ -358,6 +379,7 @@ class ExtractionService {
           if (progressInt >= 100 || progressInt.isOdd) return;
           events.send(progressInt.toDouble());
         },
+        passwords: passwords,
         onStart: (Process proc) {
           extractionProcess = proc;
         },
@@ -367,14 +389,19 @@ class ExtractionService {
       events.send(ExtractionSignal.complete.value);
     } catch (e) {
       print("Extraction error: $e");
-      events.send(ExtractionSignal.error.value);
+      events.send({
+        "type": "error",
+        "message": e.toString(),
+      });
     }
   }
 }
 
 /// Helper utilities for working with progress values.
 class ExtractionProgress {
-  static bool isError(double value) => value == ExtractionSignal.error.value;
+  static bool isError(dynamic value) =>
+      value == ExtractionSignal.error.value ||
+      (value is Map && value['type'] == 'error');
 
   static bool isComplete(double value) =>
       value >= ExtractionSignal.complete.value;

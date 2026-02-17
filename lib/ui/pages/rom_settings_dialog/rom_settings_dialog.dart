@@ -55,7 +55,7 @@ class RomSettingsDialog extends StatelessWidget {
     }
 
     _pickRomPath() async {
-      var file = await FileSystemService.locateFile();
+      var file = await FileSystemService.showFilePicker();
       if (file == null || libraryItem == null) return;
       libraryItem.filePath = file;
       await provider.updateLibraryItem(libraryItem);

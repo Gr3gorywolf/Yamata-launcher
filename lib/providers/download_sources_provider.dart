@@ -81,13 +81,13 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
     for (final d in source.downloads ?? const []) {
       final console = d.console;
 
-      d.title_clean ??= RomService.normalizeRomTitle(
+      d.titleClean ??= RomService.normalizeRomTitle(
         _removeMisplacedWords(d.title ?? ""),
       );
 
-      if (d.title_clean!.isEmpty) continue;
+      if (d.titleClean!.isEmpty) continue;
 
-      final prefix = _prefix3(d.title_clean!);
+      final prefix = _prefix3(d.titleClean!);
 
       final consoleMap = index.putIfAbsent(console, () => {});
       final list = consoleMap.putIfAbsent(prefix, () => []);
@@ -130,7 +130,7 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
 
     for (final source in candidates) {
       if (source.downloads.any(
-        (d) => _isRomMatch(d.title_clean!, name),
+        (d) => _isRomMatch(d.titleClean!, name),
       )) {
         romResult.add(source.sourceInfo!);
       }
@@ -164,6 +164,16 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
   bool isRomCompilingDownloadSources(String romSlug) {
     return _compilingRoms.contains(romSlug);
+  }
+
+  List<String> get downloadSourcesPasswords {
+    final passwords = <String>{};
+    for (final source in _downloadSources) {
+      if (source.sourceInfo.passwords != null) {
+        passwords.addAll(source.sourceInfo.passwords!);
+      }
+    }
+    return passwords.toList();
   }
 
   List<DownloadSource> getRomSources(String romSlug) {

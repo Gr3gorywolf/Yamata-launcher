@@ -170,7 +170,7 @@ class _RomActionButtonState extends State<RomActionButton> {
         AlertsService.showAlert(navigatorContext!, "File not found",
             "Rom file not found. Please re-download the rom or locate the file.",
             acceptTitle: "Locate", callback: () async {
-          var file = await FileSystemService.locateFile();
+          var file = await FileSystemService.showFilePicker();
           if (file != null) {
             await handleUpdateRomInLibrary(file);
             await Navigator.of(context).maybePop();
@@ -203,19 +203,7 @@ class _RomActionButtonState extends State<RomActionButton> {
       }
     }
 
-    if (isReadyToPlay && _fileExists == null) {
-      return const SizedBox(
-        height: 36,
-        width: 36,
-        child: Center(
-          child: SizedBox(
-            height: 16,
-            width: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
+    var isVerifying = isReadyToPlay && _fileExists == null;
 
     final fileExists = _fileExists ?? false;
 
@@ -255,8 +243,10 @@ class _RomActionButtonState extends State<RomActionButton> {
 
     IconData icon = Icons.cloud_off_rounded;
     String text = "No downloads";
-
-    if (isPlaying) {
+    if (isCompilingSource || isVerifying) {
+      icon = Icons.hourglass_top;
+      text = "Loading...";
+    } else if (isPlaying) {
       icon = FileSystemService.isDesktop ? Icons.close : Icons.videogame_asset;
       text = FileSystemService.isDesktop ? "Close" : "Playing";
     } else if (isDownloading) {
@@ -278,9 +268,6 @@ class _RomActionButtonState extends State<RomActionButton> {
     } else if (hasDownloadSources) {
       icon = Icons.cloud_download_outlined;
       text = "Download";
-    } else if (isCompilingSource) {
-      icon = Icons.hourglass_top;
-      text = "Loading...";
     }
 
     return ElevatedButton.icon(

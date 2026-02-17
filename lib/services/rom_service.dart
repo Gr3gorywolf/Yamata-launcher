@@ -26,9 +26,12 @@ class RomService {
 
   static Future extractRom(RomLibraryItem downloadedRom) async {
     var resultFile = await ExtractionDialog.show(
-        navigatorContext!, File(downloadedRom.filePath ?? ""));
+        navigatorContext!, File(downloadedRom.filePath ?? ""),
+        onError: (downloadError) {
+      AlertsService.showErrorSnackbar(
+          "Failed to extract ROM from zip file. $downloadError");
+    });
     if (resultFile == null) {
-      AlertsService.showErrorSnackbar("Failed to extract ROM from zip file.");
       return;
     }
     var provider =

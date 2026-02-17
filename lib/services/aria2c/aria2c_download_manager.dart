@@ -102,6 +102,7 @@ class Aria2cDownloadManager {
         customDownloadPath.folderPath.isNotEmpty) {
       downloadPath = p.join(customDownloadPath.folderPath, romSubFolder);
     }
+
     var downloadMarkFile = File(p.join(downloadPath, DOWNLOAD_MARK_FILENAME));
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
@@ -110,10 +111,10 @@ class Aria2cDownloadManager {
       if (!downloadMarkFile.existsSync()) {
         downloadPath =
             downloadPath + "_${StringHelper.generateUUID().substring(0, 5)}";
+        await Directory(downloadPath).create(recursive: true);
         downloadMarkFile = File(p.join(downloadPath, DOWNLOAD_MARK_FILENAME));
         await downloadMarkFile.create();
       }
-      await Directory(downloadPath).create(recursive: true);
     }
 
     final isolate = await Isolate.spawn<IsolateArgs>(

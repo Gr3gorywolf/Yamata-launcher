@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
@@ -54,6 +55,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await DownloadService.initDownloadHistory();
     UpdateService.initialize();
     RomService.initializeGameFilenames();
+    await requestAndroidPermissions();
     Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
     context.replace("/explore");
   }
@@ -65,6 +67,12 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     }
     if (FileSystemService.isDesktop) {
       await SystemTrayService.initialize();
+    }
+  }
+
+  Future requestAndroidPermissions() async {
+    if (!await Permission.storage.isGranted) {
+      await Permission.storage.request();
     }
   }
 

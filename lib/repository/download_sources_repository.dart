@@ -104,6 +104,9 @@ class DownloadSourcesRepository {
         return DownloadSourceWithDownloads(
             sourceInfo: DownloadSource(
                 title: getSourceTitle(responseData, type),
+                passwords: (responseData['passwords'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .toList(),
                 romsCount: downloads.length,
                 lastUpdated: lastDownloadDate.toIso8601String()),
             downloads: downloads);

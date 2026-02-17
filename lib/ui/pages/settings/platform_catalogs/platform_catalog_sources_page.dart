@@ -115,6 +115,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
                   margin:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
+                    leading: Icon(Icons.gamepad),
                     title: Text((source.sourceName ?? "")),
                     subtitle: Opacity(
                         opacity: 0.7, child: Text(source.console.name ?? "")),

@@ -11,6 +11,7 @@ import 'package:yamata_launcher/utils/string_helper.dart';
 
 class ConsoleService {
   static List<PlatformCatalogSource> externalPlatformCatalogs = [];
+  static Map<String, Console> _consolesCache = {};
 
   static PlatformCatalogSource _processExternalSource(
       PlatformCatalogSource source) {
@@ -78,6 +79,7 @@ class ConsoleService {
     externalPlatformCatalogs.add(processedSource);
     String jsonString = json.encode(_processExternalSource(source).toJson());
     await consoleFile.writeAsString(jsonString);
+    _loadConsolesCache();
     return true;
   }
 
@@ -92,6 +94,7 @@ class ConsoleService {
 
     String jsonString = json.encode(_processExternalSource(source).toJson());
     await consoleFile.writeAsString(jsonString);
+    _loadConsolesCache();
     return true;
   }
 
@@ -117,6 +120,8 @@ class ConsoleService {
         }
       }
     }
+
+    _loadConsolesCache();
   }
 
   static String getConsoleVendor(Console console) {
@@ -146,7 +151,7 @@ class ConsoleService {
     );
   }
 
-  static List<Console> getConsoles({bool includeUnsupported = false}) {
+  static _loadConsolesCache() {
     var officialConsolesMap = <String, Console>{};
     for (var console in ConsoleConstants.defaultConsoles) {
       officialConsolesMap[console.slug ?? ""] = console;
@@ -159,9 +164,6 @@ class ConsoleService {
 
     var uniqueConsoles = <String, Console>{};
     uniqueConsoles.addAll(officialConsolesMap);
-    if (includeUnsupported) {
-      uniqueConsoles.addAll(additionalConsolesMap);
-    }
 
     // Merges the external platform catalogs to be just one console entry per slug
     var externalPlatformSources =
@@ -182,7 +184,25 @@ class ConsoleService {
       }
     }
     uniqueConsoles.addAll(uniqueExternalPlatformCatalogs);
-    return uniqueConsoles.values.toList();
+    _consolesCache = uniqueConsoles;
+  }
+
+  static List<Console> getConsoles({bool includeUnsupported = false}) {
+    if (_consolesCache.isEmpty) {
+      _loadConsolesCache();
+    }
+    if (includeUnsupported) {
+      var unsupportedConsolesMap = <String, Console>{};
+      for (var console in ConsoleConstants.additionalConsoles) {
+        unsupportedConsolesMap[console.slug ?? ""] = console;
+      }
+
+      var newMap = <String, Console>{};
+      newMap.addAll(unsupportedConsolesMap);
+      newMap.addAll(_consolesCache);
+      return newMap.values.toList();
+    }
+    return _consolesCache.values.toList();
   }
 
   static Console? getConsoleFromName(String? name) {

@@ -83,30 +83,38 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
   }
 
   _handleComplete(String tempFolderPath) async {
-    var dir = Directory(tempFolderPath);
-    File? extractedFile =
-        RomService.searchRomFile(dir, skipCompressedFiles: true);
+    try {
+      var dir = Directory(tempFolderPath);
+      File? extractedFile =
+          RomService.searchRomFile(dir, skipCompressedFiles: true);
 
-    if (extractedFile != null) {
-      var movingResult = FileSystemService.moveFilesToParentFolder(
-          tempFolderPath,
-          filePath: extractedFile.path);
-      var newFilePath = File(movingResult.filePath ?? "");
-      if (newFilePath.existsSync() && movingResult.filePath != null) {
-        extractedFile = newFilePath;
-        if (Platform.isAndroid) {
-          MediaScanner.loadMedia(path: extractedFile.path);
-          MediaScanner.loadMedia(path: extractedFile.parent.path);
+      if (extractedFile != null) {
+        var movingResult = FileSystemService.moveFilesToParentFolder(
+            tempFolderPath,
+            filePath: extractedFile.path);
+        var newFilePath = File(movingResult.filePath ?? "");
+        if (newFilePath.existsSync() && movingResult.filePath != null) {
+          extractedFile = newFilePath;
+          if (Platform.isAndroid) {
+            MediaScanner.loadMedia(path: extractedFile.path);
+            MediaScanner.loadMedia(path: extractedFile.parent.path);
+          }
+          try {
+            await widget.zipFile.delete();
+          } catch (e) {}
         }
         try {
-          await widget.zipFile.delete();
+          dir.deleteSync(recursive: true);
         } catch (e) {}
       }
-      try {
-        dir.deleteSync(recursive: true);
-      } catch (e) {}
+      Navigator.of(context).pop(extractedFile);
+    } on Exception catch (e) {
+      Future.microtask(() {
+        widget?.onError?.call(e.toString());
+      }).then((_) {});
+      Navigator.of(context).pop();
+      return;
     }
-    Navigator.of(context).pop(extractedFile);
   }
 
   _cleanupTempDir() {

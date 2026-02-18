@@ -48,6 +48,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     if (Platform.isAndroid) {
       await FileSystemService.setupAndroidIntents();
       await EmulatorService.loadEmulatorIntents();
+      await requestAndroidPermissions();
     }
     await Provider.of<LibraryProvider>(context, listen: false).init();
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
@@ -55,7 +56,6 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await DownloadService.initDownloadHistory();
     UpdateService.initialize();
     RomService.initializeGameFilenames();
-    await requestAndroidPermissions();
     Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);
     context.replace("/explore");
   }

@@ -279,7 +279,7 @@
                 </li>
                 <li class="tab col s6">
                     <a href="#!" :class="{active: activeTab==='platforms'}" @click="switchTab('platforms')">
-                        Platform Catalog Sources
+                    Game Catalog Sources
                     </a>
                 </li>
             </ul>
@@ -343,13 +343,14 @@
             <!-- Modal -->
             <div id="modalAdd" class="modal">
                 <div class="modal-content">
-                    <h5>Add {{ activeTab==='download' ? 'Download Source' : 'Platform Catalog Source' }}</h5>
+                    <h5>Add {{ activeTab==='download' ? 'Download Source' : 'Game Catalog Source' }}</h5>
 
                     <div class="input-field">
                         <input v-model="newUrl" placeholder="https://example.com/source.json">
                     </div>
 
                     <div v-show="activeTab==='download'" class="input-field">
+                        <h6 style="margin-bottom: 10px;">Download Source Type</h6>
                         <select ref="typeSelect" v-model="downloadType">
                             <option v-for="type in sourceTypes" :key="type" :value="type">{{ type }}</option>
                         </select>

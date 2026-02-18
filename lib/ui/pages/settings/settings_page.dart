@@ -186,9 +186,9 @@ class _SettingsPageState extends State<SettingsPage> {
             const _SectionHeader(title: 'Sources'),
             _NavigationTile(
               icon: Icons.web,
-              title: 'Web Sources Manager',
+              title: 'Remote Sources Manager',
               subtitle:
-                  'Manage your sources from an external device using a web interface, Useful when the device has limited input capabilities like a arcade machine or a console',
+                  'Scan the QR code to manage your sources from any device using a local web interface. Ideal for arcade machines, consoles, and gaming systems with limited input.',
               onTap: () => context.push("/settings/web-sources-manager"),
             ),
             _NavigationTile(

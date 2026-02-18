@@ -35,8 +35,7 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: const Text('Manage sources from an external device')),
+      appBar: AppBar(title: const Text('Remote Sources Manager')),
       body: Center(
         child: url == null
             ? const CircularProgressIndicator()

@@ -130,9 +130,11 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         if (selectedHoster.isDirect) {
           Navigator.pop(
               context,
-              sourceRom.copyWith(
-                uris: [selectedHoster.uri],
-              ));
+              RomDownloadSourcesDialogResult(
+                  rom: sourceRom.copyWith(
+                    uris: [selectedHoster.uri],
+                  ),
+                  extractAfterDownload: extractAfterDownload));
           return;
         }
         var loading = AlertsService.showLoadingAlert(

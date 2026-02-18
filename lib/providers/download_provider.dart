@@ -328,8 +328,8 @@ class DownloadProvider extends ChangeNotifier {
     var extractionEnabled =
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     await _setDownloadToHistory(download, path);
-    if (extractionEnabled == true &&
-        VALID_COMPRESSED_EXTENSIONS.contains(fileExtension) &&
+    if ((extractionEnabled == true &&
+            VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) ||
         download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {

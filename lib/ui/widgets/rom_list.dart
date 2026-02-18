@@ -78,7 +78,7 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
 
     final roms = widget.roms ?? const [];
     final screenWidth = MediaQuery.of(context).size.width;
-    final gridAxisCount = max(1, (screenWidth / 275).floor());
+    final gridAxisCount = max(1, (screenWidth / 283).floor());
 
     if (widget.isLoading) {
       return const Center(child: CircularProgressIndicator());

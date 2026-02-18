@@ -18,8 +18,12 @@ class WebSourcesManagerService {
   int port = 8080;
 
   Future<String> _getHtmlFile() async {
+    var data = {
+      "downloadSourceTypes":
+          DownloadSourceType.values.map((e) => e.name).toList(),
+    };
     final html = await rootBundle.loadString('assets/web/sources_manager.html');
-    return html;
+    return html.replaceAll("{{data}}", jsonEncode(data));
   }
 
   Future<String> start() async {

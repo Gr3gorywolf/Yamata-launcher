@@ -18,23 +18,59 @@
 
     <style>
         :root {
-            --grayBorderColorLight: #E3E7E7;
-            --backgroundColorLight: #F7FAF8;
-            --surfaceColorLight: #FFFFFF;
-            --inverseSurfaceColorLight: #F0F4F2;
+            --grayBorderColor: #25292a;
+
+            --backgroundColor: #0b0f10;
+            --surfaceColor: #1e1e1e;
+            --inverseSurfaceColor: #2a2a2a;
+
             --primaryGreen: #66bb6a;
             --secondaryGreen: #27AE60;
-            --textPrimaryLight: #0B0F10;
-            --textSecondaryLight: #5D7267;
+            --mutedGreen: #1E3A2B;
+
+            --textPrimary: #EAF4ED;
+            --textSecondary: #9FB5A7;
+        }
+
+        html,
+        body {
+            background: var(--backgroundColor);
+            color: var(--textPrimary);
         }
 
         body {
-            background: var(--backgroundColorLight);
-            color: var(--textPrimaryLight);
+            font-size: 14px;
         }
 
-        .nav-wrapper {
-            background: var(--primaryGreen);
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: var(--textPrimary);
+        }
+        
+
+        nav {
+            background: var(--backgroundColor);
+            box-shadow: none;
+            border-bottom: 1px solid var(--grayBorderColor);
+        }
+
+      .brand-logo img{
+           margin-top: 5px;
+           margin-left: 7px;
+        }
+
+       
+
+        @media (max-width: 600px) {
+            .brand-logo  {
+                margin-left: 0px;
+        }
+
+       
+
         }
 
         .app-shell {
@@ -48,31 +84,39 @@
             font-weight: 600;
         }
 
+        .tabs {
+            background: transparent;
+        }
+
         .tabs .indicator {
             background: var(--primaryGreen);
         }
 
         .tabs .tab a {
-            color: rgba(11, 15, 16, 0.6);
-            font-weight: 600;
-            text-transform: none;
+            color: rgba(234, 244, 237, 0.5);
+            border-bottom: 2px solid var(--surfaceColor);
+        }
+        .tabs .tab a:hover {
+            color: rgba(234, 244, 237, 0.5);
         }
 
         .tabs .tab a.active {
             color: var(--primaryGreen);
+            border-bottom: 2px solid var(--primaryGreen);
         }
 
         .collection {
-            border: 1px solid var(--grayBorderColorLight);
-            border-radius: 8px;
-            margin-top: 16px;
+            background-color: var(--surfaceColor) !important;
+            border: 1px solid var(--grayBorderColor) !important;
         }
 
         .collection-item {
+            background-color: var(--surfaceColor) !important;
+            border-bottom: 1px solid var(--grayBorderColor) !important;
             display: flex;
-            justify-content: space-between;
+            flex-direction: row;
             align-items: center;
-            border-bottom: 1px solid var(--grayBorderColorLight);
+            justify-content: space-between;
         }
 
         .item-main {
@@ -84,8 +128,7 @@
         }
 
         .item-sub {
-            font-size: 13px;
-            color: var(--textSecondaryLight);
+            color: var(--textSecondary);
         }
 
         .icon-btn {
@@ -107,16 +150,45 @@
             bottom: 18px;
         }
 
+        .btn {
+            background: var(--primaryGreen);
+            color: black;
+            border-radius: 24px;
+            box-shadow: none;
+        }
+
+        .btn-flat {
+            color: var(--textSecondary);
+        }
+
+        .toast {
+            background: var(--surfaceColor);
+            color: var(--textPrimary);
+            border: 1px solid var(--grayBorderColor);
+        }
+
+        .toast.red {
+            background: #5a1f1f;
+        }
+
+        .toast.green {
+            background: #1E3A2B;
+        }
+
         .btn-floating {
             background: var(--primaryGreen) !important;
+            color: black;
+            box-shadow: none;
+        }
+
+        .spinner-layer.spinner-green-only {
+            border-color: var(--primaryGreen);
         }
 
         .empty {
-            border: 1px dashed var(--grayBorderColorLight);
-            padding: 16px;
-            margin-top: 16px;
-            border-radius: 8px;
-            color: var(--textSecondaryLight);
+            background: var(--surfaceColor);
+            border: 1px dashed var(--grayBorderColor);
+            color: var(--textSecondary);
         }
 
         .loading-dialog-content {
@@ -128,6 +200,60 @@
         .loading-dialog-content-text {
             margin-left: 20px;
         }
+
+        .input-field input {
+            background-color: var(--surfaceColor) !important;
+            color: var(--textPrimary) !important;
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding-left: 12px !important;
+        }
+
+        .input-field input::placeholder {
+            color: rgba(159, 181, 167, 0.7);
+        }
+
+        .select-wrapper input.select-dropdown {
+            background-color: var(--surfaceColor) !important;
+            color: var(--textPrimary);
+            border-radius: 8px;
+        }
+
+        .dropdown-content {
+            background-color: var(--surfaceColor) !important;
+        }
+
+        .dropdown-content li>span {
+            color: var(--textPrimary);
+        }
+
+        .modal {
+            background: var(--inverseSurfaceColor);
+            border-radius: 8px;
+            border: 1px solid var(--grayBorderColor);
+        }
+
+        .modal-footer {
+            background-color: var(--inverseSurfaceColor) !important;
+            border-top: 1px solid var(--grayBorderColor) !important;
+        }
+
+        #modalLoad  {
+            max-height: 85%;
+            max-width: 300px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
+        .icon-btn {
+            background-color: var(--inverseSurfaceColor) !important;
+            border: 1px solid var(--grayBorderColor) !important;
+        }
+
+        .icon-btn i {
+            color: var(--primaryGreen);
+        }
     </style>
 </head>
 
@@ -137,7 +263,7 @@
         <nav>
             <div class="nav-wrapper w-100">
                 <a href="#" class="brand-logo">
-                    <h5>Yamata sources manager</h5>
+                    <img src="https://github.com/Gr3gorywolf/Yamata-launcher/blob/master/assets/images/logo.png?raw=true" alt="" height="45px" width="45px">
                 </a>
             </div>
         </nav>
@@ -153,7 +279,7 @@
                 </li>
                 <li class="tab col s6">
                     <a href="#!" :class="{active: activeTab==='platforms'}" @click="switchTab('platforms')">
-                        Platform Catalogs
+                        Platform Catalog Sources
                     </a>
                 </li>
             </ul>
@@ -185,7 +311,7 @@
             <!-- Platform Catalogs -->
             <div v-if="activeTab==='platforms'">
                 <div v-if="platformCatalogs.length===0" class="empty">
-                    No platform catalogs
+                    No platform catalog sources
                 </div>
 
                 <ul class="collection" v-else>
@@ -225,8 +351,7 @@
 
                     <div v-show="activeTab==='download'" class="input-field">
                         <select ref="typeSelect" v-model="downloadType">
-                            <option value="Yamata">Yamata Source</option>
-                            <option value="Hydra">Hydra Source</option>
+                            <option v-for="type in sourceTypes" :key="type" :value="type">{{ type }}</option>
                         </select>
                     </div>
                 </div>
@@ -264,6 +389,7 @@
         </div>
 
         <script>
+            window.serverData = JSON.parse(`{{data}}`);
             const {
                 createApp,
                 ref,
@@ -276,6 +402,7 @@
 
                     const activeTab = ref('download');
                     const downloadSources = ref([]);
+                    const sourceTypes = ref(window.serverData.downloadSourceTypes || []);
                     const platformCatalogs = ref([]);
 
                     const newUrl = ref('');
@@ -448,7 +575,8 @@
                         deletePlatform,
                         addSource,
                         newUrl,
-                        downloadType
+                        downloadType,
+                        sourceTypes
                     };
                 }
             }).mount('#app');

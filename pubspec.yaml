@@ -65,6 +65,8 @@ dependencies:
       ref: fix-windows-context-menu-close
   dmg: ^0.1.7
   flutter_app_installer: ^1.0.2
+  qr_flutter: ^4.1.0
+  network_info_plus: ^7.0.0
 
 
 dev_dependencies:
@@ -93,6 +95,7 @@ flutter:
       - assets/bin/7z/
       - assets/bin/aria2c/
       - assets/data/
+      - assets/web/
 
 dependency_overrides:
   file: 6.1.4

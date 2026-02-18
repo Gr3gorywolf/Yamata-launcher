@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yamata Local Manager</title>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <!-- Materialize -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <style>
+        :root {
+            --grayBorderColorLight: #E3E7E7;
+            --backgroundColorLight: #F7FAF8;
+            --surfaceColorLight: #FFFFFF;
+            --inverseSurfaceColorLight: #F0F4F2;
+            --primaryGreen: #66bb6a;
+            --secondaryGreen: #27AE60;
+            --textPrimaryLight: #0B0F10;
+            --textSecondaryLight: #5D7267;
+        }
+
+        body {
+            background: var(--backgroundColorLight);
+            color: var(--textPrimaryLight);
+        }
+
+        .nav-wrapper {
+            background: var(--primaryGreen);
+        }
+
+        .app-shell {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px 16px 90px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .tabs .indicator {
+            background: var(--primaryGreen);
+        }
+
+        .tabs .tab a {
+            color: rgba(11, 15, 16, 0.6);
+            font-weight: 600;
+            text-transform: none;
+        }
+
+        .tabs .tab a.active {
+            color: var(--primaryGreen);
+        }
+
+        .collection {
+            border: 1px solid var(--grayBorderColorLight);
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .collection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--grayBorderColorLight);
+        }
+
+        .item-main {
+            min-width: 0;
+        }
+
+        .item-title {
+            font-weight: 600;
+        }
+
+        .item-sub {
+            font-size: 13px;
+            color: var(--textSecondaryLight);
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--grayBorderColorLight);
+            background: var(--inverseSurfaceColorLight);
+            cursor: pointer;
+            margin-left: 6px;
+        }
+
+        .fixed-action-btn {
+            left: 18px;
+            right: auto;
+            bottom: 18px;
+        }
+
+        .btn-floating {
+            background: var(--primaryGreen) !important;
+        }
+
+        .empty {
+            border: 1px dashed var(--grayBorderColorLight);
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 8px;
+            color: var(--textSecondaryLight);
+        }
+
+        .loading-dialog-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .loading-dialog-content-text {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <nav>
+            <div class="nav-wrapper w-100">
+                <a href="#" class="brand-logo">
+                    <h5>Yamata sources manager</h5>
+                </a>
+            </div>
+        </nav>
+
+        <div class="app-shell">
+
+            <!-- Tabs -->
+            <ul class="tabs">
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='download'}" @click="switchTab('download')">
+                        Download Sources
+                    </a>
+                </li>
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='platforms'}" @click="switchTab('platforms')">
+                        Platform Catalogs
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Download Sources -->
+            <div v-if="activeTab==='download'">
+                <div v-if="downloadSources.length===0" class="empty">
+                    No download sources
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="s in downloadSources" :key="s.id">
+                        <div class="item-main">
+                            <div class="item-title">{{ s.title || s.id }}</div>
+                            <div class="item-sub">{{ s.type }} • {{ s.games }} games</div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="refreshDownload(s.id)">
+                                <i class="material-icons">refresh</i>
+                            </div>
+                            <div class="icon-btn" @click="deleteDownload(s.id)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Platform Catalogs -->
+            <div v-if="activeTab==='platforms'">
+                <div v-if="platformCatalogs.length===0" class="empty">
+                    No platform catalogs
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="p in platformCatalogs" :key="p.id">
+                        <div class="item-main">
+                            <div class="item-title">{{ p.name || p.id }}</div>
+                            <div class="item-sub">{{ p.platform }}</div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="refreshPlatform(p.id)">
+                                <i class="material-icons">refresh</i>
+                            </div>
+                            <div class="icon-btn" @click="deletePlatform(p.id)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- FAB -->
+            <div class="fixed-action-btn">
+                <a class="btn-floating btn-large modal-trigger" style="position:fixed;right:20px;bottom:20px"
+                    href="#modalAdd">
+                    <i class="material-icons">add</i>
+                </a>
+            </div>
+
+            <!-- Modal -->
+            <div id="modalAdd" class="modal">
+                <div class="modal-content">
+                    <h5>Add {{ activeTab==='download' ? 'Download Source' : 'Platform Catalog Source' }}</h5>
+
+                    <div class="input-field">
+                        <input v-model="newUrl" placeholder="https://example.com/source.json">
+                    </div>
+
+                    <div v-show="activeTab==='download'" class="input-field">
+                        <select ref="typeSelect" v-model="downloadType">
+                            <option value="Yamata">Yamata Source</option>
+                            <option value="Hydra">Hydra Source</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <a class="modal-close btn-flat">Cancel</a>
+                    <a class="btn modal-close" @click="addSource">Add</a>
+                </div>
+            </div>
+
+            <div id="modalLoad" class="modal">
+                <div class="modal-content">
+                    <div class="loading-dialog-content">
+                        <div class="preloader-wrapper big active">
+                            <div class="spinner-layer spinner-green-only">
+                                <div class="circle-clipper left">
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="gap-patch">
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="circle-clipper right">
+                                    <div class="circle"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="loading-dialog-content-text">
+                            <h5>Loading</h5>
+                            <p>Please wait</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const {
+                createApp,
+                ref,
+                onMounted,
+                nextTick
+            } = Vue;
+
+            createApp({
+                setup() {
+
+                    const activeTab = ref('download');
+                    const downloadSources = ref([]);
+                    const platformCatalogs = ref([]);
+
+                    const newUrl = ref('');
+                    const downloadType = ref('Yamata');
+
+                    const API = {
+                        downloadSources: '/api/download-sources',
+                        refreshDownload: id => `/api/download-sources?id=${btoa(id)}`,
+                        deleteDownload: id => `/api/download-sources?id=${btoa(id)}`,
+                        platformCatalogs: '/api/platform-catalogs',
+                        refreshPlatform: id => `/api/platform-catalogs?id=${btoa(id)}`,
+                        deletePlatform: id => `/api/platform-catalogs?id=${btoa(id)}`
+                    };
+
+                    const setLoading = (loading) => {
+                        const modal = M.Modal.getInstance(document.getElementById('modalLoad'));
+                        modal.options.dismissible = !loading;
+                        if (loading) modal.open();
+                        else modal.close();
+                    };
+
+                    const showError = (message) => {
+                        M.toast({
+                            html: message,
+                            classes: 'red'
+                        });
+                    };
+
+                    const fetchJson = async (url, options = {}) => {
+                        const res = await fetch(url, options);
+                        if (!res.ok) throw new Error();
+                        return res.json();
+                    };
+
+                    const loadDownloadSources = async () => {
+                        downloadSources.value = await fetchJson(API.downloadSources);
+                    };
+
+                    const loadPlatformCatalogs = async () => {
+                        platformCatalogs.value = await fetchJson(API.platformCatalogs);
+                    };
+
+                    const switchTab = (tab) => {
+                        activeTab.value = tab;
+                        if (tab === 'download') loadDownloadSources();
+                        else loadPlatformCatalogs();
+                    };
+
+                    const refreshDownload = async (id) => {
+                        setLoading(true);
+                        try {
+                            const res = await fetch(API.refreshDownload(id), {
+                                method: 'PUT'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                throw new Error(error.error || 'Unknown error');
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error refreshing download source: ' + e.message);
+                        }
+                        setLoading(false);
+                        loadDownloadSources();
+                    };
+
+                    const deleteDownload = async (id) => {
+                        if (!confirm('Delete source?')) return;
+                        await fetch(API.deleteDownload(id), {
+                            method: 'DELETE'
+                        });
+                        loadDownloadSources();
+                        M.toast({
+                            html: 'Download source deleted',
+                            classes: 'green'
+                        });
+                    };
+
+                    const refreshPlatform = async (id) => {
+                        setLoading(true);
+                        try {
+                            const res = await fetch(API.refreshPlatform(id), {
+                                method: 'PUT'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                throw new Error(error.error || 'Unknown error');
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error refreshing platform catalog: ' + e.message);
+                        }
+                        setLoading(false);
+                        loadPlatformCatalogs();
+                    };
+
+                    const deletePlatform = async (id) => {
+                        if (!confirm('Delete catalog?')) return;
+                        await fetch(API.deletePlatform(id), {
+                            method: 'DELETE'
+                        });
+                        loadPlatformCatalogs();
+                        M.toast({
+                            html: 'Platform catalog deleted',
+                            classes: 'green'
+                        });
+                    };
+
+                    const addSource = async () => {
+                        try {
+                            if (!newUrl.value) return;
+                            setLoading(true);
+                            if (activeTab.value === 'download') {
+                                const res = await fetch(API.downloadSources, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        url: newUrl.value,
+                                        type: downloadType.value
+                                    })
+                                });
+                                if (!res.ok) {
+                                    const error = await res.json();
+                                    throw new Error(error.error || 'Unknown error');
+                                }
+                                loadDownloadSources();
+                            } else {
+                                const res = await fetch(API.platformCatalogs, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        url: newUrl.value
+                                    })
+                                });
+                                if (!res.ok) {
+                                    const error = await res.json();
+                                    throw new Error(error.error || 'Unknown error');
+                                }
+                                loadPlatformCatalogs();
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            M.toast({
+                                html: 'Error adding source: ' + e.message,
+                                classes: 'red'
+                            });
+                        }
+                        setLoading(false);
+                        newUrl.value = '';
+                    };
+
+                    onMounted(async () => {
+                        M.Modal.init(document.querySelectorAll('.modal'));
+                        M.FormSelect.init(document.querySelectorAll('select'));
+                        loadDownloadSources();
+                    });
+
+                    return {
+                        activeTab,
+                        downloadSources,
+                        platformCatalogs,
+                        switchTab,
+                        refreshDownload,
+                        deleteDownload,
+                        refreshPlatform,
+                        deletePlatform,
+                        addSource,
+                        newUrl,
+                        downloadType
+                    };
+                }
+            }).mount('#app');
+        </script>
+
+</body>
+
+</html>

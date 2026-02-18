@@ -185,6 +185,13 @@ class _SettingsPageState extends State<SettingsPage> {
             // Sources section
             const _SectionHeader(title: 'Sources'),
             _NavigationTile(
+              icon: Icons.web,
+              title: 'Web Sources Manager',
+              subtitle:
+                  'Manage your sources from an external device using a web interface, Useful when the device has limited input capabilities like a arcade machine or a console',
+              onTap: () => context.push("/settings/web-sources-manager"),
+            ),
+            _NavigationTile(
               icon: Icons.cloud_download,
               title: 'Download Sources',
               subtitle: 'Manage your download sources',

@@ -97,6 +97,10 @@ class FileSystemService {
     return cachePath + "/updates";
   }
 
+  static get webFilesPath {
+    return cachePath + "/web";
+  }
+
   static Future<String?> showFilePicker() async {
     if (Platform.isAndroid) {
       if (!await Permission.manageExternalStorage.isGranted) {
@@ -404,7 +408,8 @@ class FileSystemService {
       consoleSourcesPath,
       fetchCachePath,
       notificationImagesPath,
-      updatesPath
+      updatesPath,
+      webFilesPath,
     ];
     for (var path in paths) {
       if (!await Directory(path).exists()) {

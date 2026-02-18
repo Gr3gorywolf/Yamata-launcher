@@ -7,6 +7,7 @@ import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_cat
 import 'package:yamata_launcher/ui/pages/settings/custom_paths/custom_paths_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/web_sources_manager/web_sources_manager_page.dart';
 import 'package:yamata_launcher/ui/pages/splashcreen/splashcreen_page.dart';
 import 'package:yamata_launcher/ui/widgets/keyboard_pop_wrapper.dart';
 
@@ -70,6 +71,10 @@ final router = GoRouter(
             child: SettingsPage(),
           ),
           routes: [
+            GoRoute(
+              path: 'web-sources-manager',
+              builder: (context, state) => WebSourcesManagerPage(),
+            ),
             GoRoute(
               path: 'platform-catalog-sources',
               builder: (context, state) => ConsoleSourcesPage(),

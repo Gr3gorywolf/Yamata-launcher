@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:yamata_launcher/utils/process_helper.dart';
 
 class SevenZipConsoleHandler {
@@ -10,21 +9,81 @@ class SevenZipConsoleHandler {
     if (match != null) {
       return int.parse(match.group(1)!);
     }
-
     return null;
   }
 
-  Future extractFile(String sevenZipBinary, String archivePath,
-      String outputPath, Function(double) progressCallback,
-      {Function(Process)? onStart}) async {
+  Future<bool> _archiveNeedsPassword(
+      String sevenZipBinary, String archivePath) async {
     final proc = await Process.start(
       sevenZipBinary,
-      [
-        'x',
-        '-y',
-        '-bsp1',
-        archivePath,
-      ],
+      ['t', '-bd', '-p', archivePath],
+    );
+
+    bool needsPassword = false;
+
+    await proc.stderr.transform(SystemEncoding().decoder).forEach((line) {
+      print(line);
+      if (line.toLowerCase().contains('password') ||
+          line.toLowerCase().contains('wrong password') ||
+          line.toLowerCase().contains('can not open encrypted archive')) {
+        needsPassword = true;
+      }
+    });
+
+    await proc.exitCode;
+    return needsPassword;
+  }
+
+  Future<bool> _testPassword(
+      String sevenZipBinary, String archivePath, String password) async {
+    final proc = await Process.start(
+      sevenZipBinary,
+      ['t', '-p$password', archivePath],
+    );
+
+    final exitCode = await proc.exitCode;
+    return exitCode == 0;
+  }
+
+  Future extractFile(
+    String sevenZipBinary,
+    String archivePath,
+    String outputPath,
+    Function(double) progressCallback, {
+    Function(Process)? onStart,
+    List<String> passwords = const [],
+  }) async {
+    String? workingPassword;
+
+    final needsPassword =
+        await _archiveNeedsPassword(sevenZipBinary, archivePath);
+    print('Archive needs password: $needsPassword');
+    if (needsPassword) {
+      for (final pwd in passwords) {
+        final ok = await _testPassword(sevenZipBinary, archivePath, pwd);
+        print('Testing password "$pwd": $ok');
+        if (ok) {
+          workingPassword = pwd;
+          break;
+        }
+      }
+
+      if (workingPassword == null) {
+        throw Exception('Archive requires password and none matched');
+      }
+    }
+
+    final args = [
+      'x',
+      '-y',
+      '-bsp1',
+      if (workingPassword != null) '-p$workingPassword',
+      archivePath,
+    ];
+
+    final proc = await Process.start(
+      sevenZipBinary,
+      args,
       workingDirectory: outputPath,
     );
 
@@ -34,16 +93,14 @@ class SevenZipConsoleHandler {
         print(line);
       },
       onProgress: (line) {
-        {
-          print(line);
-          final progressVal = parseProgress(line);
-          if (progressVal != null) {
-            progressCallback(progressVal.toDouble());
-          }
+        final progressVal = parseProgress(line);
+        if (progressVal != null) {
+          progressCallback(progressVal.toDouble());
         }
       },
       progressPrefix: '%',
     );
+
     onStart?.call(proc);
 
     await ProcessHelper.ensureExitOk(proc, () => false, 'Extraction failed');

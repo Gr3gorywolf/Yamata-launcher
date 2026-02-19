@@ -30,7 +30,7 @@ class DownloadService {
   }
 
   static downloadRom(RomInfo rom, DownloadSourceRom sourceRom,
-      {bool isExtraContent = false}) async {
+      {bool isExtraContent = false, bool shouldExtract = false}) async {
     var downloadsPath = FileSystemService.downloadsPath;
     if (!await Directory(downloadsPath).exists()) {
       await Directory(downloadsPath).create();
@@ -43,7 +43,9 @@ class DownloadService {
     var contentTitle = sourceRom.title;
     Provider.of<DownloadProvider>(navigatorContext!, listen: false)
         .addRomDownloadToQueue(rom, sourceRom, handle,
-            contentTitle: contentTitle, isExtraContent: isExtraContent);
+            contentTitle: contentTitle,
+            isExtraContent: isExtraContent,
+            shouldExtract: shouldExtract);
   }
 
   static void catchRomPortrait(RomInfo romInfo) async {

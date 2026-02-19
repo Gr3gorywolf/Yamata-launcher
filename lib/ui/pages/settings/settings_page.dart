@@ -12,7 +12,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
-import 'package:yamata_launcher/ui/pages/settings/console_sources/platform_catalog_sources_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_catalog_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -86,6 +86,9 @@ class _SettingsPageState extends State<SettingsPage> {
           break;
         case SettingsKeys.ENABLE_EXTRACTION:
           _extractRomsAfterDownload = value as bool;
+          break;
+        case SettingsKeys.CLOSE_TO_SYSTEM_TRAY:
+          _closeToSystemTray = value as bool;
           break;
         default:
           break;
@@ -181,6 +184,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             // Sources section
             const _SectionHeader(title: 'Sources'),
+            _NavigationTile(
+              icon: Icons.web,
+              title: 'Remote Sources Manager',
+              subtitle:
+                  'Scan the QR code to manage your sources from any device using a local web interface. Ideal for arcade machines, consoles, and gaming systems with limited input.',
+              onTap: () => context.push("/settings/web-sources-manager"),
+            ),
             _NavigationTile(
               icon: Icons.cloud_download,
               title: 'Download Sources',

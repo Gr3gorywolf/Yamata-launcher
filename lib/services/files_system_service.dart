@@ -6,6 +6,7 @@ import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_scanner/media_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
@@ -96,8 +97,15 @@ class FileSystemService {
     return cachePath + "/updates";
   }
 
-  static Future<String?> locateFile() async {
+  static get webFilesPath {
+    return cachePath + "/web";
+  }
+
+  static Future<String?> showFilePicker() async {
     if (Platform.isAndroid) {
+      if (!await Permission.manageExternalStorage.isGranted) {
+        await Permission.manageExternalStorage.request();
+      }
       var internalDirectory = _systemPaths?.internalPath != null
           ? Directory(_systemPaths!.internalPath)
           : Directory("/storage/emulated/0/");
@@ -185,21 +193,53 @@ class FileSystemService {
   /*
   * Moves the content of the specified file to its containing folder.
   */
-  static String moveFilesToParentFolder(String filePath) {
-    var fileDir = Directory(p.dirname(filePath));
-    var parentPath = fileDir.parent.path;
-    if (Platform.isAndroid) {
-      MediaScanner.loadMedia(path: parentPath);
-    }
-    for (var item in fileDir.listSync()) {
-      var newPath = p.join(parentPath, item.uri.pathSegments.last);
-      item.renameSync(newPath);
-      if (Platform.isAndroid) {
-        MediaScanner.loadMedia(path: newPath);
-      }
+  static ContentMoveResult moveFilesToParentFolder(
+    String folderPath, {
+    String? filePath,
+  }) {
+    final sourceDir = Directory(folderPath);
+
+    if (!sourceDir.existsSync()) {
+      throw Exception("Folder does not exist: $folderPath");
     }
 
-    return p.join(parentPath, Uri.parse(filePath).pathSegments.last);
+    final parentPath = sourceDir.parent.path;
+
+    final items = sourceDir.listSync();
+
+    for (final item in items) {
+      final name = p.basename(item.path);
+      var newPath = p.join(parentPath, name);
+      if (item.path.endsWith(".aria2")) {
+        item.deleteSync();
+        continue;
+      }
+      if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
+        item.deleteSync(recursive: true);
+      }
+
+      item.renameSync(newPath);
+    }
+
+    try {
+      sourceDir.deleteSync();
+    } catch (_) {}
+
+    if (Platform.isAndroid) {
+      try {
+        MediaScanner.loadMedia(path: parentPath);
+      } catch (_) {}
+    }
+
+    String? newFilePath;
+
+    if (filePath != null) {
+      newFilePath = filePath.replaceAll(folderPath, parentPath);
+    }
+    return ContentMoveResult(
+      parentFolder: parentPath,
+      filePath: newFilePath,
+    );
   }
 
   /**
@@ -368,7 +408,8 @@ class FileSystemService {
       consoleSourcesPath,
       fetchCachePath,
       notificationImagesPath,
-      updatesPath
+      updatesPath,
+      webFilesPath,
     ];
     for (var path in paths) {
       if (!await Directory(path).exists()) {
@@ -376,4 +417,14 @@ class FileSystemService {
       }
     }
   }
+}
+
+class ContentMoveResult {
+  final String parentFolder;
+  final String? filePath;
+
+  ContentMoveResult({
+    required this.parentFolder,
+    required this.filePath,
+  });
 }

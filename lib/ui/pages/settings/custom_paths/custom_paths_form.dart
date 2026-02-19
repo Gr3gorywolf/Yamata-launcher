@@ -33,10 +33,9 @@ class _CustomPathsFormState extends State<CustomPathsForm> {
   String selectedPath = "";
   @override
   void initState() {
-    availableConsoles =
-        ConsoleService.getConsoles(includeAdditional: true, unique: true)
-            .where((console) => !widget.existingConsoles.contains(console.slug))
-            .toList();
+    availableConsoles = ConsoleService.getConsoles(includeUnsupported: true)
+        .where((console) => !widget.existingConsoles.contains(console.slug))
+        .toList();
     if (widget.editingPath != null) {
       selectedConsole = widget.editingPath!.console;
       selectedPath = widget.editingPath!.folderPath;

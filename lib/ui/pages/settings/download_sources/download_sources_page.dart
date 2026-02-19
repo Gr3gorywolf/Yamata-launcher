@@ -7,8 +7,8 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
-
-enum DownloadSourceType { Yamata, Hydra }
+import 'package:yamata_launcher/utils/string_helper.dart';
+import 'package:yamata_launcher/utils/time_helpers.dart';
 
 class DownloadSourcesPage extends StatefulWidget {
   @override
@@ -31,7 +31,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
   }
 
   _handleSetSource(DownloadSourceWithDownloads? sourceToUpdate) async {
-    var type = DownloadSourceType.Yamata;
+    var type = sourceToUpdate?.sourceInfo?.type ?? DownloadSourceType.Yamata;
     var result = sourceToUpdate == null
         ? await AlertsService.showPrompt(
             context,
@@ -73,6 +73,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
     loadingHandle.close();
     if (source != null) {
       source.sourceInfo.downloadUrl = result;
+      source.sourceInfo.type = type;
       final provider =
           Provider.of<DownloadSourcesProvider>(context, listen: false);
       var success = await provider.setDownloadSource(source);
@@ -94,6 +95,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
   @override
   Widget build(BuildContext context) {
     var provider = DownloadSourcesProvider.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Download Sources'),
@@ -118,14 +120,19 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
             itemCount: provider.downloadSources.length,
             itemBuilder: (_, index) {
               final source = provider.downloadSources[index];
+              var timeAgo = source.sourceInfo?.lastUpdated != null
+                  ? TimeHelpers.getTimeAgo(
+                      DateTime.parse(source.sourceInfo!.lastUpdated!))
+                  : "Unknown";
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
+                  leading: Icon(Icons.cloud_download),
                   title: Text(source.sourceInfo!.title!),
                   subtitle: Opacity(
                       opacity: 0.7,
-                      child:
-                          Text('${source.downloads!.length} roms available')),
+                      child: Text(
+                          '${source.sourceInfo.type?.name} - ${source.downloads!.length} games - Last Updated: $timeAgo')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

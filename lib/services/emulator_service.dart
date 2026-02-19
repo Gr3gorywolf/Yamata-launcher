@@ -130,7 +130,7 @@ class EmulatorService {
    */
   static Future<String> _resolveMacAppExecutable(String appPath) async {
     if (!appPath.endsWith('.app')) {
-      throw ArgumentError('Expected a .app bundle path, got: $appPath');
+      return appPath;
     }
 
     final macOSDir = Directory(p.join(appPath, 'Contents', 'MacOS'));
@@ -247,7 +247,9 @@ class EmulatorService {
           print("resolved emulator binary to ${execPath}");
           process = await Process.start(execPath, launchParams);
         } else {
-          process = await Process.start(emulatorBinary, launchParams);
+          process = await Process.start(emulatorBinary, launchParams,
+              mode: ProcessStartMode.inheritStdio,
+              workingDirectory: p.dirname(filePath));
         }
         _activeGamesProcesses[slug] = process;
 

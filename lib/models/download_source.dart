@@ -1,21 +1,33 @@
 import 'download_source_rom.dart';
 
+enum DownloadSourceType { Yamata, Hydra }
+
 class DownloadSource {
   String title = "Unknown";
+  List<String>? passwords = [];
   String? downloadUrl;
   int? romsCount;
+  DownloadSourceType? type;
   String? lastUpdated;
 
   DownloadSource(
       {required this.title,
+      this.passwords,
       this.romsCount,
       this.lastUpdated,
-      this.downloadUrl});
+      this.downloadUrl,
+      this.type});
   DownloadSource.fromJson(Map<String, dynamic> json) {
     title = json['title'] ?? "";
     romsCount = json['roms_count'];
     lastUpdated = json['last_updated'];
     downloadUrl = json['download_url'];
+    type = json['type'] != null
+        ? DownloadSourceType.values.firstWhere((e) => e.name == json['type'])
+        : null;
+    if (json['passwords'] != null) {
+      passwords = List<String>.from(json['passwords']);
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -24,6 +36,10 @@ class DownloadSource {
     data['roms_count'] = this.romsCount;
     data['last_updated'] = this.lastUpdated;
     data['download_url'] = this.downloadUrl;
+    data['type'] = this.type != null ? this.type?.name : null;
+    if (this.passwords != null) {
+      data['passwords'] = this.passwords;
+    }
     return data;
   }
 }

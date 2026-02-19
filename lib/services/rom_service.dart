@@ -4,10 +4,12 @@ import 'package:collection/collection.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/extraction_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
@@ -24,9 +26,12 @@ class RomService {
 
   static Future extractRom(RomLibraryItem downloadedRom) async {
     var resultFile = await ExtractionDialog.show(
-        navigatorContext!, File(downloadedRom.filePath ?? ""));
+        navigatorContext!, File(downloadedRom.filePath ?? ""),
+        onError: (downloadError) {
+      AlertsService.showErrorSnackbar(
+          "Failed to extract ROM from zip file. $downloadError");
+    });
     if (resultFile == null) {
-      AlertsService.showErrorSnackbar("Failed to extract ROM from zip file.");
       return;
     }
     var provider =
@@ -63,6 +68,10 @@ class RomService {
     }
 
     return buffer.toString();
+  }
+
+  static String getRomSlug(String consoleSlug, String romName) {
+    return consoleSlug + "-" + normalizeRomTitle(romName, deleteRunes: true);
   }
 
   static String getLastPlayedLabel(RomLibraryItem? downloadedRom) {

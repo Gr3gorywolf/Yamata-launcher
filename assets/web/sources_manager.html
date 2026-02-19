@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yamata Local Manager</title>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <!-- Materialize -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <style>
+        :root {
+            --grayBorderColor: #25292a;
+
+            --backgroundColor: #0b0f10;
+            --surfaceColor: #1e1e1e;
+            --inverseSurfaceColor: #2a2a2a;
+
+            --primaryGreen: #66bb6a;
+            --secondaryGreen: #27AE60;
+            --mutedGreen: #1E3A2B;
+
+            --textPrimary: #EAF4ED;
+            --textSecondary: #9FB5A7;
+        }
+
+        html,
+        body {
+            background: var(--backgroundColor);
+            color: var(--textPrimary);
+        }
+
+        body {
+            font-size: 14px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: var(--textPrimary);
+        }
+        
+
+        nav {
+            background: var(--backgroundColor);
+            box-shadow: none;
+            border-bottom: 1px solid var(--grayBorderColor);
+        }
+
+      .brand-logo img{
+           margin-top: 5px;
+           margin-left: 7px;
+        }
+
+       
+
+        @media (max-width: 600px) {
+            .brand-logo  {
+                margin-left: 0px;
+        }
+
+       
+
+        }
+
+        .app-shell {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px 16px 90px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .tabs {
+            background: transparent;
+        }
+
+        .tabs .indicator {
+            background: var(--primaryGreen);
+        }
+
+        .tabs .tab a {
+            color: rgba(234, 244, 237, 0.5);
+            border-bottom: 2px solid var(--surfaceColor);
+        }
+        .tabs .tab a:hover {
+            color: rgba(234, 244, 237, 0.5);
+        }
+
+        .tabs .tab a.active {
+            color: var(--primaryGreen);
+            border-bottom: 2px solid var(--primaryGreen);
+        }
+
+        .collection {
+            background-color: var(--surfaceColor) !important;
+            border: 1px solid var(--grayBorderColor) !important;
+        }
+
+        .collection-item {
+            background-color: var(--surfaceColor) !important;
+            border-bottom: 1px solid var(--grayBorderColor) !important;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .item-main {
+            min-width: 0;
+        }
+
+        .item-title {
+            font-weight: 600;
+        }
+
+        .item-sub {
+            color: var(--textSecondary);
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--grayBorderColorLight);
+            background: var(--inverseSurfaceColorLight);
+            cursor: pointer;
+            margin-left: 6px;
+        }
+
+        .fixed-action-btn {
+            left: 18px;
+            right: auto;
+            bottom: 18px;
+        }
+
+        .btn {
+            background: var(--primaryGreen);
+            color: black;
+            border-radius: 24px;
+            box-shadow: none;
+        }
+
+        .btn-flat {
+            color: var(--textSecondary);
+        }
+
+        .toast {
+            background: var(--surfaceColor);
+            color: var(--textPrimary);
+            border: 1px solid var(--grayBorderColor);
+        }
+
+        .toast.red {
+            background: #5a1f1f;
+        }
+
+        .toast.green {
+            background: #1E3A2B;
+        }
+
+        .btn-floating {
+            background: var(--primaryGreen) !important;
+            color: black;
+            box-shadow: none;
+        }
+
+        .spinner-layer.spinner-green-only {
+            border-color: var(--primaryGreen);
+        }
+
+        .empty {
+            background: var(--surfaceColor);
+            border: 1px dashed var(--grayBorderColor);
+            color: var(--textSecondary);
+        }
+
+        .loading-dialog-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .loading-dialog-content-text {
+            margin-left: 20px;
+        }
+
+        .input-field input {
+            background-color: var(--surfaceColor) !important;
+            color: var(--textPrimary) !important;
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding-left: 12px !important;
+        }
+
+        .input-field input::placeholder {
+            color: rgba(159, 181, 167, 0.7);
+        }
+
+        .select-wrapper input.select-dropdown {
+            background-color: var(--surfaceColor) !important;
+            color: var(--textPrimary);
+            border-radius: 8px;
+        }
+
+        .dropdown-content {
+            background-color: var(--surfaceColor) !important;
+        }
+
+        .dropdown-content li>span {
+            color: var(--textPrimary);
+        }
+
+        .modal {
+            background: var(--inverseSurfaceColor);
+            border-radius: 8px;
+            border: 1px solid var(--grayBorderColor);
+        }
+
+        .modal-footer {
+            background-color: var(--inverseSurfaceColor) !important;
+            border-top: 1px solid var(--grayBorderColor) !important;
+        }
+
+        #modalLoad  {
+            max-height: 85%;
+            max-width: 300px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
+        .icon-btn {
+            background-color: var(--inverseSurfaceColor) !important;
+            border: 1px solid var(--grayBorderColor) !important;
+        }
+
+        .icon-btn i {
+            color: var(--primaryGreen);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <nav>
+            <div class="nav-wrapper w-100">
+                <a href="#" class="brand-logo">
+                    <img src="https://github.com/Gr3gorywolf/Yamata-launcher/blob/master/assets/images/logo.png?raw=true" alt="" height="45px" width="45px">
+                </a>
+            </div>
+        </nav>
+
+        <div class="app-shell">
+
+            <!-- Tabs -->
+            <ul class="tabs">
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='download'}" @click="switchTab('download')">
+                        Download Sources
+                    </a>
+                </li>
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='platforms'}" @click="switchTab('platforms')">
+                    Game Catalog Sources
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Download Sources -->
+            <div v-if="activeTab==='download'">
+                <div v-if="downloadSources.length===0" class="empty">
+                    No download sources
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="s in downloadSources" :key="s.id">
+                        <div class="item-main">
+                            <div class="item-title">{{ s.title || s.id }}</div>
+                            <div class="item-sub">{{ s.type }} • {{ s.games }} games</div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="refreshDownload(s.id)">
+                                <i class="material-icons">refresh</i>
+                            </div>
+                            <div class="icon-btn" @click="deleteDownload(s.id)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Platform Catalogs -->
+            <div v-if="activeTab==='platforms'">
+                <div v-if="platformCatalogs.length===0" class="empty">
+                    No platform catalog sources
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="p in platformCatalogs" :key="p.id">
+                        <div class="item-main">
+                            <div class="item-title">{{ p.name || p.id }}</div>
+                            <div class="item-sub">{{ p.platform }}</div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="refreshPlatform(p.id)">
+                                <i class="material-icons">refresh</i>
+                            </div>
+                            <div class="icon-btn" @click="deletePlatform(p.id)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- FAB -->
+            <div class="fixed-action-btn">
+                <a class="btn-floating btn-large modal-trigger" style="position:fixed;right:20px;bottom:20px"
+                    href="#modalAdd">
+                    <i class="material-icons">add</i>
+                </a>
+            </div>
+
+            <!-- Modal -->
+            <div id="modalAdd" class="modal">
+                <div class="modal-content">
+                    <h5>Add {{ activeTab==='download' ? 'Download Source' : 'Game Catalog Source' }}</h5>
+
+                    <div class="input-field">
+                        <input v-model="newUrl" placeholder="https://example.com/source.json">
+                    </div>
+
+                    <div v-show="activeTab==='download'" class="input-field">
+                        <h6 style="margin-bottom: 10px;">Download Source Type</h6>
+                        <select ref="typeSelect" v-model="downloadType">
+                            <option v-for="type in sourceTypes" :key="type" :value="type">{{ type }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <a class="modal-close btn-flat">Cancel</a>
+                    <a class="btn modal-close" @click="addSource">Add</a>
+                </div>
+            </div>
+
+            <div id="modalLoad" class="modal">
+                <div class="modal-content">
+                    <div class="loading-dialog-content">
+                        <div class="preloader-wrapper big active">
+                            <div class="spinner-layer spinner-green-only">
+                                <div class="circle-clipper left">
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="gap-patch">
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="circle-clipper right">
+                                    <div class="circle"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="loading-dialog-content-text">
+                            <h5>Loading</h5>
+                            <p>Please wait</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.serverData = JSON.parse(`{{data}}`);
+            const {
+                createApp,
+                ref,
+                onMounted,
+                nextTick
+            } = Vue;
+
+            createApp({
+                setup() {
+
+                    const activeTab = ref('download');
+                    const downloadSources = ref([]);
+                    const sourceTypes = ref(window.serverData.downloadSourceTypes || []);
+                    const platformCatalogs = ref([]);
+
+                    const newUrl = ref('');
+                    const downloadType = ref('Yamata');
+
+                    const API = {
+                        downloadSources: '/api/download-sources',
+                        refreshDownload: id => `/api/download-sources?id=${btoa(id)}`,
+                        deleteDownload: id => `/api/download-sources?id=${btoa(id)}`,
+                        platformCatalogs: '/api/platform-catalogs',
+                        refreshPlatform: id => `/api/platform-catalogs?id=${btoa(id)}`,
+                        deletePlatform: id => `/api/platform-catalogs?id=${btoa(id)}`
+                    };
+
+                    const setLoading = (loading) => {
+                        const modal = M.Modal.getInstance(document.getElementById('modalLoad'));
+                        modal.options.dismissible = !loading;
+                        if (loading) modal.open();
+                        else modal.close();
+                    };
+
+                    const showError = (message) => {
+                        M.toast({
+                            html: message,
+                            classes: 'red'
+                        });
+                    };
+
+                    const fetchJson = async (url, options = {}) => {
+                        const res = await fetch(url, options);
+                        if (!res.ok) throw new Error();
+                        return res.json();
+                    };
+
+                    const loadDownloadSources = async () => {
+                        downloadSources.value = await fetchJson(API.downloadSources);
+                    };
+
+                    const loadPlatformCatalogs = async () => {
+                        platformCatalogs.value = await fetchJson(API.platformCatalogs);
+                    };
+
+                    const switchTab = (tab) => {
+                        activeTab.value = tab;
+                        if (tab === 'download') loadDownloadSources();
+                        else loadPlatformCatalogs();
+                    };
+
+                    const refreshDownload = async (id) => {
+                        setLoading(true);
+                        try {
+                            const res = await fetch(API.refreshDownload(id), {
+                                method: 'PUT'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                throw new Error(error.error || 'Unknown error');
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error refreshing download source: ' + e.message);
+                        }
+                        setLoading(false);
+                        loadDownloadSources();
+                    };
+
+                    const deleteDownload = async (id) => {
+                        if (!confirm('Delete source?')) return;
+                        await fetch(API.deleteDownload(id), {
+                            method: 'DELETE'
+                        });
+                        loadDownloadSources();
+                        M.toast({
+                            html: 'Download source deleted',
+                            classes: 'green'
+                        });
+                    };
+
+                    const refreshPlatform = async (id) => {
+                        setLoading(true);
+                        try {
+                            const res = await fetch(API.refreshPlatform(id), {
+                                method: 'PUT'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                throw new Error(error.error || 'Unknown error');
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error refreshing platform catalog: ' + e.message);
+                        }
+                        setLoading(false);
+                        loadPlatformCatalogs();
+                    };
+
+                    const deletePlatform = async (id) => {
+                        if (!confirm('Delete catalog?')) return;
+                        await fetch(API.deletePlatform(id), {
+                            method: 'DELETE'
+                        });
+                        loadPlatformCatalogs();
+                        M.toast({
+                            html: 'Platform catalog deleted',
+                            classes: 'green'
+                        });
+                    };
+
+                    const addSource = async () => {
+                        try {
+                            if (!newUrl.value) return;
+                            setLoading(true);
+                            if (activeTab.value === 'download') {
+                                const res = await fetch(API.downloadSources, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        url: newUrl.value,
+                                        type: downloadType.value
+                                    })
+                                });
+                                if (!res.ok) {
+                                    const error = await res.json();
+                                    throw new Error(error.error || 'Unknown error');
+                                }
+                                loadDownloadSources();
+                            } else {
+                                const res = await fetch(API.platformCatalogs, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        url: newUrl.value
+                                    })
+                                });
+                                if (!res.ok) {
+                                    const error = await res.json();
+                                    throw new Error(error.error || 'Unknown error');
+                                }
+                                loadPlatformCatalogs();
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            M.toast({
+                                html: 'Error adding source: ' + e.message,
+                                classes: 'red'
+                            });
+                        }
+                        setLoading(false);
+                        newUrl.value = '';
+                    };
+
+                    onMounted(async () => {
+                        M.Modal.init(document.querySelectorAll('.modal'));
+                        M.FormSelect.init(document.querySelectorAll('select'));
+                        loadDownloadSources();
+                    });
+
+                    return {
+                        activeTab,
+                        downloadSources,
+                        platformCatalogs,
+                        switchTab,
+                        refreshDownload,
+                        deleteDownload,
+                        refreshPlatform,
+                        deletePlatform,
+                        addSource,
+                        newUrl,
+                        downloadType,
+                        sourceTypes
+                    };
+                }
+            }).mount('#app');
+        </script>
+
+</body>
+
+</html>

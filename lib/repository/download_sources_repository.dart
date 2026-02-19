@@ -93,7 +93,7 @@ class DownloadSourcesRepository {
                 download['uris']?.isNotEmpty)
             .map((download) {
           if (type == DownloadSourceType.Hydra) {
-            download['console'] = "windows";
+            download['console'] = CONSOLE_SLUGS.windows.value;
           }
           return DownloadSourceRom.fromJson(download);
         }).toList();
@@ -104,6 +104,9 @@ class DownloadSourcesRepository {
         return DownloadSourceWithDownloads(
             sourceInfo: DownloadSource(
                 title: getSourceTitle(responseData, type),
+                passwords: (responseData['passwords'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .toList(),
                 romsCount: downloads.length,
                 lastUpdated: lastDownloadDate.toIso8601String()),
             downloads: downloads);

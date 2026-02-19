@@ -15,29 +15,62 @@ class ExplorePage extends StatefulWidget {
 }
 
 class ExplorePage_State extends State<ExplorePage> {
-  List<Console> _consoles = ConsoleService.getConsoles(unique: true)
+  List<Console> _consoles = ConsoleService.getConsoles()
     ..sort((a, b) => a.name?.compareTo(b.name ?? "") ?? 0);
-  ToolbarValue<Console>? filterValues = null;
 
+  ToolbarValue<Console>? filterValues;
   var textController = TextEditingController();
 
-  get filteredConsoles {
+  List<Console> get filteredConsoles {
     if (filterValues == null) return _consoles;
-    var newConsoles =
-        FilterHelpers.handleDynamicFilter<Console>(_consoles, filterValues!);
-    return newConsoles;
+    return FilterHelpers.handleDynamicFilter<Console>(_consoles, filterValues!);
+  }
+
+  Map<String, List<Console>> _groupByVendor(
+    List<Console> consoles, {
+    List<String> priorityVendors = const [],
+  }) {
+    final Map<String, List<Console>> grouped = {};
+
+    for (final console in consoles) {
+      final vendor = console.vendor ?? 'Other';
+      grouped.putIfAbsent(vendor, () => []).add(console);
+    }
+
+    final sortedKeys = grouped.keys.toList()..sort();
+
+    final priorityKeys =
+        priorityVendors.where((vendor) => grouped.containsKey(vendor)).toList();
+    final remainingKeys =
+        sortedKeys.where((k) => !priorityKeys.contains(k)).toList();
+
+    final orderedKeys = [...priorityKeys, ...remainingKeys];
+
+    return {
+      for (final key in orderedKeys) key: grouped[key]!,
+    };
   }
 
   @override
   Widget build(BuildContext bldContext) {
-    var axisCount = max(2, (MediaQuery.of(context).size.width / 220).floor());
+    final axisCount = max(2, (MediaQuery.of(context).size.width / 220).floor());
+
+    final grouped = _groupByVendor(filteredConsoles, priorityVendors: [
+      "Nintendo",
+      "Sony",
+      "Microsoft",
+      "Sega",
+      "Atari",
+      "Bandai",
+    ]);
+
     return Scaffold(
       appBar: Toolbar<Console>(
         settings: ToolbarSettings(title: "Explore", disableSearch: true),
-        onChanged: (val) => {
+        onChanged: (val) {
           setState(() {
             filterValues = val;
-          })
+          });
         },
       ),
       body: Padding(
@@ -80,29 +113,50 @@ class ExplorePage_State extends State<ExplorePage> {
                 ],
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.only(bottom: 16),
-              sliver: SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final console = filteredConsoles[index];
 
-                    // Usa tu ConsoleCard directamente
-                    return ConsoleCard(
-                      console,
-                      onTap: () {
-                        context.push("/explore/console-roms", extra: console);
-                      },
-                    );
-                  },
-                  childCount: filteredConsoles.length,
+            // Vendor sections
+            ...grouped.entries.expand((entry) {
+              final vendor = entry.key;
+              final consoles = entry.value;
+
+              return [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      vendor,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: axisCount,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8),
-              ),
-            ),
+                SliverPadding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final console = consoles[index];
+                        return ConsoleCard(
+                          console,
+                          onTap: () {
+                            context.push("/explore/console-roms",
+                                extra: console);
+                          },
+                        );
+                      },
+                      childCount: consoles.length,
+                    ),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: axisCount,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                  ),
+                ),
+              ];
+            }).toList(),
           ],
         ),
       ),

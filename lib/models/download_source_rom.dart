@@ -1,6 +1,6 @@
 class DownloadSourceRom {
   String? fileSize;
-  String? title_clean;
+  String? titleClean;
   List<String>? uris;
   String? title;
   String? filePath;
@@ -8,21 +8,23 @@ class DownloadSourceRom {
   int? fileIndex;
   String? uploadDate;
   String? console;
+  bool? isExtraContent;
 
   DownloadSourceRom(
       {this.fileSize,
       this.uris,
       this.title,
-      this.title_clean,
+      this.titleClean,
       this.filePath,
       this.fileIndex,
       this.fileName,
       this.uploadDate,
+      this.isExtraContent,
       this.console});
 
   DownloadSourceRom copyWith({
     String? fileSize,
-    String? title_clean,
+    String? titleClean,
     List<String>? uris,
     String? title,
     String? filePath,
@@ -30,10 +32,11 @@ class DownloadSourceRom {
     int? fileIndex,
     String? uploadDate,
     String? console,
+    bool? isExtraContent,
   }) {
     return DownloadSourceRom(
         fileSize: fileSize ?? this.fileSize,
-        title_clean: title_clean ?? this.title_clean,
+        titleClean: titleClean ?? this.titleClean,
         uris:
             uris ?? (this.uris != null ? List<String>.from(this.uris!) : null),
         title: title ?? this.title,
@@ -41,6 +44,7 @@ class DownloadSourceRom {
         fileIndex: fileIndex ?? this.fileIndex,
         uploadDate: uploadDate ?? this.uploadDate,
         console: console ?? this.console,
+        isExtraContent: isExtraContent ?? this.isExtraContent,
         fileName: fileName ?? this.fileName);
   }
 
@@ -52,8 +56,9 @@ class DownloadSourceRom {
     fileIndex = json['fileIndex'];
     uploadDate = json['uploadDate'];
     console = json['console'];
-    title_clean = json['title_clean'] ?? null;
+    titleClean = json['titleClean'] ?? null;
     fileName = json['fileName'] ?? null;
+    isExtraContent = json['isExtraContent'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -65,8 +70,9 @@ class DownloadSourceRom {
     data['fileIndex'] = this.fileIndex;
     data['uploadDate'] = this.uploadDate;
     data['console'] = this.console;
-    data['title_clean'] = this.title_clean;
+    data['titleClean'] = this.titleClean;
     data['fileName'] = this.fileName;
+    data['isExtraContent'] = this.isExtraContent;
     return data;
   }
 }

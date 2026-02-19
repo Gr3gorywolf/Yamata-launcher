@@ -3,9 +3,9 @@ import 'package:sembast/sembast.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/custom_path_dao.dart';
 import 'package:yamata_launcher/models/console.dart';
-import 'package:yamata_launcher/models/console_source.dart';
+import 'package:yamata_launcher/models/platform_catalog_source.dart';
 import 'package:yamata_launcher/models/custom_download_path.dart';
-import 'package:yamata_launcher/repository/console_sources_repository.dart';
+import 'package:yamata_launcher/repository/platform_catalog_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:provider/provider.dart';
@@ -145,7 +145,7 @@ class _CustomPathsPageState extends State<CustomPathsPage> {
           );
         },
       ),
-      floatingActionButton: !ConsoleService.consolesFromExternalSources.isEmpty
+      floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
           ? FloatingActionButton.extended(
               onPressed: handleAddPath,
               icon: const Icon(Icons.add),

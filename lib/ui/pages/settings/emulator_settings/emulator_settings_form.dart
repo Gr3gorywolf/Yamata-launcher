@@ -38,10 +38,9 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   String selectedBinary = "";
   @override
   void initState() {
-    availableConsoles =
-        ConsoleService.getConsoles(includeAdditional: true, unique: true)
-            .where((console) => !widget.existingConsoles.contains(console.slug))
-            .toList();
+    availableConsoles = ConsoleService.getConsoles(includeUnsupported: true)
+        .where((console) => !widget.existingConsoles.contains(console.slug))
+        .toList();
     if (widget.editingSetting != null) {
       selectedConsole = widget.editingSetting!.console;
       selectedBinaryController.text = widget.editingSetting!.emulatorBinary;

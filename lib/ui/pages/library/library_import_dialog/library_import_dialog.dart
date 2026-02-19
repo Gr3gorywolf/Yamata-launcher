@@ -63,8 +63,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
   @override
   void initState() {
     super.initState();
-    consoles =
-        ConsoleService.getConsoles(includeAdditional: true, unique: true);
+    consoles = ConsoleService.getConsoles(includeUnsupported: true);
   }
 
   @override
@@ -74,7 +73,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
   }
 
   Future<void> _pickRomPath() async {
-    final file = await FileSystemService.locateFile();
+    final file = await FileSystemService.showFilePicker();
     if (file == null) return;
 
     form.control('romPath').value = file;
@@ -108,8 +107,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
 
-    final romSlug =
-        '${console.toLowerCase()}-${RomService.normalizeRomTitle(title, deleteRunes: true)}';
+    final romSlug = RomService.getRomSlug(console.toLowerCase(), title);
 
     final romInfo = RomInfo(
       slug: romSlug,

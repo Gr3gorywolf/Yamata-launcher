@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/hoster_info.dart';
@@ -13,6 +14,7 @@ import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/download_source_hoster_select_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -34,6 +36,7 @@ class RomDownloadSourcesDialog extends StatefulWidget {
 class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   Map<String, HosterInfo> urlHosters = {};
   List<_Result> results = [];
+  var extractAfterDownload = false;
 
   Future fetchSingleSourcesHosters() async {
     for (final result in results) {
@@ -88,10 +91,15 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     super.initState();
     loadResults();
     fetchSingleSourcesHosters();
+    SettingsService().get(SettingsKeys.ENABLE_EXTRACTION).then((value) {
+      setState(() {
+        extractAfterDownload = value ?? false;
+      });
+    });
   }
 
   locateAndAddToLibrary() async {
-    final file = await FileSystemService.locateFile();
+    final file = await FileSystemService.showFilePicker();
     if (file == null) return;
     var provider = Provider.of<LibraryProvider>(context, listen: false);
     var item = provider.addRomToLibrary(widget.rom);
@@ -122,9 +130,11 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         if (selectedHoster.isDirect) {
           Navigator.pop(
               context,
-              sourceRom.copyWith(
-                uris: [selectedHoster.uri],
-              ));
+              RomDownloadSourcesDialogResult(
+                  rom: sourceRom.copyWith(
+                    uris: [selectedHoster.uri],
+                  ),
+                  extractAfterDownload: extractAfterDownload));
           return;
         }
         var loading = AlertsService.showLoadingAlert(
@@ -137,13 +147,14 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
               "Could not extract download link for ${sourceRom.title}");
           return;
         }
-
+        var romDownload = sourceRom.copyWith(
+          fileName: selectedHoster.fileName,
+          uris: [directDownloadLink],
+        );
         Navigator.pop(
             context,
-            sourceRom.copyWith(
-              fileName: selectedHoster.fileName,
-              uris: [directDownloadLink],
-            ));
+            RomDownloadSourcesDialogResult(
+                rom: romDownload, extractAfterDownload: extractAfterDownload));
         return;
       }
 
@@ -156,10 +167,14 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     if (await DownloadSourcesRepository()
         .isDirectDownload(sourceRom.uris!.first)) {
       loading.close();
+      var romDownload = sourceRom.copyWith(
+        uris: [sourceRom.uris!.first],
+      );
       Navigator.pop(
           context,
-          sourceRom.copyWith(
-            uris: [sourceRom.uris!.first],
+          RomDownloadSourcesDialogResult(
+            rom: romDownload,
+            extractAfterDownload: extractAfterDownload,
           ));
       return;
     }
@@ -175,9 +190,12 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     }
     Navigator.pop(
         context,
-        sourceRom.copyWith(
-          uris: [link],
-          fileName: fileName,
+        RomDownloadSourcesDialogResult(
+          rom: sourceRom.copyWith(
+            fileName: fileName,
+            uris: [link],
+          ),
+          extractAfterDownload: extractAfterDownload,
         ));
   }
 
@@ -195,35 +213,50 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                   style: TextStyle(color: Colors.grey),
                 ),
               )
-            : ListView.builder(
-                itemCount: results.length,
-                itemBuilder: (_, index) {
-                  final item = results[index];
-                  var prefix = item.rom.uris!.length > 1
-                      ? '${item.rom.uris!.length} hosters'
-                      : urlHosters.containsKey(item.rom.uris!.first)
-                          ? urlHosters[item.rom.uris!.first]!.domain
-                          : 'Loading...';
-                  return ListTile(
-                    leading: const Icon(Icons.cloud),
-                    title: Text(
-                      item.rom.title!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: results.length,
+                      itemBuilder: (_, index) {
+                        final item = results[index];
+                        var prefix = item.rom.uris!.length > 1
+                            ? '${item.rom.uris!.length} hosters'
+                            : urlHosters.containsKey(item.rom.uris!.first)
+                                ? urlHosters[item.rom.uris!.first]!.domain
+                                : 'Loading...';
+                        return ListTile(
+                          leading: const Icon(Icons.cloud),
+                          title: Text(
+                            item.rom.title!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Opacity(
+                            opacity: 0.7,
+                            child: Text(
+                              ' ${item.sourceTitle} • $prefix  • ${item.rom.fileSize}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          onTap: () {
+                            handleDownloadSourceSelected(item.rom);
+                          },
+                        );
+                      },
                     ),
-                    subtitle: Opacity(
-                      opacity: 0.7,
-                      child: Text(
-                        ' ${item.sourceTitle} • $prefix  • ${item.rom.fileSize}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    onTap: () {
-                      handleDownloadSourceSelected(item.rom);
+                  ),
+                  CheckboxListTile(
+                    value: extractAfterDownload,
+                    onChanged: (checked) => {
+                      setState(() {
+                        extractAfterDownload = checked ?? false;
+                      })
                     },
-                  );
-                },
+                    title: Text("Extract contents after download"),
+                  )
+                ],
               ),
       ),
       actions: [
@@ -239,6 +272,16 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       ],
     );
   }
+}
+
+class RomDownloadSourcesDialogResult {
+  final DownloadSourceRom rom;
+  final bool extractAfterDownload;
+
+  RomDownloadSourcesDialogResult({
+    required this.rom,
+    required this.extractAfterDownload,
+  });
 }
 
 class _Result {

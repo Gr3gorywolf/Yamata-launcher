@@ -100,7 +100,9 @@ class DownloadProvider extends ChangeNotifier {
 
   Future<void> addRomDownloadToQueue(
       RomInfo rom, DownloadSourceRom source, Aria2DownloadHandle handle,
-      {bool isExtraContent = false, String? contentTitle}) async {
+      {bool isExtraContent = false,
+      String? contentTitle,
+      bool? shouldExtract}) async {
     final downloadId = handle.id;
     final info = DownloadInfo(
       romSlug: rom.slug,
@@ -109,6 +111,7 @@ class DownloadProvider extends ChangeNotifier {
       romInfo: rom,
       isExtraContent: isExtraContent,
       contentTitle: contentTitle,
+      shouldExtract: shouldExtract,
       downloadInfo: 'Starting download...',
       totalSize: source.fileSize,
     );
@@ -325,11 +328,13 @@ class DownloadProvider extends ChangeNotifier {
     var extractionEnabled =
         await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     await _setDownloadToHistory(download, path);
-    if (extractionEnabled == true &&
-        VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) {
+    if ((extractionEnabled == true &&
+            VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) ||
+        download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {
-      var newPath = await _handleMoveContentToParentFolder(libraryItem, path,
+      var newPath = await _handleMoveContentToParentFolder(
+          libraryItem, path, File(path).parent.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
       _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(download));
@@ -453,7 +458,7 @@ class DownloadProvider extends ChangeNotifier {
             exception: e);
       }
       var newPath = await _handleMoveContentToParentFolder(
-          libraryItem!, extractedFile.path,
+          libraryItem!, extractedFile.path, outputDir.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
     }
@@ -473,18 +478,21 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   Future<String> _handleMoveContentToParentFolder(
-      RomLibraryItem libraryItem, String path,
+      RomLibraryItem libraryItem, String path, String downloadFolder,
       {bool updateLibrary = true}) async {
+    var pathFilesCount =
+        Directory(downloadFolder).listSync(recursive: true).length;
     if (await SettingsService()
             .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER) ||
-        PLATFORMS_WITH_DIRECTORY_TYPE_GAMES.contains(libraryItem.rom.console)) {
+        PLATFORMS_WITH_DIRECTORY_TYPE_GAMES.contains(libraryItem.rom.console) ||
+        pathFilesCount > 4) {
       return path;
     }
     try {
-      var newPath = FileSystemService.moveFilesToParentFolder(path);
-
+      var moveResult = FileSystemService.moveFilesToParentFolder(downloadFolder,
+          filePath: path);
       if (updateLibrary) {
-        libraryItem.filePath = newPath;
+        libraryItem.filePath = moveResult.filePath;
         Provider.of<LibraryProvider>(navigatorContext!, listen: false)
             .updateLibraryItem(libraryItem);
       }
@@ -492,7 +500,7 @@ class DownloadProvider extends ChangeNotifier {
       try {
         parentFolder.deleteSync();
       } catch (e) {}
-      return newPath;
+      return moveResult.filePath ?? moveResult.parentFolder;
     } catch (e) {
       print("Error moving files to containing folder: ${e.toString()}");
     }

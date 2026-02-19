@@ -48,6 +48,8 @@
 - [Key Features](#features)
 - [How to Install](#how-to-install)
 - [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Building from source](#building-from-source)
 - [License](#license)
 
 
@@ -103,12 +105,19 @@ In the Wiki you will find:
 - How to's guides for making downloads and catalogs sources
 - Project architecture and extensibility system
 - ROM handling, emulators, and Android intent integration
-- Troubleshooting and common issues
 - Technical documentation for developers and contributors
 
 
 [Official Project Wiki](https://github.com/Gr3gorywolf/Yamata-launcher/wiki)  
 
+
+---
+## Building from source
+The build from source its on the project wiki you can take a look [here](https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Building-from-source)
+
+---
+## Contributing
+The contributing guide its on the project wiki, you can take a look [here](https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Contributing)
 
 ---
 

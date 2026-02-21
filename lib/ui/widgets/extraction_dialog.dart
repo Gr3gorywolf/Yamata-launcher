@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:archive/archive.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -46,9 +49,24 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
     }
   }
 
+  void _cancelWakeLock() {
+    if (Platform.isAndroid) {
+      var downloadProvider =
+          Provider.of<DownloadProvider>(context, listen: false);
+      if (downloadProvider.activeDownloadInfos.isEmpty) {
+        WakelockAndroidInterface.setWakeLock(false);
+      } else {
+        print("Active downloads detected, keeping wakelock");
+      }
+    }
+  }
+
   Future<void> _unzip() async {
     var tempFolder = Directory(
         p.join(widget.zipFile.parent.path, StringHelper.generateUUID()));
+    if (Platform.isAndroid) {
+      WakelockAndroidInterface.setWakeLock(true);
+    }
     await tempFolder.create(recursive: true);
     var (stream, cancelFn) = await ExtractionService.extractOnce(
         input: widget.zipFile,
@@ -58,6 +76,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
           Future.microtask(() {
             widget?.onError?.call(data as String);
           }).then((_) {});
+          _cancelWakeLock();
 
           if (!isCanceling) {
             Navigator.of(context).pop();
@@ -96,8 +115,12 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         if (newFilePath.existsSync() && movingResult.filePath != null) {
           extractedFile = newFilePath;
           if (Platform.isAndroid) {
-            MediaScanner.loadMedia(path: extractedFile.path);
-            MediaScanner.loadMedia(path: extractedFile.parent.path);
+            try {
+              MediaScanner.loadMedia(path: extractedFile.path);
+              MediaScanner.loadMedia(path: extractedFile.parent.path);
+            } catch (e) {
+              print("Error loading media: ${e.toString()}");
+            }
           }
           try {
             await widget.zipFile.delete();
@@ -107,11 +130,13 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
           dir.deleteSync(recursive: true);
         } catch (e) {}
       }
+      _cancelWakeLock();
       Navigator.of(context).pop(extractedFile);
     } on Exception catch (e) {
       Future.microtask(() {
         widget?.onError?.call(e.toString());
       }).then((_) {});
+      _cancelWakeLock();
       Navigator.of(context).pop();
       return;
     }

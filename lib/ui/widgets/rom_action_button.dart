@@ -47,7 +47,8 @@ class RomActionButton extends StatefulWidget {
 }
 
 class _RomActionButtonState extends State<RomActionButton> {
-  bool? _fileExists; // null = loading
+  bool? _fileExists;
+  bool? isCheckingFile;
 
   @override
   void initState() {
@@ -56,6 +57,8 @@ class _RomActionButtonState extends State<RomActionButton> {
   }
 
   Future<void> _checkFileExists() async {
+    if (isCheckingFile == true) return;
+    isCheckingFile = true;
     final libraryProvider =
         Provider.of<LibraryProvider>(context, listen: false);
 
@@ -63,6 +66,8 @@ class _RomActionButtonState extends State<RomActionButton> {
 
     if (libraryItem == null || libraryItem.filePath == null) {
       _fileExists = false;
+      isCheckingFile = false;
+      if (mounted) setState(() {});
       return;
     }
 
@@ -70,6 +75,7 @@ class _RomActionButtonState extends State<RomActionButton> {
 
     final cached = FileExistCache.get(path);
     if (cached != null) {
+      isCheckingFile = false;
       _fileExists = cached;
       if (mounted) setState(() {});
       return;
@@ -89,6 +95,7 @@ class _RomActionButtonState extends State<RomActionButton> {
         _fileExists = exists;
       });
     }
+    isCheckingFile = false;
   }
 
   @override
@@ -110,6 +117,15 @@ class _RomActionButtonState extends State<RomActionButton> {
     final isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
     final hasDownloadSources =
         downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty;
+
+    bool shouldCheckFileExists = libraryItem != null &&
+        libraryItem.filePath != null &&
+        FileExistCache.get(libraryItem.filePath!) == null &&
+        (_fileExists == null || _fileExists == false);
+
+    if (shouldCheckFileExists) {
+      _checkFileExists();
+    }
 
     bool getFileIsCompressed() {
       if (libraryItem?.filePath == null) return false;

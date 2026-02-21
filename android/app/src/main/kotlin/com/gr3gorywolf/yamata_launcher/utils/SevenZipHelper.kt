@@ -11,7 +11,7 @@ private fun detectArchiveFormat(file: File): ArchiveFormat {
 
     return when {
         name.endsWith(".zip") -> ArchiveFormat.ZIP
-        name.endsWith(".rar") -> ArchiveFormat.RAR
+        name.endsWith(".rar") -> ArchiveFormat.RAR5
         name.endsWith(".7z") -> ArchiveFormat.SEVEN_ZIP
         name.endsWith(".tar") -> ArchiveFormat.TAR
         name.endsWith(".gz") || name.endsWith(".tgz") -> ArchiveFormat.GZIP
@@ -45,6 +45,7 @@ object SevenZipHelper {
         passwords?.let { attempts.addAll(it) }
         Log.e(TAG, "Passwords for this extraction $passwords")
         var lastError: Exception? = null
+        var archiveIsEncrypted = false
 
         for (password in attempts) {
             if (isCancelled()) return
@@ -76,12 +77,12 @@ object SevenZipHelper {
                             if (isCancelled()) return
                             readBytes = bytes ?: 0
 
-                            val p =
+                           val p =
                                 if (totalBytes > 0)
-                                    (readBytes.toDouble() / totalBytes.toDouble()) * 50.0
+                                    (readBytes.toDouble() / totalBytes.toDouble()) * 10.0
                                 else 0.0
 
-                            onProgress(p.coerceIn(0.0, 50.0))
+                            onProgress(p.coerceIn(0.0, 10.0))
                         }
                     }
                 )
@@ -119,14 +120,15 @@ object SevenZipHelper {
 
                         override fun prepareOperation(mode: ExtractAskMode) {}
 
-                        override fun setOperationResult(result: ExtractOperationResult) {
+                       override fun setOperationResult(result: ExtractOperationResult) {
                             if (result == ExtractOperationResult.WRONG_PASSWORD) {
+                                archiveIsEncrypted = true
                                 throw SevenZipException("Wrong password")
                             }
                             if (result != ExtractOperationResult.OK && !isCancelled()) {
                                 throw SevenZipException("Extraction error: $result")
                             }
-                        }
+                      }
 
                         override fun setTotal(total: Long) {
                             extractTotal = total
@@ -135,12 +137,12 @@ object SevenZipHelper {
                         override fun setCompleted(complete: Long) {
                             if (isCancelled()) return
 
-                            val percentExtraction =
-                                if (extractTotal > 0)
-                                    (complete.toDouble() / extractTotal.toDouble()) * 50.0
-                                else 0.0
+                        val percentExtraction =
+                            if (extractTotal > 0)
+                                (complete.toDouble() / extractTotal.toDouble()) * 90.0
+                            else 0.0
 
-                            onProgress(50.0 + percentExtraction.coerceIn(0.0, 50.0))
+                        onProgress(10.0 + percentExtraction.coerceIn(0.0, 90.0))
                         }
                     }
                 )
@@ -161,6 +163,10 @@ object SevenZipHelper {
             }
         }
 
-        throw SevenZipException("No valid password found. Last error: ${lastError?.message}")
+        if (archiveIsEncrypted) {
+            throw SevenZipException("No valid password found")
+        } else {
+            throw lastError ?: SevenZipException("Extraction failed")
+        }
     }
 }

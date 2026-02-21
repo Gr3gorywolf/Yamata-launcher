@@ -38,8 +38,12 @@ class RomService {
         Provider.of<LibraryProvider>(navigatorContext!, listen: false);
     downloadedRom.filePath = resultFile.path;
     if (Platform.isAndroid) {
-      MediaScanner.loadMedia(path: resultFile.path);
-      MediaScanner.loadMedia(path: resultFile.parent.path);
+      try {
+        MediaScanner.loadMedia(path: resultFile.path);
+        MediaScanner.loadMedia(path: resultFile.parent.path);
+      } catch (e) {
+        print("Error loading media: ${e.toString()}");
+      }
     }
     provider.updateLibraryItem(downloadedRom);
     Future.microtask(() {

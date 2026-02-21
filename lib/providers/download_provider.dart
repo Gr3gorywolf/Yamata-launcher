@@ -19,6 +19,7 @@ import 'package:yamata_launcher/services/aria2c/aria2c_client.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
 import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
@@ -92,10 +93,24 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
+  // This method is used to handle common logic after changing the state
+  void handleNotifyListeners() {
+    if (_activeDownloadInfos.isEmpty) {
+      if (Platform.isAndroid) {
+        WakelockAndroidInterface.setWakeLock(false);
+      }
+    } else {
+      if (Platform.isAndroid) {
+        WakelockAndroidInterface.setWakeLock(true);
+      }
+    }
+    notifyListeners();
+  }
+
   Future setDownloadHistory(List<DownloadHistoryItem> history) async {
     _downloadHistory.clear();
     _downloadHistory.addAll(history);
-    notifyListeners();
+    handleNotifyListeners();
   }
 
   Future<void> addRomDownloadToQueue(
@@ -125,7 +140,6 @@ class DownloadProvider extends ChangeNotifier {
           tag: rom.slug,
           androidActions: [AndroidNotificationsActionTypes.CancelDownload]);
     }
-
     _activeDownloadInfos.add(info);
     final sub = handle.events!.listen((event) {
       _handleAria2Event(
@@ -144,7 +158,7 @@ class DownloadProvider extends ChangeNotifier {
       sub: sub,
     );
     _handleProgressChanged();
-    notifyListeners();
+    handleNotifyListeners();
   }
 
   abortDownload(DownloadInfo info) async {
@@ -155,7 +169,7 @@ class DownloadProvider extends ChangeNotifier {
       }
       _activeDownloadInfos
           .removeWhere((element) => element.downloadId == info.downloadId);
-      notifyListeners();
+      handleNotifyListeners();
       _handleProgressChanged();
       return;
     }
@@ -169,7 +183,7 @@ class DownloadProvider extends ChangeNotifier {
         print("Cancelling notification for tag: ${info.romSlug}");
         NotificationsService.cancelNotificationByTag(info.romSlug);
       }
-      notifyListeners();
+      handleNotifyListeners();
       _handleProgressChanged();
     }
   }
@@ -189,7 +203,7 @@ class DownloadProvider extends ChangeNotifier {
 
       info.downloadInfo = Aria2cUtils.formatProgress(p);
       print("Download info: ${info.downloadInfo}");
-      notifyListeners();
+      handleNotifyListeners();
       _handleProgressChanged();
       if (Platform.isAndroid) {
         NotificationsService.showNotification(
@@ -218,7 +232,7 @@ class DownloadProvider extends ChangeNotifier {
       print("Download completed: ${event.outputFilePath}");
       _registerCompletedDownload(info, rom, event.outputFilePath ?? "");
       _disposeActive(handle.id);
-      notifyListeners();
+      handleNotifyListeners();
       return;
     }
 
@@ -228,7 +242,7 @@ class DownloadProvider extends ChangeNotifier {
       _disposeActive(handle.id);
       Future.delayed(Duration(seconds: 2), () {
         _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(info));
-        notifyListeners();
+        handleNotifyListeners();
         _handleProgressChanged();
         NotificationsService.showNotification(
           title: 'Failed to download ${rom.name}',
@@ -279,13 +293,13 @@ class DownloadProvider extends ChangeNotifier {
     if (foundDownloadIndex != -1) {
       await DownloadHistoryDao(db!).update(historyItem);
       _downloadHistory[foundDownloadIndex] = historyItem;
-      notifyListeners();
+      handleNotifyListeners();
       return;
     }
 
     await DownloadHistoryDao(db!).insert(historyItem);
     _downloadHistory.add(historyItem);
-    notifyListeners();
+    handleNotifyListeners();
   }
 
   void _registerCompletedDownload(
@@ -311,8 +325,12 @@ class DownloadProvider extends ChangeNotifier {
     }
     libraryItem.downloadedAt = DateTime.now();
     if (Platform.isAndroid) {
-      MediaScanner.loadMedia(path: path);
-      MediaScanner.loadMedia(path: File(path).parent.path);
+      try {
+        MediaScanner.loadMedia(path: path);
+        MediaScanner.loadMedia(path: File(path).parent.path);
+      } catch (e) {
+        print("Error loading media: ${e.toString()}");
+      }
     }
     await libraryProvider.updateLibraryItem(libraryItem);
     await NotificationsService.showNotification(
@@ -322,7 +340,7 @@ class DownloadProvider extends ChangeNotifier {
       image: rom.portrait,
       tag: rom.slug,
     );
-    notifyListeners();
+    handleNotifyListeners();
     _handleProgressChanged();
     var fileExtension = SystemHelpers.getFileExtension(path).toLowerCase();
     var extractionEnabled =
@@ -362,7 +380,7 @@ class DownloadProvider extends ChangeNotifier {
       extractionId: download.downloadId,
       onError: (error) {
         _activeDownloadInfos.remove(download);
-        notifyListeners();
+        handleNotifyListeners();
       },
     );
 
@@ -388,7 +406,7 @@ class DownloadProvider extends ChangeNotifier {
         }
       }
 
-      notifyListeners();
+      handleNotifyListeners();
     });
   }
 
@@ -443,8 +461,12 @@ class DownloadProvider extends ChangeNotifier {
         RomService.searchRomFile(outputDir, skipCompressedFiles: true);
     if (extractedFile != null) {
       if (Platform.isAndroid) {
-        MediaScanner.loadMedia(path: extractedFile.path);
-        MediaScanner.loadMedia(path: extractedFile.parent.path);
+        try {
+          MediaScanner.loadMedia(path: extractedFile.path);
+          MediaScanner.loadMedia(path: extractedFile.parent.path);
+        } catch (e) {
+          print("Error loading media: ${e.toString()}");
+        }
       }
       if (libraryItem != null && !download.isExtraContent) {
         libraryItem.filePath = extractedFile.path;
@@ -474,7 +496,7 @@ class DownloadProvider extends ChangeNotifier {
 
     _activeDownloadInfos.remove(download);
     _handleProgressChanged();
-    notifyListeners();
+    handleNotifyListeners();
   }
 
   Future<String> _handleMoveContentToParentFolder(

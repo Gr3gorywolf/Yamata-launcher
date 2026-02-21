@@ -15,6 +15,7 @@ import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_client.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
 import 'package:yamata_launcher/services/native/aria2c_android_interface.dart';
+import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
@@ -139,7 +140,6 @@ class Aria2cDownloadManager {
     );
 
     SendPort? controlPort;
-
     final sub = receivePort.listen((msg) {
       if (msg is! Map) return;
 

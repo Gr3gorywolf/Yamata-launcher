@@ -52,10 +52,19 @@ String _prefix3(String s) => s.length <= 3 ? s : s.substring(0, 3);
  * Remove words that are commonly misplaced in titles to improve matching accuracy.
  */
 String _removeMisplacedWords(String input) {
-  var wordsToRemove = ["the", "and", "of"];
-  var pattern =
-      RegExp(r'\b(' + wordsToRemove.join('|') + r')\b', caseSensitive: false);
-  return input.replaceAll(pattern, '').trim();
+  var wordsToRemove = ["the", "and", "of", "a"];
+
+  var wordPattern = r'\b(' + wordsToRemove.join('|') + r')\b\s*';
+
+  var symbolPattern = r'\s*&\s*';
+
+  var pattern = RegExp('($wordPattern|$symbolPattern)', caseSensitive: false);
+
+  var result = input.replaceAll(pattern, ' ');
+
+  result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  return result;
 }
 
 /**
@@ -68,12 +77,10 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
   final stopwatch = Stopwatch()..start();
 
   print("Isolate: Compiling ${payload.roms.length} roms");
-
-  for (final rom in payload.roms) {
-    rom.name = RomService.normalizeRomTitle(
-      _removeMisplacedWords(rom.name),
-    );
-  }
+  var normalizedRoms = payload.roms.map((rom) {
+    rom.name = RomService.normalizeRomTitle(_removeMisplacedWords(rom.name));
+    return rom;
+  }).toList();
 
   final Map<String, Map<String, List<DownloadSourceWithDownloads>>> index = {};
 
@@ -81,9 +88,12 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
     for (final d in source.downloads ?? const []) {
       final console = d.console;
 
-      d.titleClean ??= RomService.normalizeRomTitle(
+      d.titleClean = RomService.normalizeRomTitle(
         _removeMisplacedWords(d.title ?? ""),
       );
+      if (d.titleClean!.contains("zelda")) {
+        print("Processing source ${d.titleClean}");
+      }
 
       if (d.titleClean!.isEmpty) continue;
 
@@ -115,8 +125,11 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
 
   print("Index built in ${stopwatch.elapsedMilliseconds} ms");
 
-  for (final rom in payload.roms) {
+  for (final rom in normalizedRoms) {
     final name = rom.name;
+    if (rom.name.contains("zelda")) {
+      print("Processing ${rom.name}");
+    }
     if (name.isEmpty) continue;
 
     final consoleMap = index[rom.console];

@@ -111,6 +111,8 @@ class LibraryProvider extends ChangeNotifier {
     }
     await LibraryDao(db!).update(item);
     _libraryItems[item.rom.slug] = item;
-    notifyListeners();
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 }

@@ -90,6 +90,9 @@ class _SettingsPageState extends State<SettingsPage> {
         case SettingsKeys.CLOSE_TO_SYSTEM_TRAY:
           _closeToSystemTray = value as bool;
           break;
+        case SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER:
+          _moveRomToSubfolder = value as bool;
+          break;
         default:
           break;
       }

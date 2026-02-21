@@ -110,78 +110,53 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
           minWidth: 300,
           maxWidth: 400,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DialogSectionItem(
-              title: "Console",
-              icon: Icons.gamepad,
-              actions: [],
-              content: SearchableDropdownFormField<String>(
-                value: selectedConsole.isNotEmpty ? selectedConsole : null,
-                items: availableConsoles
-                    .map((console) => DropdownMenuItem<String>(
-                          value: console.slug ?? "",
-                          child: Text(console.name ?? ""),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedConsole = value ?? "";
-                  });
-                },
-              ),
-            ),
-            DialogSectionItem(
-              title: "Emulator $emulatorExecutableType",
-              icon: Icons.videogame_asset,
-              helperText:
-                  "Select the emulator $emulatorExecutableType to be used for the selected console. ${FileSystemService.isDesktop ? " If no $emulatorExecutableType is selected will launch the game directly (Useful for desktop Games)" : ""}.",
-              actions: [
-                if (selectedBinaryController.text.isNotEmpty)
-                  IconButton(
-                      onPressed: () {
-                        setState(() {
-                          selectedBinaryController.text = "";
-                        });
-                      },
-                      icon: Icon(Icons.clear)),
-                IconButton(
-                    onPressed: handleSelectEmulatorBinary,
-                    icon: Icon(Icons.file_open))
-              ],
-              content: TextField(
-                controller: selectedBinaryController,
-                enabled: FileSystemService.isDesktop,
-                decoration: InputDecoration(
-                  hintText: "Emulator $emulatorExecutableType path",
-                  helperMaxLines: 3,
-                  helperStyle: TextStyle(color: Colors.grey[500]),
-                  filled: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 7),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (text) {
-                  setState(() {});
-                },
-              ),
-            ),
-            if (FileSystemService.isDesktop)
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               DialogSectionItem(
-                title: "Launch parameters",
-                helperText:
-                    "Parameters flags used when launching the ROM (if supported by the emulator)",
-                icon: Icons.terminal,
+                title: "Console",
+                icon: Icons.gamepad,
                 actions: [],
+                content: SearchableDropdownFormField<String>(
+                  value: selectedConsole.isNotEmpty ? selectedConsole : null,
+                  items: availableConsoles
+                      .map((console) => DropdownMenuItem<String>(
+                            value: console.slug ?? "",
+                            child: Text(console.name ?? ""),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedConsole = value ?? "";
+                    });
+                  },
+                ),
+              ),
+              DialogSectionItem(
+                title: "Emulator $emulatorExecutableType",
+                icon: Icons.videogame_asset,
+                helperText:
+                    "Select the emulator $emulatorExecutableType to be used for the selected console. ${FileSystemService.isDesktop ? " If no $emulatorExecutableType is selected will launch the game directly (Useful for desktop Games)" : ""}.",
+                actions: [
+                  if (selectedBinaryController.text.isNotEmpty)
+                    IconButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedBinaryController.text = "";
+                          });
+                        },
+                        icon: Icon(Icons.clear)),
+                  IconButton(
+                      onPressed: handleSelectEmulatorBinary,
+                      icon: Icon(Icons.file_open))
+                ],
                 content: TextField(
-                  controller: launchParametersController,
+                  controller: selectedBinaryController,
+                  enabled: FileSystemService.isDesktop,
                   decoration: InputDecoration(
-                    hintText: "Custom launch parameters",
+                    hintText: "Emulator $emulatorExecutableType path",
                     helperMaxLines: 3,
                     helperStyle: TextStyle(color: Colors.grey[500]),
                     filled: true,
@@ -197,7 +172,34 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                   },
                 ),
               ),
-          ],
+              if (FileSystemService.isDesktop)
+                DialogSectionItem(
+                  title: "Launch parameters",
+                  helperText:
+                      "Parameters flags used when launching the ROM (if supported by the emulator)",
+                  icon: Icons.terminal,
+                  actions: [],
+                  content: TextField(
+                    controller: launchParametersController,
+                    decoration: InputDecoration(
+                      hintText: "Custom launch parameters",
+                      helperMaxLines: 3,
+                      helperStyle: TextStyle(color: Colors.grey[500]),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 7),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (text) {
+                      setState(() {});
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: [

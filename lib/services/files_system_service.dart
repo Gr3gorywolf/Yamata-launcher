@@ -9,6 +9,7 @@ import 'package:media_scanner/media_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/services/native/aria2c_android_interface.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
@@ -210,7 +211,8 @@ class FileSystemService {
     for (final item in items) {
       final name = p.basename(item.path);
       var newPath = p.join(parentPath, name);
-      if (item.path.endsWith(".aria2")) {
+      if (item.path.endsWith(".aria2") ||
+          item.path.endsWith(DOWNLOAD_MARK_FILENAME)) {
         item.deleteSync();
         continue;
       }

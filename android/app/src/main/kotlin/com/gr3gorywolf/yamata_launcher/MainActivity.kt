@@ -14,6 +14,7 @@ import com.gr3gorywolf.yamata_launcher.utils.ZipUtils
 import com.gr3gorywolf.yamata_launcher.utils.SevenZipHelper
 import android.content.Intent
 import android.net.Uri
+import android.os.PowerManager
 
 class MainActivity : FlutterActivity() {
 
@@ -29,10 +30,16 @@ class MainActivity : FlutterActivity() {
     private var certFileName = "libutils.so/yamata_launcher.pem"
     private var certKeyFileName = "libutils.so/yamata_launcher.key"
     private val extractTasks = mutableMapOf<String, Boolean>()
+    
+
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "MyApp:DownloadLock"
+        )
        val channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
@@ -182,6 +189,24 @@ class MainActivity : FlutterActivity() {
                     result.success(paths)
                     } catch (e: Exception) {
                         result.error("PATHS_ERROR", e.message, null)
+                    }
+                }
+
+                "setWakeLock" -> {
+                    try {
+                        val shouldAcquire = call.argument<Boolean>("shouldAcquire") ?: false
+                        if (shouldAcquire) {
+                            if (!wakeLock.isHeld) {
+                                wakeLock.acquire()
+                            }
+                        } else {
+                            if (wakeLock.isHeld) {
+                                wakeLock.release()
+                            }
+                        }
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("WAKELOCK_ERROR", e.message, null)
                     }
                 }
 

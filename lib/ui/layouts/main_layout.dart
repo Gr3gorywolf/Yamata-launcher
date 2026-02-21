@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
+import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
@@ -46,11 +47,13 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
 
     final isSmallScreen = ScreenHelpers.isSmallScreen(context);
     final isMediumScreen = ScreenHelpers.isMediumScreen(context);
+    final totalDownloadPercent =
+        Provider.of<DownloadProvider>(context).totalDownloadPercent;
 
     const navigationItems = [
       {'icon': Icons.explore, 'label': 'Explore'},
       {'icon': Icons.collections_bookmark, 'label': 'Library'},
-      {'icon': Icons.download_sharp, 'label': 'Downloads'},
+      {'icon': Icons.download_sharp, 'label': 'Downloads', 'isDownload': true},
       {'icon': Icons.settings, 'label': 'Settings'},
     ];
 
@@ -84,7 +87,17 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
             destinations: navigationItems
                 .map(
                   (item) => NavigationRailDestination(
-                    icon: Icon(item['icon'] as IconData),
+                    icon: item['isDownload'] == true && totalDownloadPercent > 0
+                        ? Stack(children: [
+                            CircularProgressIndicator(
+                                strokeWidth: 1.3,
+                                value: totalDownloadPercent / 100),
+                            Positioned(
+                                child: Icon(item['icon'] as IconData),
+                                top: 6,
+                                left: 6)
+                          ])
+                        : Icon(item['icon'] as IconData),
                     label: Text(item['label'] as String),
                   ),
                 )

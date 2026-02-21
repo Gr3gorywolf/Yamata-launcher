@@ -8,6 +8,7 @@ import 'package:yamata_launcher/models/emulator.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
@@ -111,6 +112,7 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     var libraryProvider = LibraryProvider.of(context);
+    var appProvider = Provider.of<AppProvider>(context);
     var roms = libraryProvider.libraryItems;
     var getFilteredRoms = () {
       if (filterValues == null) return roms.map((e) => e.rom).toList();
@@ -182,9 +184,10 @@ class _LibraryPageState extends State<LibraryPage> {
                   handleQuickFilterChanged(newSelection.first);
                 },
               ),
-              initialViewMode: Platform.isAndroid
-                  ? ViewModeToggleMode.list
-                  : ViewModeToggleMode.grid,
+              onViewModeChanged: (mode) {
+                appProvider.setConsoleRomsItemType(mode);
+              },
+              initialViewMode: appProvider.romListItemType,
               roms: getFilteredRoms(),
             ),
     );

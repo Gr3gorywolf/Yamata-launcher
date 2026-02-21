@@ -151,7 +151,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         isLoading: this._isLoading,
         roms: filteredRoms,
         showConsole: true,
-        initialViewMode: appProvider.consoleRomsItemType,
+        initialViewMode: appProvider.romListItemType,
         onViewModeChanged: (mode) {
           appProvider.setConsoleRomsItemType(mode);
         },

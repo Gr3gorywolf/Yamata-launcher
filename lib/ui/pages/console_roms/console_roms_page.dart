@@ -148,7 +148,7 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
             handleQuickFilterChanged(newSelection.first);
           },
         ),
-        initialViewMode: appProvider.consoleRomsItemType,
+        initialViewMode: appProvider.romListItemType,
         onViewModeChanged: (mode) {
           appProvider.setConsoleRomsItemType(mode);
         },

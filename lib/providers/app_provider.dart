@@ -20,12 +20,12 @@ class AppProvider extends ChangeNotifier {
   ThemeMode _theme = ThemeMode.system;
   ThemeMode get themeMode => _theme;
   UpdateInfo? get updateInfo => _updateInfo;
-  ViewModeToggleMode consoleRomsItemType = ViewModeToggleMode.grid;
+  ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
 
   setAppLoaded(bool val) {
     _isAppLoaded = val;
     if (Platform.isAndroid) {
-      consoleRomsItemType = ViewModeToggleMode.list;
+      romListItemType = ViewModeToggleMode.list;
     }
     notifyListeners();
   }
@@ -36,7 +36,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   setConsoleRomsItemType(ViewModeToggleMode type) {
-    consoleRomsItemType = type;
+    romListItemType = type;
     notifyListeners();
   }
 

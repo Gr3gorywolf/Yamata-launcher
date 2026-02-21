@@ -36,12 +36,13 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Remote Sources Manager')),
-      body: SingleChildScrollView(
-        child: Center(
+      body: Center(
+        child: SingleChildScrollView(
           child: url == null
               ? const CircularProgressIndicator()
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
                       'Scan this QR code with your external device to manage sources',
@@ -81,6 +82,11 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
                     const Text(
                       'Open this URL from your external device (must be on the same network)',
                       textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      'Dont close this page while managing sources or the connection will be lost',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.redAccent),
                     ),
                   ],
                 ),

@@ -67,6 +67,22 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
       }
     }
 
+    Widget buildIcon(dynamic navigationItem) {
+      final icon = navigationItem['icon'] as IconData;
+      final percent =
+          navigationItem['isDownload'] == true && totalDownloadPercent > 0
+              ? totalDownloadPercent
+              : null;
+      if (percent == null) {
+        return Container(
+            height: 35, width: 35, child: Center(child: Icon(icon)));
+      }
+      return Stack(children: [
+        CircularProgressIndicator(strokeWidth: 1.3, value: percent / 100),
+        Positioned(child: Icon(icon), top: 6, left: 6)
+      ]);
+    }
+
     Widget buildDesktopLayout() {
       return Row(
         children: [
@@ -87,17 +103,7 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
             destinations: navigationItems
                 .map(
                   (item) => NavigationRailDestination(
-                    icon: item['isDownload'] == true && totalDownloadPercent > 0
-                        ? Stack(children: [
-                            CircularProgressIndicator(
-                                strokeWidth: 1.3,
-                                value: totalDownloadPercent / 100),
-                            Positioned(
-                                child: Icon(item['icon'] as IconData),
-                                top: 6,
-                                left: 6)
-                          ])
-                        : Icon(item['icon'] as IconData),
+                    icon: buildIcon(item),
                     label: Text(item['label'] as String),
                   ),
                 )
@@ -138,7 +144,7 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
                 items: navigationItems
                     .map(
                       (item) => BottomNavigationBarItem(
-                        icon: Icon(item['icon'] as IconData),
+                        icon: buildIcon(item),
                         label: item['label'] as String,
                       ),
                     )

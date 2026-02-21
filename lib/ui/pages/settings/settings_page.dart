@@ -308,6 +308,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const _SectionHeader(title: 'About'),
             _NavigationTile(
+              icon: Icons.code,
               title: 'Github Repository',
               subtitle: 'Know more about the project or contribute',
               trailing: Icons.open_in_new,
@@ -316,6 +317,17 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             _NavigationTile(
+              icon: Icons.menu_book,
+              title: 'User guide',
+              subtitle:
+                  'Learn how to use the application and troubleshoot common issues',
+              trailing: Icons.open_in_new,
+              onTap: () => _launchUrl(
+                'https://github.com/Gr3gorywolf/Yamata-launcher/wiki',
+              ),
+            ),
+            _NavigationTile(
+              icon: Icons.person,
               title: 'App Developed by Gr3gorywolf',
               subtitle: 'Check out my website',
               trailing: Icons.open_in_new,
@@ -324,6 +336,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Consumer<AppProvider>(builder: (context, app, _) {
               var isDownloaded = app.updateInfo?.downloadedFilePath != null;
               return _NavigationTile(
+                icon: Icons.system_update,
                 title: 'App version $_appVersion',
                 subtitle: app.updateInfo != null
                     ? "Update ${app.updateInfo?.version} available, tap to ${isDownloaded ? 'install' : 'download'}"

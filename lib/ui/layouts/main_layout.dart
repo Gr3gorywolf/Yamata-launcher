@@ -121,9 +121,15 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
     return GlobalFocusHighlight(
       child: Scaffold(
         body: AppKeyboardListener(
-            onChangeTab: () {
+            onChangeTab: (next) {
               if (currentIndex == -1) return;
-              final nextIndex = (currentIndex + 1) % MainLayout._routes.length;
+              final isForward = next == null || next == true;
+
+              final nextIndex = isForward
+                  ? (currentIndex + 1) % MainLayout._routes.length
+                  : (currentIndex - 1 + MainLayout._routes.length) %
+                      MainLayout._routes.length;
+
               context.go(MainLayout._routes[nextIndex]);
             },
             child: isSmallScreen ? widget.child : buildDesktopLayout()),

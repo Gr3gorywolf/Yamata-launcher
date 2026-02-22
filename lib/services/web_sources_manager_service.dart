@@ -15,7 +15,7 @@ import 'package:yamata_launcher/models/platform_catalog_source.dart';
 
 class WebSourcesManagerService {
   HttpServer? _server;
-  int port = 8387;
+  int port = 8487;
 
   Future<String> _getHtmlFile() async {
     var data = {

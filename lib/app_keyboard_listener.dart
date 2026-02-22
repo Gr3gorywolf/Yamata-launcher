@@ -8,7 +8,7 @@ import 'package:yamata_launcher/services/os_service.dart';
 
 class AppKeyboardListener extends StatefulWidget {
   final Widget child;
-  final Function? onChangeTab;
+  final Function(bool? next)? onChangeTab;
   const AppKeyboardListener({super.key, required this.child, this.onChangeTab});
 
   @override
@@ -72,7 +72,17 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
               return;
             }
           }
-          widget.onChangeTab?.call();
+          widget.onChangeTab?.call(null);
+          return;
+        }
+        // Gamepad support for switching tabs
+        if (key == LogicalKeyboardKey.gameButtonRight1 ||
+            key == LogicalKeyboardKey.gameButtonSelect) {
+          widget.onChangeTab?.call(true);
+          return;
+        }
+        if (key == LogicalKeyboardKey.gameButtonLeft1) {
+          widget.onChangeTab?.call(false);
           return;
         }
 

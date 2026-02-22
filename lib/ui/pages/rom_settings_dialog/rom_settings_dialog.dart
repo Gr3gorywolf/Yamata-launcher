@@ -80,14 +80,28 @@ class RomSettingsDialog extends StatelessWidget {
         }
         return;
       }
-      FilePickerResult? selectedFile = await FilePicker.platform.pickFiles(
-        dialogTitle: "Select Emulator Binary",
-        type: FileType.custom,
-        initialDirectory: Platform.isMacOS ? "/Applications" : null,
-        allowedExtensions: VALID_EXECUTABLE_EXTENSIONS,
-      );
-      if (selectedFile == null || libraryItem == null) return;
-      libraryItem.overrideEmulator = selectedFile.files.first.path ?? "";
+      var validExtensions = VALID_EXECUTABLE_EXTENSIONS;
+      String? selectedFilePath = null;
+      try {
+        FilePickerResult? selectedFile = await FilePicker.platform.pickFiles(
+          dialogTitle: "Select Emulator Binary",
+          type: FileType.custom,
+          initialDirectory: Platform.isMacOS ? "/Applications" : null,
+          allowedExtensions: validExtensions,
+        );
+        if (selectedFile != null) {
+          selectedFilePath = selectedFile.files.single.path ?? "";
+        }
+      } catch (e) {
+        print("Error selecting emulator binary: $e");
+        var filePath = await FileSystemService.showFilePicker(
+            allowedExtensions: validExtensions);
+        if (filePath != null) {
+          selectedFilePath = filePath;
+        }
+      }
+      if (selectedFilePath == null || libraryItem == null) return;
+      libraryItem.overrideEmulator = selectedFilePath;
       await provider.updateLibraryItem(libraryItem);
     }
 

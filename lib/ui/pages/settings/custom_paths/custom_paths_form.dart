@@ -61,7 +61,7 @@ class _CustomPathsFormState extends State<CustomPathsForm> {
   }
 
   void handleSelectPath() async {
-    final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    final selectedDirectory = await FileSystemService.showFolderPicker();
 
     if (selectedDirectory == null) return;
     var isValidDirectory =

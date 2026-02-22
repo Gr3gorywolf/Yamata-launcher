@@ -12,6 +12,26 @@
             ]
         },
         {
+            "trigger": "a",
+            "type": "key",
+            "target": "KEY_ESC"
+        },
+        {
+            "trigger": "b",
+            "type": "key",
+            "target": "KEY_ENTER"
+        },
+        {
+            "trigger": "x",
+            "type": "key",
+            "target": "KEY_S"
+        },
+        {
+            "trigger": "y",
+            "type": "key",
+            "target": "KEY_S"
+        },
+        {
             "trigger": "up",
             "type": "key",
             "target": "KEY_UP"
@@ -47,29 +67,14 @@
             "target": "KEY_LEFT"
         },
         {
-            "trigger": "b",
+            "trigger": "joystick1right",
             "type": "key",
-            "target": "KEY_ESCAPE"
-        },
-        {
-            "trigger": "a",
-            "type": "key",
-            "target": "KEY_ENTER"
+            "target": "KEY_RIGHT"
         },
         {
             "trigger": "pageup",
             "type": "key",
             "target": "KEY_A"
-        },
-        {
-            "trigger": "x",
-            "type": "key",
-            "target": "KEY_S"
-        },
-        {
-            "trigger": "y",
-            "type": "key",
-            "target": "KEY_S"
         },
         {
             "trigger": "pagedown",
@@ -100,6 +105,26 @@
             ]
         },
         {
+            "trigger": "a",
+            "type": "key",
+            "target": "KEY_ESC"
+        },
+        {
+            "trigger": "b",
+            "type": "key",
+            "target": "KEY_ENTER"
+        },
+        {
+            "trigger": "x",
+            "type": "key",
+            "target": "KEY_S"
+        },
+        {
+            "trigger": "y",
+            "type": "key",
+            "target": "KEY_S"
+        },
+        {
             "trigger": "up",
             "type": "key",
             "target": "KEY_UP"
@@ -135,27 +160,14 @@
             "target": "KEY_LEFT"
         },
         {
-            "trigger": "b",
+            "trigger": "joystick1right",
             "type": "key",
-            "target": "KEY_ESCAPE"
-        },
-        {
-            "trigger": "a",
-            "type": "key",
-            "target": "KEY_ENTER"
+            "target": "KEY_RIGHT"
         },
         {
             "trigger": "pageup",
             "type": "key",
             "target": "KEY_A"
-        },
-        {
-            "trigger": [
-                "pageup",
-                "pagedown"
-            ],
-            "type": "key",
-            "target": "KEY_S"
         },
         {
             "trigger": "pagedown",
@@ -167,7 +179,7 @@
             "type": "key",
             "target": "KEY_ENTER"
         },
-         {
+        {
             "trigger": "select",
             "type": "key",
             "target": "KEY_TAB"

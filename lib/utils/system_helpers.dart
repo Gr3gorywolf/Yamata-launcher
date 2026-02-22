@@ -51,4 +51,43 @@ class SystemHelpers {
     }
     return sevenZipBinary;
   }
+
+  static Future<List<String>> getAvailableDrives() async {
+    List<String> drives = [];
+    if (Platform.isWindows) {
+      for (var letterCode = 65; letterCode <= 90; letterCode++) {
+        final letter = String.fromCharCode(letterCode);
+        final path = '$letter:\\';
+
+        final dir = Directory(path);
+        try {
+          if (await dir.exists()) {
+            drives.add(path);
+          }
+        } catch (e) {
+          print('Error checking drive $path: $e');
+        }
+      }
+    } else if (Platform.isLinux || Platform.isMacOS) {
+      var rootDrive = "/";
+      final possibleDirs = [
+        '/mnt',
+        '/media',
+        '/Volumes',
+      ];
+
+      for (final base in possibleDirs) {
+        final dir = Directory(base);
+        if (await dir.exists()) {
+          final entities = dir.listSync();
+          for (final e in entities) {
+            if (e is Directory) {
+              drives.add(e.path);
+            }
+          }
+        }
+      }
+    }
+    return drives;
+  }
 }

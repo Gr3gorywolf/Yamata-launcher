@@ -104,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _pickDownloadPath() async {
-    final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    var selectedDirectory = await FileSystemService.showFolderPicker();
 
     if (selectedDirectory == null) return;
     var isValidDirectory =

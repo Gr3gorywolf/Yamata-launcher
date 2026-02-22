@@ -11,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/main.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/native/aria2c_android_interface.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/native/system_paths_android_interface.dart';
@@ -102,45 +104,119 @@ class FileSystemService {
     return cachePath + "/web";
   }
 
-  static Future<String?> showFilePicker() async {
+  /**
+   * Shows a file system widget that its not a dialog, so it can be used on fullscreen mode. It returns the selected path or null if the user cancels the operation.
+   */
+  static Future<String?> _openBuiltInFilePicker(FilesystemType type,
+      {List<String>? allowedExtensions}) async {
+    var shortcuts = <FilesystemPickerShortcut>[];
+    if (FileSystemService.isDesktop) {
+      var loading = AlertsService.showLoadingAlert(
+          navigatorContext!,
+          "Loading drives...",
+          "Please wait while we load the available drives.");
+      var drives = await SystemHelpers.getAvailableDrives();
+      loading.close();
+      shortcuts = [
+        FilesystemPickerShortcut(
+            name: 'Home',
+            path: Directory(Platform.isWindows ? "C:/" : "/"),
+            icon: Icons.home),
+        FilesystemPickerShortcut(
+            name: 'Documents',
+            path: await getApplicationDocumentsDirectory() ?? Directory("/"),
+            icon: Icons.folder),
+        FilesystemPickerShortcut(
+            name: 'Downloads',
+            path: Directory(downloadsPath) ??
+                (await getDownloadsDirectory()) ??
+                Directory("/"),
+            icon: Icons.download),
+        ...drives.map((drive) {
+          return FilesystemPickerShortcut(
+              name: drive, path: Directory(drive), icon: Icons.storage);
+        })
+      ];
+    }
+    if (Platform.isAndroid) {
+      var internalDirectory = _systemPaths?.internalPath != null
+          ? Directory(_systemPaths!.internalPath)
+          : Directory("/storage/emulated/0/");
+      shortcuts = [
+        FilesystemPickerShortcut(
+            name: 'Internal Card',
+            path: internalDirectory,
+            icon: Icons.phone_android),
+        if (_systemPaths?.externalSdCardPath != null)
+          FilesystemPickerShortcut(
+              name: 'External Card',
+              path: Directory(_systemPaths?.externalSdCardPath ?? ""),
+              icon: Icons.sd_card),
+        if (_systemPaths?.downloadsPath != null)
+          FilesystemPickerShortcut(
+              name: 'Downloads',
+              path: Directory(_systemPaths?.downloadsPath ?? ""),
+              icon: Icons.download),
+      ];
+    }
+    var result = await FilesystemPicker.open(
+      title:
+          type == FilesystemType.folder ? 'Select a folder' : 'Select a file',
+      context: navigatorContext!,
+      fsType: type,
+      pickText: type == FilesystemType.folder
+          ? 'Select this folder'
+          : 'Select this file',
+      shortcuts: shortcuts,
+      contextActions: [
+        FilesystemPickerNewFolderContextAction(),
+      ],
+    );
+    return result;
+  }
+
+  /**
+   * Shows a file picker dialog and returns the selected file path. Returns null if the user cancels the dialog or an error occurs.
+   *  if the app is in fullscreen mode, it falls back to a built in file system wrapper
+   */
+  static Future<String?> showFilePicker(
+      {List<String>? allowedExtensions}) async {
     if (Platform.isAndroid) {
       if (!await Permission.manageExternalStorage.isGranted) {
         await Permission.manageExternalStorage.request();
       }
-      var internalDirectory = _systemPaths?.internalPath != null
-          ? Directory(_systemPaths!.internalPath)
-          : Directory("/storage/emulated/0/");
-      return await FilesystemPicker.open(
-        title: 'Select a file',
-        context: navigatorContext!,
-        fsType: FilesystemType.file,
-        pickText: 'Select this file',
-        shortcuts: [
-          FilesystemPickerShortcut(
-              name: 'Internal Card',
-              path: internalDirectory,
-              icon: Icons.phone_android),
-          if (_systemPaths?.externalSdCardPath != null)
-            FilesystemPickerShortcut(
-                name: 'External Card',
-                path: Directory(_systemPaths?.externalSdCardPath ?? ""),
-                icon: Icons.sd_card),
-          if (_systemPaths?.downloadsPath != null)
-            FilesystemPickerShortcut(
-                name: 'Downloads',
-                path: Directory(_systemPaths?.downloadsPath ?? ""),
-                icon: Icons.download),
-        ],
-        contextActions: [
-          FilesystemPickerNewFolderContextAction(),
-        ],
-      );
+      return await _openBuiltInFilePicker(FilesystemType.file,
+          allowedExtensions: allowedExtensions);
     }
+    try {
+      if (isFullScreen) {
+        return await _openBuiltInFilePicker(FilesystemType.file,
+            allowedExtensions: allowedExtensions);
+      }
+      final selectedFiles =
+          await FilePicker.platform.pickFiles(type: FileType.any);
+      if (selectedFiles == null || selectedFiles.files.isEmpty) return null;
+      return selectedFiles.files.first.path!;
+    } catch (e) {
+      return _openBuiltInFilePicker(FilesystemType.file,
+          allowedExtensions: allowedExtensions);
+    }
+  }
 
-    final selectedFiles =
-        await FilePicker.platform.pickFiles(type: FileType.any);
-    if (selectedFiles == null || selectedFiles.files.isEmpty) return null;
-    return selectedFiles.files.first.path!;
+  /**
+  * Shows a folder picker dialog and returns the selected folder path. Returns null if the user cancels the dialog or an error occurs.
+  */
+  static Future<String?> showFolderPicker() async {
+    try {
+      if (isFullScreen) {
+        return await _openBuiltInFilePicker(FilesystemType.folder);
+      }
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory == null) return null;
+      return selectedDirectory;
+    } catch (e) {
+      return _openBuiltInFilePicker(FilesystemType.folder);
+    }
   }
 
   /**

@@ -8,6 +8,7 @@ import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/ui/pages/rom_details_dialog/rom_details_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/rom_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/rom_library_actions.dart';
 import 'package:yamata_launcher/ui/widgets/rom_rating.dart';
@@ -29,8 +30,10 @@ class RomListItem extends StatelessWidget {
       this.showConsole = false,
       this.download,
       this.itemType = RomListItemType.listItem});
+
   @override
   Widget build(BuildContext context) {
+    final focusId = romItem.slug;
     final _currentDownloadInfo =
         context.select<DownloadProvider, DownloadInfo?>(
       (p) => p.getDownloadInfo(romItem),
@@ -140,231 +143,243 @@ class RomListItem extends StatelessWidget {
     /// List Item View
     if (itemType == RomListItemType.listItem) {
       return RepaintBoundary(
-        child: InkWell(
-            onTap: () {
-              navigateToDetails();
-            },
-            child: Card(
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(13),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          child: ClipRRect(
-                              child: thumbnail,
-                              borderRadius: BorderRadius.circular(6)),
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: RomRating(
-                            rating: romItem!.rating,
-                          ),
-                        )
-                      ],
-                    ),
-                    SizedBox(
-                      width: 12,
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(right: 82),
-                                child: Text(
-                                  romItem!.name,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              SizedBox(
-                                height: 3,
-                              ),
-                              Container(
-                                margin: EdgeInsets.only(right: 110),
-                                child: Opacity(
-                                  opacity: 0.7,
-                                  child: Text(
-                                    getSubHeader(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.labelSmall,
-                                  ),
-                                ),
-                              ),
-                              if (hasDownloadInfo) ...[
-                                SizedBox(
-                                  height: 10,
-                                ),
-                                ...buildDownloadInfoContent(),
-                              ],
-                              ...(_currentDownloadInfo != null &&
-                                      download == null
-                                  ? [buildDownloadInfoProgress()]
-                                  : []),
-                              SizedBox(
-                                height: 18,
-                              ),
-                              if (download == null)
-                                RomActionButton(
-                                  romItem,
-                                  size: RomActionButtonSize.small,
-                                ),
-                            ],
-                          ),
-                          if (_currentDownloadInfo == null || download != null)
-                            Positioned(
-                              right: 0,
-                              bottom: 10,
-                              child: Opacity(
-                                opacity: 0.7,
-                                child: Text(
-                                    download != null
-                                        ? "Downloaded " +
-                                            TimeHelpers.getTimeAgo(
-                                                download?.downloadedAt ??
-                                                    DateTime.now())
-                                        : RomService.getLastPlayedLabel(
-                                            _libraryDetails),
-                                    style:
-                                        Theme.of(context).textTheme.labelSmall),
-                              ),
-                            ),
-                          if (_currentDownloadInfo == null)
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: RomLibraryActions(
-                                  rom: romItem, downloadHistoryItem: download),
-                            )
-                        ],
-                      ),
-                    ),
-                  ],
+        child: FocusableElement(
+          focusId: focusId,
+          child: InkWell(
+              canRequestFocus: false,
+              onTap: () {
+                navigateToDetails();
+              },
+              child: Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-            )),
-      );
-    }
-
-    //Card View
-    return RepaintBoundary(
-      child: InkWell(
-        onTap: navigateToDetails,
-        child: Card(
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-                padding: const EdgeInsets.all(13),
-                child: Column(
+                child: Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Stack(
                         children: [
                           Container(
-                            width: double.infinity,
-                            height: 200,
+                            width: 80,
+                            height: 80,
                             child: ClipRRect(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(6)),
-                              child: Opacity(
-                                  opacity: 0.5, child: gameplayThumbnail),
-                            ),
-                          ),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            top: 0,
-                            child: Center(
-                              child: Container(
-                                width: 100,
-                                height: 100,
-                                child: ClipRRect(
-                                    child: thumbnail,
-                                    borderRadius: BorderRadius.circular(6)),
-                              ),
-                            ),
+                                child: thumbnail,
+                                borderRadius: BorderRadius.circular(6)),
                           ),
                           Positioned(
                             right: 0,
                             bottom: 0,
                             child: RomRating(
                               rating: romItem!.rating,
-                              size: 12,
                             ),
                           )
                         ],
                       ),
                       SizedBox(
-                        height: 7,
+                        width: 12,
                       ),
-                      Text(
-                        romItem!.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      SizedBox(
-                        height: 3,
-                      ),
-                      Opacity(
-                        opacity: 0.7,
-                        child: Text(
-                          getSubHeader(),
-                          style: Theme.of(context).textTheme.labelSmall,
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.only(right: 82),
+                                  child: Text(
+                                    romItem!.name,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 3,
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(right: 110),
+                                  child: Opacity(
+                                    opacity: 0.7,
+                                    child: Text(
+                                      getSubHeader(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall,
+                                    ),
+                                  ),
+                                ),
+                                if (hasDownloadInfo) ...[
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  ...buildDownloadInfoContent(),
+                                ],
+                                ...(_currentDownloadInfo != null &&
+                                        download == null
+                                    ? [buildDownloadInfoProgress()]
+                                    : []),
+                                SizedBox(
+                                  height: 18,
+                                ),
+                                if (download == null)
+                                  RomActionButton(
+                                    romItem,
+                                    size: RomActionButtonSize.small,
+                                  ),
+                              ],
+                            ),
+                            if (_currentDownloadInfo == null ||
+                                download != null)
+                              Positioned(
+                                right: 0,
+                                bottom: 10,
+                                child: Opacity(
+                                  opacity: 0.7,
+                                  child: Text(
+                                      download != null
+                                          ? "Downloaded " +
+                                              TimeHelpers.getTimeAgo(
+                                                  download?.downloadedAt ??
+                                                      DateTime.now())
+                                          : RomService.getLastPlayedLabel(
+                                              _libraryDetails),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall),
+                                ),
+                              ),
+                            if (_currentDownloadInfo == null)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: RomLibraryActions(
+                                    rom: romItem,
+                                    downloadHistoryItem: download),
+                              )
+                          ],
                         ),
                       ),
-                      if (hasDownloadInfo) ...[
-                        Spacer(),
-                        ...buildDownloadInfoContent(),
-                      ],
-                      ...(_currentDownloadInfo != null && download == null
-                          ? [
-                              if (!hasDownloadInfo) Spacer(),
-                              buildDownloadInfoProgress()
-                            ]
-                          : []),
-                      Spacer(),
-                      Row(children: [
-                        if (download == null)
-                          RomActionButton(
-                            romItem,
-                            size: RomActionButtonSize.small,
-                          ),
-                        Spacer(),
-                        if (_currentDownloadInfo == null)
-                          RomLibraryActions(rom: romItem)
-                      ]),
-                      SizedBox(
-                        height: 3,
-                      ),
-                      if (_currentDownloadInfo == null)
+                    ],
+                  ),
+                ),
+              )),
+        ),
+      );
+    }
+
+    //Card View
+    return RepaintBoundary(
+      child: FocusableElement(
+        focusId: focusId,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: navigateToDetails,
+          child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              height: 200,
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(6)),
+                                child: Opacity(
+                                    opacity: 0.5, child: gameplayThumbnail),
+                              ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              top: 0,
+                              child: Center(
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  child: ClipRRect(
+                                      child: thumbnail,
+                                      borderRadius: BorderRadius.circular(6)),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: RomRating(
+                                rating: romItem!.rating,
+                                size: 12,
+                              ),
+                            )
+                          ],
+                        ),
+                        SizedBox(
+                          height: 7,
+                        ),
+                        Text(
+                          romItem!.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        SizedBox(
+                          height: 3,
+                        ),
                         Opacity(
                           opacity: 0.7,
                           child: Text(
-                              RomService.getLastPlayedLabel(_libraryDetails),
-                              style: Theme.of(context).textTheme.labelSmall),
-                        )
-                    ]))),
+                            getSubHeader(),
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
+                        if (hasDownloadInfo) ...[
+                          Spacer(),
+                          ...buildDownloadInfoContent(),
+                        ],
+                        ...(_currentDownloadInfo != null && download == null
+                            ? [
+                                if (!hasDownloadInfo) Spacer(),
+                                buildDownloadInfoProgress()
+                              ]
+                            : []),
+                        Spacer(),
+                        Row(children: [
+                          if (download == null)
+                            RomActionButton(
+                              romItem,
+                              size: RomActionButtonSize.small,
+                            ),
+                          Spacer(),
+                          if (_currentDownloadInfo == null)
+                            RomLibraryActions(rom: romItem)
+                        ]),
+                        SizedBox(
+                          height: 3,
+                        ),
+                        if (_currentDownloadInfo == null)
+                          Opacity(
+                            opacity: 0.7,
+                            child: Text(
+                                RomService.getLastPlayedLabel(_libraryDetails),
+                                style: Theme.of(context).textTheme.labelSmall),
+                          )
+                      ]))),
+        ),
       ),
     );
   }

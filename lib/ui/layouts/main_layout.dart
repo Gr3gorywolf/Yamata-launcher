@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
 
@@ -122,36 +124,44 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
       );
     }
 
-    return Scaffold(
-      body: isSmallScreen ? widget.child : buildDesktopLayout(),
-      bottomNavigationBar: isSmallScreen
-          ? Container(
-              padding: const EdgeInsets.only(top: 5),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    width: 0.5,
+    return GlobalFocusHighlight(
+      child: Scaffold(
+        body: AppKeyboardListener(
+            onChangeTab: () {
+              if (currentIndex == -1) return;
+              final nextIndex = (currentIndex + 1) % MainLayout._routes.length;
+              context.go(MainLayout._routes[nextIndex]);
+            },
+            child: isSmallScreen ? widget.child : buildDesktopLayout()),
+        bottomNavigationBar: isSmallScreen
+            ? Container(
+                padding: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 0.5,
+                    ),
                   ),
                 ),
-              ),
-              child: BottomNavigationBar(
-                currentIndex: currentIndex,
-                showUnselectedLabels: true,
-                onTap: (index) {
-                  context.go(MainLayout._routes[index]);
-                },
-                items: navigationItems
-                    .map(
-                      (item) => BottomNavigationBarItem(
-                        icon: buildIcon(item),
-                        label: item['label'] as String,
-                      ),
-                    )
-                    .toList(),
-              ),
-            )
-          : null,
+                child: BottomNavigationBar(
+                  currentIndex: currentIndex,
+                  showUnselectedLabels: true,
+                  onTap: (index) {
+                    context.go(MainLayout._routes[index]);
+                  },
+                  items: navigationItems
+                      .map(
+                        (item) => BottomNavigationBarItem(
+                          icon: buildIcon(item),
+                          label: item['label'] as String,
+                        ),
+                      )
+                      .toList(),
+                ),
+              )
+            : null,
+      ),
     );
   }
 }

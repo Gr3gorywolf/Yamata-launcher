@@ -17,6 +17,7 @@ import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
+import 'package:yamata_launcher/services/os_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
 import 'package:yamata_launcher/utils/animation_helper.dart';
@@ -49,6 +50,9 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
       await FileSystemService.setupAndroidIntents();
       await EmulatorService.loadEmulatorIntents();
       await requestAndroidPermissions();
+    }
+    if (FileSystemService.isDesktop) {
+      await OsService.init();
     }
     await Provider.of<LibraryProvider>(context, listen: false).init();
     await Provider.of<DownloadSourcesProvider>(context, listen: false)

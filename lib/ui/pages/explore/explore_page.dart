@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:yamata_launcher/ui/widgets/console_card.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
@@ -18,6 +20,8 @@ class ExplorePage_State extends State<ExplorePage> {
   List<Console> _consoles = ConsoleService.getConsoles()
     ..sort((a, b) => a.name?.compareTo(b.name ?? "") ?? 0);
 
+  FocusNode searchFocusNode = FocusNode();
+  bool _initialFocusDone = false;
   ToolbarValue<Console>? filterValues;
   var textController = TextEditingController();
 
@@ -49,6 +53,28 @@ class ExplorePage_State extends State<ExplorePage> {
     return {
       for (final key in orderedKeys) key: grouped[key]!,
     };
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialFocusDone) {
+      _initialFocusDone = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        if (FocusMemory.lastFocusId != null) {
+          FocusScope.of(context).requestFocus(
+            FocusManager.instance.primaryFocus,
+          );
+        } else {
+          FocusScope.of(context).nextFocus();
+          FocusScope.of(context).nextFocus();
+        }
+      });
+    }
   }
 
   @override
@@ -85,6 +111,7 @@ class ExplorePage_State extends State<ExplorePage> {
                     children: [
                       Expanded(
                         child: TextField(
+                          focusNode: searchFocusNode,
                           controller: textController,
                           decoration: const InputDecoration(
                             hintText: 'Search for roms',
@@ -141,6 +168,7 @@ class ExplorePage_State extends State<ExplorePage> {
                         return ConsoleCard(
                           console,
                           onTap: () {
+                            print("Tapped on ${console.name}");
                             context.push("/explore/console-roms",
                                 extra: console);
                           },

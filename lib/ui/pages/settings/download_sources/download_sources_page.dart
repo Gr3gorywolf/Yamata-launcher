@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:provider/provider.dart';
@@ -66,7 +67,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
     if (result == null || result.isEmpty) {
       return;
     }
-    var loadingHandle = AlertsService.showLoadingAlert(context,
+    var loadingHandle = AlertsService.showLoadingAlert(navigatorContext!,
         "Fetching Source", "Please wait while the source is being fetched...");
     final source =
         await DownloadSourcesRepository().fetchDownloadSource(result, type);

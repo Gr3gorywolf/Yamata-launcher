@@ -91,10 +91,6 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
       d.titleClean = RomService.normalizeRomTitle(
         _removeMisplacedWords(d.title ?? ""),
       );
-      if (d.titleClean!.contains("zelda")) {
-        print("Processing source ${d.titleClean}");
-      }
-
       if (d.titleClean!.isEmpty) continue;
 
       final prefix = _prefix3(d.titleClean!);
@@ -127,9 +123,6 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
 
   for (final rom in normalizedRoms) {
     final name = rom.name;
-    if (rom.name.contains("zelda")) {
-      print("Processing ${rom.name}");
-    }
     if (name.isEmpty) continue;
 
     final consoleMap = index[rom.console];

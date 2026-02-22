@@ -10,6 +10,7 @@ import 'package:yamata_launcher/models/update_info.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
+import 'package:yamata_launcher/ui/layouts/main_layout.dart';
 import 'package:yamata_launcher/ui/widgets/loading_alert_dialog_content.dart';
 
 class AlertsService {
@@ -256,7 +257,8 @@ class AlertsService {
                       UpdateService.handleInstall();
                     } else {
                       UpdateService.startUpdateDownload();
-                      AlertsService.showUpdateAppBanner(navigatorContext!);
+                      AlertsService.showUpdateAppBanner(
+                          mainLayoutKey.currentContext!);
                       Navigator.of(context, rootNavigator: true).pop();
                     }
                   },

@@ -71,8 +71,8 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
             if (!isCtrlPressed) {
               return;
             }
-            widget.onChangeTab?.call();
           }
+          widget.onChangeTab?.call();
           return;
         }
 

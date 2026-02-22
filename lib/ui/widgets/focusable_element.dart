@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class FocusMemory {
+  static String? lastFocusId;
+}
+
 class FocusableElement extends StatefulWidget {
-  final Widget child;
+  final dynamic child;
   final VoidCallback? onPressed;
   final EdgeInsets padding;
   final BorderRadius borderRadius;
+  final String? focusId;
+  final bool preventChildrenFocus;
 
   const FocusableElement({
     super.key,
     required this.child,
     this.onPressed,
+    this.focusId,
+    this.preventChildrenFocus = true,
     this.padding = const EdgeInsets.all(4),
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
   });
@@ -30,13 +38,22 @@ class _FocusableElementState extends State<FocusableElement> {
 
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
+        _directionalMode = true;
         setState(() => _hasFocus = true);
 
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 150),
-          alignment: 0.4,
-        );
+        if (widget.focusId != null) {
+          FocusMemory.lastFocusId = widget.focusId!;
+        }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 180),
+            alignment: 0.35,
+            curve: Curves.easeOut,
+          );
+        });
       } else {
         setState(() => _hasFocus = false);
       }
@@ -55,40 +72,33 @@ class _FocusableElementState extends State<FocusableElement> {
 
       if (event.logicalKey == LogicalKeyboardKey.enter ||
           event.logicalKey == LogicalKeyboardKey.select ||
+          event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-        widget.onPressed?.call();
+        if (widget.onPressed != null) widget.onPressed!();
+        try {
+          if (widget.child.onTap != null) widget.child.onTap!();
+          if (widget.child.onPressed != null) widget.child.onTap!();
+        } catch (e) {}
+
         return KeyEventResult.handled;
       }
     }
-
     return KeyEventResult.ignored;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final primaryGreen = theme.colorScheme.primary;
-
-    final showFocusStyle = _hasFocus && _directionalMode;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Focus(
       focusNode: _focusNode,
+      canRequestFocus: true,
+      descendantsAreFocusable: !widget.preventChildrenFocus,
       onKeyEvent: _onKey,
       child: GestureDetector(
         onTap: widget.onPressed,
         behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            borderRadius: widget.borderRadius,
-            border: Border.all(
-              color: showFocusStyle ? primaryGreen : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: widget.child,
-        ),
+        child: widget.child,
       ),
     );
   }

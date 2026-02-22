@@ -8,6 +8,7 @@ import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/ui/pages/rom_details_dialog/rom_details_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/rom_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';

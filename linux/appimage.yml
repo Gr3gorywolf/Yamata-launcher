@@ -36,6 +36,10 @@ AppDir:
       - libgdk-pixbuf2.0-0
       - libgdk-pixbuf2.0-bin
       - librsvg2-2
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+      - libxkbcommon0
     exclude:
       - humanity-icon-theme
       - hicolor-icon-theme

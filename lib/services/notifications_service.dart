@@ -194,13 +194,17 @@ class NotificationsService {
     var id = tag != null
         ? getIdForTag(tag)
         : DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await _notifications.show(
-      id,
-      title,
-      body,
-      notificationDetails,
-      payload: tag,
-    );
+    try {
+      await _notifications.show(
+        id,
+        title,
+        body,
+        notificationDetails,
+        payload: tag,
+      );
+    } catch (e) {
+      print("Error showing notification: $e");
+    }
   }
 
   static Future<void> cancelNotificationByTag(String tag) async {

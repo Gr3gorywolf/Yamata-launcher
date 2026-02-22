@@ -20,10 +20,17 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
   }
 
   void _start() async {
-    final u = await server.start();
-    setState(() {
-      url = u;
-    });
+    try {
+      final u = await server.start();
+      setState(() {
+        url = u;
+      });
+    } catch (e) {
+      AlertsService.showErrorSnackbar(
+        'Failed to start web server. Make sure port ${server.port} is not being used by another application and try again. error: $e',
+      );
+      return;
+    }
   }
 
   @override

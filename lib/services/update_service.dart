@@ -160,18 +160,24 @@ class UpdateService {
     }
 
     if (Platform.isLinux) {
-      await Process.start(
-        "bash",
-        [
-          "-c",
-          """
+      await AlertsService.showAlert(
+          navigatorContext!,
+          "The installation will start",
+          "The application will be closed and the installation will happen in background, once done the application will start again with the new version.",
+          acceptTitle: "Continue", callback: () async {
+        await Process.start(
+          "bash",
+          [
+            "-c",
+            """
           curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!}
           \$HOME/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage &
           """
-        ],
-        mode: ProcessStartMode.detached,
-      );
-      exit(0);
+          ],
+          mode: ProcessStartMode.detached,
+        );
+        exit(0);
+      }, onClose: () {});
     }
 
     if (Platform.isMacOS) {

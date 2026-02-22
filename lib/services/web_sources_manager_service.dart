@@ -15,7 +15,7 @@ import 'package:yamata_launcher/models/platform_catalog_source.dart';
 
 class WebSourcesManagerService {
   HttpServer? _server;
-  int port = 8080;
+  int port = 8387;
 
   Future<String> _getHtmlFile() async {
     var data = {
@@ -29,7 +29,6 @@ class WebSourcesManagerService {
   Future<String> start() async {
     final address = InternetAddress.anyIPv4;
     _server = await HttpServer.bind(address, port);
-
     _server!.listen(_handleRequest);
 
     final ip = await _getLocalIp();

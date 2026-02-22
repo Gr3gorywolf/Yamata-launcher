@@ -185,7 +185,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 onChanged: (v) => _toggleDarkMode(v),
               ),
             ),
-            // Sources section
             const _SectionHeader(title: 'Sources'),
             _NavigationTile(
               icon: Icons.web,

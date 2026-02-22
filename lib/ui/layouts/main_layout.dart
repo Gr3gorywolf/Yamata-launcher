@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/app_keyboard_listener.dart';
-import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
-import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
+
+final GlobalKey<ScaffoldState> mainLayoutKey = GlobalKey<ScaffoldState>();
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -27,6 +28,9 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> with TrayListener {
+  late final FocusScopeNode _navScopeNode;
+  late final FocusScopeNode _contentScopeNode;
+
   int _locationToIndex(String location) {
     return MainLayout._routes.indexWhere((e) => location.startsWith(e));
   }
@@ -34,6 +38,15 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
   @override
   void initState() {
     super.initState();
+    _navScopeNode = FocusScopeNode(debugLabel: 'NavScope');
+    _contentScopeNode = FocusScopeNode(debugLabel: 'ContentScope');
+  }
+
+  @override
+  void dispose() {
+    _navScopeNode.dispose();
+    _contentScopeNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,6 +56,7 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
 
     final isSmallScreen = ScreenHelpers.isSmallScreen(context);
     final isMediumScreen = ScreenHelpers.isMediumScreen(context);
+
     final totalDownloadPercent =
         Provider.of<DownloadProvider>(context).totalDownloadPercent;
 
@@ -69,99 +83,171 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
           navigationItem['isDownload'] == true && totalDownloadPercent > 0
               ? totalDownloadPercent
               : null;
+
       if (percent == null) {
-        return Container(
-            height: 35, width: 35, child: Center(child: Icon(icon)));
+        return SizedBox(
+          height: 35,
+          width: 35,
+          child: Center(child: Icon(icon)),
+        );
       }
-      return Stack(children: [
-        CircularProgressIndicator(strokeWidth: 1.3, value: percent / 100),
-        Positioned(child: Icon(icon), top: 6, left: 6)
-      ]);
+
+      return Stack(
+        children: [
+          CircularProgressIndicator(strokeWidth: 1.3, value: percent / 100),
+          const Positioned(top: 6, left: 6, child: Icon(Icons.download_sharp))
+        ],
+      );
     }
 
     Widget buildDesktopLayout() {
       return Row(
         children: [
-          NavigationRail(
-            selectedIndex: currentIndex,
-            extended: !isMediumScreen,
-            minExtendedWidth: 190,
-            minWidth: 60,
-            indicatorColor: Colors.transparent,
-            selectedLabelTextStyle:
-                TextStyle(color: Theme.of(context).colorScheme.primary),
-            selectedIconTheme:
-                IconThemeData(color: Theme.of(context).colorScheme.primary),
-            leading: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: getLogo(),
+          FocusScope(
+            node: _navScopeNode,
+            child: NavigationRail(
+              selectedIndex: currentIndex,
+              extended: !isMediumScreen,
+              minExtendedWidth: 190,
+              minWidth: 60,
+              indicatorColor: Colors.transparent,
+              selectedLabelTextStyle:
+                  TextStyle(color: Theme.of(context).colorScheme.primary),
+              selectedIconTheme:
+                  IconThemeData(color: Theme.of(context).colorScheme.primary),
+              leading: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: getLogo(),
+              ),
+              destinations: navigationItems
+                  .map(
+                    (item) => NavigationRailDestination(
+                      icon: buildIcon(item),
+                      label: Text(item['label'] as String),
+                    ),
+                  )
+                  .toList(),
+              onDestinationSelected: (index) {
+                context.go(MainLayout._routes[index]);
+              },
             ),
-            destinations: navigationItems
-                .map(
-                  (item) => NavigationRailDestination(
-                    icon: buildIcon(item),
-                    label: Text(item['label'] as String),
-                  ),
-                )
-                .toList(),
-            onDestinationSelected: (index) {
-              context.go(MainLayout._routes[index]);
-            },
           ),
           VerticalDivider(
             thickness: 1,
             width: 1,
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          Expanded(child: widget.child),
+          Expanded(
+            child: FocusScope(
+              node: _contentScopeNode,
+              child: widget.child,
+            ),
+          ),
         ],
       );
     }
 
-    return GlobalFocusHighlight(
-      child: Scaffold(
-        body: AppKeyboardListener(
-            onChangeTab: (next) {
-              if (currentIndex == -1) return;
-              final isForward = next == null || next == true;
+    // Global keyboard handler (desktop only)
+    Widget desktopWithGlobalKeys() {
+      return Focus(
+        autofocus: true,
+        canRequestFocus: false,
+        onKeyEvent: (node, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-              final nextIndex = isForward
-                  ? (currentIndex + 1) % MainLayout._routes.length
-                  : (currentIndex - 1 + MainLayout._routes.length) %
-                      MainLayout._routes.length;
+          final key = event.logicalKey;
 
-              context.go(MainLayout._routes[nextIndex]);
-            },
-            child: isSmallScreen ? widget.child : buildDesktopLayout()),
-        bottomNavigationBar: isSmallScreen
-            ? Container(
-                padding: const EdgeInsets.only(top: 5),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      width: 0.5,
-                    ),
+          final isLeft = key == LogicalKeyboardKey.arrowLeft;
+          final isRight = key == LogicalKeyboardKey.arrowRight;
+
+          final isDown = key == LogicalKeyboardKey.arrowDown;
+
+          if (isLeft) {
+            final moved = FocusManager.instance.primaryFocus
+                    ?.focusInDirection(TraversalDirection.left) ??
+                false;
+
+            if (!moved) {
+              _navScopeNode.requestFocus();
+            }
+
+            return KeyEventResult.handled;
+          }
+
+          if (isRight) {
+            final moved = FocusManager.instance.primaryFocus
+                    ?.focusInDirection(TraversalDirection.right) ??
+                false;
+
+            if (!moved) {
+              _contentScopeNode.requestFocus();
+            }
+
+            return KeyEventResult.handled;
+          }
+
+          if (isDown) {
+            final moved = FocusManager.instance.primaryFocus
+                    ?.focusInDirection(TraversalDirection.down) ??
+                false;
+
+            if (!moved) {
+              _contentScopeNode.requestFocus();
+            }
+
+            return KeyEventResult.handled;
+          }
+
+          return KeyEventResult.ignored;
+        },
+        child: buildDesktopLayout(),
+      );
+    }
+
+    return Scaffold(
+      key: mainLayoutKey,
+      body: AppKeyboardListener(
+        onChangeTab: (next) {
+          if (currentIndex == -1) return;
+          final isForward = next == null || next == true;
+
+          final nextIndex = isForward
+              ? (currentIndex + 1) % MainLayout._routes.length
+              : (currentIndex - 1 + MainLayout._routes.length) %
+                  MainLayout._routes.length;
+
+          context.go(MainLayout._routes[nextIndex]);
+        },
+        child: isSmallScreen ? widget.child : desktopWithGlobalKeys(),
+      ),
+      bottomNavigationBar: isSmallScreen
+          ? Container(
+              padding: const EdgeInsets.only(top: 5),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    width: 0.5,
                   ),
                 ),
-                child: BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  showUnselectedLabels: true,
-                  onTap: (index) {
-                    context.go(MainLayout._routes[index]);
-                  },
-                  items: navigationItems
-                      .map(
-                        (item) => BottomNavigationBarItem(
-                          icon: buildIcon(item),
-                          label: item['label'] as String,
-                        ),
-                      )
-                      .toList(),
-                ),
-              )
-            : null,
-      ),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: currentIndex,
+                showUnselectedLabels: true,
+                onTap: (index) {
+                  context.go(MainLayout._routes[index]);
+                },
+                items: navigationItems
+                    .map(
+                      (item) => BottomNavigationBarItem(
+                        icon: buildIcon(item),
+                        label: item['label'] as String,
+                      ),
+                    )
+                    .toList(),
+              ),
+            )
+          : null,
     );
   }
 }

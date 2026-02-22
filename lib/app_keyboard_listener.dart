@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/keyboard_keys_constants.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 
@@ -44,7 +45,7 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
   }
 
   void _handleBack() {
-    Router.of(context).routerDelegate.popRoute();
+    Router.of(navigatorContext!).routerDelegate.popRoute();
   }
 
   @override
@@ -87,9 +88,12 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
         }
 
         if (isTyping) {
-          if (key == LogicalKeyboardKey.arrowDown ||
-              key == LogicalKeyboardKey.arrowUp) {
+          if (key == LogicalKeyboardKey.arrowDown) {
             FocusManager.instance.primaryFocus?.nextFocus();
+            return;
+          }
+          if (key == LogicalKeyboardKey.arrowUp) {
+            FocusManager.instance.primaryFocus?.previousFocus();
             return;
           }
         }

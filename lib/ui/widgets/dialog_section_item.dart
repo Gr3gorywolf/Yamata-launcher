@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 
 class DialogSectionItem extends StatelessWidget {
   final String title;
@@ -43,7 +44,10 @@ class DialogSectionItem extends StatelessWidget {
                     Icon(icon),
                     SizedBox(width: 10),
                     Expanded(child: content),
-                    Row(children: actions)
+                    Row(
+                        children: actions
+                            .map((action) => FocusableElement(child: action))
+                            .toList())
                   ],
                 ),
               ),

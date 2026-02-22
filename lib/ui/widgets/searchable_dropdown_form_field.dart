@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reactive_forms/reactive_forms.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 
 class SearchableDropdownFormField<T> extends FormField<T> {
   SearchableDropdownFormField({
@@ -139,21 +140,23 @@ class _SearchableDropdownBodyState<T>
       cursor: widget.enabled
           ? SystemMouseCursors.click
           : SystemMouseCursors.forbidden,
-      child: GestureDetector(
-        onTap: _openPicker,
-        behavior: HitTestBehavior.opaque,
-        child: InputDecorator(
-          decoration: widget.decoration.copyWith(
-            enabled: widget.enabled,
-            suffixIcon: const Icon(Icons.arrow_drop_down),
+      child: FocusableElement(
+        child: GestureDetector(
+          onTap: _openPicker,
+          behavior: HitTestBehavior.opaque,
+          child: InputDecorator(
+            decoration: widget.decoration.copyWith(
+              enabled: widget.enabled,
+              suffixIcon: const Icon(Icons.arrow_drop_down),
+            ),
+            isEmpty: selectedItem == null,
+            child: selectedItem == null
+                ? null
+                : DefaultTextStyle(
+                    style: TextStyle(fontWeight: FontWeight.w400, fontSize: 16),
+                    child: selectedItem.child,
+                  ),
           ),
-          isEmpty: selectedItem == null,
-          child: selectedItem == null
-              ? null
-              : DefaultTextStyle(
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 16),
-                  child: selectedItem.child,
-                ),
         ),
       ),
     );

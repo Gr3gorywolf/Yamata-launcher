@@ -11,6 +11,7 @@ import 'package:yamata_launcher/repository/update_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
+import 'package:yamata_launcher/ui/layouts/main_layout.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
@@ -27,7 +28,7 @@ class UpdateService {
     if (foundUpdate == null) {
       startUpdatesWatch();
     } else {
-      AlertsService.showUpdateAppBanner(navigatorContext!);
+      AlertsService.showUpdateAppBanner(mainLayoutKey.currentContext!);
     }
   }
 
@@ -38,7 +39,7 @@ class UpdateService {
       var foundUpdate = await checkForUpdate();
       if (foundUpdate != null) {
         timer.cancel();
-        AlertsService.showUpdateAppBanner(navigatorContext!);
+        AlertsService.showUpdateAppBanner(mainLayoutKey.currentContext!);
         NotificationsService.showNotification(
           title: "Yamata Launcher Update Available",
           body:

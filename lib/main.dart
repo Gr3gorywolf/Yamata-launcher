@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/app_theme.dart';
 import 'package:yamata_launcher/app_theme_dark.dart';
@@ -16,16 +17,18 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
+import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 
 var isFullScreen = false;
 void main(List<String> args) {
+  WidgetsFlutterBinding.ensureInitialized();
   initWindow(args);
+  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTouch;
   runApp(MyApp());
 }
 
 void initWindow(List<String> args) async {
   if (FileSystemService.isDesktop) {
-    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
     isFullScreen = args.contains("--fullscreen");
     WindowOptions windowOptions = WindowOptions(
@@ -139,6 +142,10 @@ class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
                   title: 'Yamata Launcher',
                   themeMode: appProvider.themeMode,
                   theme: appThemeLight,
+                  builder: (context, child) {
+                    return AppKeyboardListener(
+                        child: GlobalFocusHighlight(child: child!));
+                  },
                   darkTheme: appThemeDark);
             }),
           ),

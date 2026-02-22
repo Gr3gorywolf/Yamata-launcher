@@ -152,38 +152,19 @@ class UpdateService {
       await Process.start(
         provider.updateInfo!.downloadedFilePath!,
         [],
-        mode: ProcessStartMode.normal,
+        mode: ProcessStartMode.detached,
       );
     }
 
     if (Platform.isLinux) {
-      var loading = AlertsService.showLoadingAlert(
-          navigatorContext!,
-          "Installing Update",
-          "Please wait while the update is being installed.");
-      var process = await Process.start(
-        "bash",
-        [
-          "-c",
-          "curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!}"
-        ],
-        mode: ProcessStartMode.normal,
-      );
-      final exitCode = await process.exitCode;
-      loading.close();
-      if (exitCode != 0) {
-        return;
-      }
-
       await Process.start(
         "bash",
         [
           "-c",
-          "~/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage",
+          "curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!} && ~/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage",
         ],
         mode: ProcessStartMode.detached,
       );
-
       exit(0);
     }
 

@@ -34,12 +34,6 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
-      var updateProvider = Provider.of<AppProvider>(context, listen: false);
-      if (updateProvider.updateInfo != null) {
-        AlertsService.showUpdateAppBanner(context);
-      }
-    });
   }
 
   @override

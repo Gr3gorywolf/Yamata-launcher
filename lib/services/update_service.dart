@@ -26,6 +26,8 @@ class UpdateService {
     var foundUpdate = await checkForUpdate();
     if (foundUpdate == null) {
       startUpdatesWatch();
+    } else {
+      AlertsService.showUpdateAppBanner(navigatorContext!);
     }
   }
 
@@ -124,7 +126,8 @@ class UpdateService {
     var updateFolder = "${FileSystemService.updatesPath}/${updateInfo.version}";
     var targetFile = "$updateFolder/${getUpdateFileName() ?? "update_file"}";
     Directory(updateFolder).createSync(recursive: true);
-
+    updateInfo.progress = 0;
+    provider.setUpdateInfo(updateInfo);
     _currentDownload = FileDownloadFetch(
       url: Uri.parse(updateInfo.fileToDownload),
       onProgress: (int progress) {
@@ -161,7 +164,10 @@ class UpdateService {
         "bash",
         [
           "-c",
-          "curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!} && ~/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage",
+          """
+          curl -fsSL https://raw.githubusercontent.com/${AppConstants.repositoryBasePath}/refs/heads/master/scripts/linux/install.sh | bash -s -- --appimage ${provider.updateInfo!.downloadedFilePath!}
+          \$HOME/Applications/yamata-launcher-${SystemHelpers.isArm ? "arm" : "x86"}.AppImage &
+          """
         ],
         mode: ProcessStartMode.detached,
       );

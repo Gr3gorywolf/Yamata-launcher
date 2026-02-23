@@ -20,11 +20,11 @@
 
 > The name Yamata is inspired by Yamata-no-Orochi (八岐大蛇), symbolizing multiplicity, power, and unification under a single entity.
 
-[![Github All Releases](https://img.shields.io/github/downloads/Gr3gorywolf/Yamata-launcher/total.svg)]()
-![GitHub last commit](https://img.shields.io/github/last-commit/Gr3gorywolf/Yamata-launcher)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/Gr3gorywolf/Yamata-launcher?label=latest%20release)
-![Discord](https://img.shields.io/discord/1469115593025130578)
-![Website](https://img.shields.io/website?url=https://yamata-launcher.gregoryc.dev)
+[![Github All Releases](https://img.shields.io/github/downloads/Gr3gorywolf/Yamata-launcher/total.svg)](https://github.com/Gr3gorywolf/Yamata-launcher/releases/tag/v1.0.23)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Gr3gorywolf/Yamata-launcher)](https://github.com/Gr3gorywolf/Yamata-launcher/commits/master/)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Gr3gorywolf/Yamata-launcher?label=latest%20release)](https://github.com/Gr3gorywolf/Yamata-launcher/releases/latest)
+[![Discord](https://img.shields.io/discord/1469115593025130578)](https://discord.gg/4TegCDgQkx)
+[![Website](https://img.shields.io/website?url=https://yamata-launcher.gregoryc.dev)](https://yamata-launcher.gregoryc.dev)
 
 
 </h6>

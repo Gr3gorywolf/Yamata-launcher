@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+HERE="$(dirname "$(readlink -f "$0")")"
+APP="$HERE/yamata_launcher"
+
+# Detect lib arch inside AppImage
+if [ -d "$HERE/usr/lib/x86_64-linux-gnu" ]; then
+  LIB_ARCH="x86_64-linux-gnu"
+elif [ -d "$HERE/usr/lib/aarch64-linux-gnu" ]; then
+  LIB_ARCH="aarch64-linux-gnu"
+else
+  LIB_ARCH="$(ls "$HERE/usr/lib" | head -n1)"
+fi
+
+# ------------------------------------
+# GTK / Pixbuf
+# ------------------------------------
+export GDK_PIXBUF_MODULEDIR="$HERE/usr/lib/$LIB_ARCH/gdk-pixbuf-2.0/2.10.0/loaders"
+export GDK_PIXBUF_MODULE_FILE="$HERE/usr/lib/$LIB_ARCH/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+
+# ------------------------------------
+# Avoid host GIO conflicts (Fedora/Bazzite)
+# ------------------------------------
+export GIO_MODULE_DIR="$HERE/usr/lib/$LIB_ARCH/gio/modules"
+export GIO_EXTRA_MODULES=""
+
+# ------------------------------------
+# Flutter stability
+# ------------------------------------
+export GDK_BACKEND=x11
+
+# Do NOT override GL
+unset LIBGL_ALWAYS_SOFTWARE
+unset MESA_LOADER_DRIVER_OVERRIDE
+unset GALLIUM_DRIVER
+unset LIBGL_DRIVERS_PATH
+
+# ------------------------------------
+# Run app
+# ------------------------------------
+exec "$APP" "$@"

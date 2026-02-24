@@ -30,11 +30,15 @@ class SystemTrayService {
         Provider.of<DownloadProvider>(navigatorContext!, listen: false);
     var downloadingCount = downloadProvider.activeDownloadInfos.length;
     const title = 'Yamata Launcher';
-    if (downloadingCount > 0) {
-      trayManager.setToolTip(
-          '$title - $downloadingCount active tasks ${downloadProvider.totalDownloadPercent}% completed');
-    } else {
-      trayManager.setToolTip(title);
+    try {
+      if (downloadingCount > 0) {
+        trayManager.setToolTip(
+            '$title - $downloadingCount active tasks ${downloadProvider.totalDownloadPercent}% completed');
+      } else {
+        trayManager.setToolTip(title);
+      }
+    } catch (e) {
+      print('Error updating tooltip: $e');
     }
   }
 

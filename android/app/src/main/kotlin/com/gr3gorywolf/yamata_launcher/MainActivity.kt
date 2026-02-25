@@ -119,7 +119,7 @@ class MainActivity : FlutterActivity() {
                         val file = File(path)
                         val uri = FileProvider.getUriForFile(
                         this,
-                        "${applicationContext.packageName}.fileprovider",
+                        "${applicationContext.packageName}.fileProvider",
                         file
                     )
                         result.success(uri.toString())

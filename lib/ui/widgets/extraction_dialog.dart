@@ -1,20 +1,15 @@
 import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/material.dart';
-import 'package:archive/archive.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-import 'package:yamata_launcher/constants/files_constants.dart';
-import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
-import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
   final File zipFile;
@@ -133,6 +128,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
       _cancelWakeLock();
       Navigator.of(context).pop(extractedFile);
     } on Exception catch (e) {
+      print("Extraction completition error: ${e.toString()}");
       Future.microtask(() {
         widget?.onError?.call(e.toString());
       }).then((_) {});

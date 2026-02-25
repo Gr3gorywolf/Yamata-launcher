@@ -10,4 +10,7 @@ class AppConstants {
   static String appName = "Yamata Launcher";
   static String baseImagesPath = "assets/images";
   static String appGuid = 'e5a55a91-bdd4-4536-99be-05a564ae1882';
+  static String discordLink = "https://discord.gg/4TegCDgQkx";
+  static String guideLink =
+      "https://github.com/Gr3gorywolf/Yamata-launcher/wiki";
 }

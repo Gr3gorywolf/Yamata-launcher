@@ -366,7 +366,7 @@ class DownloadProvider extends ChangeNotifier {
   ) async {
     final context = navigatorContext;
     if (context == null) return;
-
+    var endedSent = false;
     final libraryProvider =
         Provider.of<LibraryProvider>(context, listen: false);
 
@@ -475,6 +475,7 @@ class DownloadProvider extends ChangeNotifier {
       try {
         await zipFile.delete();
       } on Exception catch (e) {
+        print("Failed to delete zip file: ${e.toString()}");
         AlertsService.showErrorSnackbar(
             "Failed to delete zip file: ${e.toString()}",
             exception: e);
@@ -518,10 +519,6 @@ class DownloadProvider extends ChangeNotifier {
         Provider.of<LibraryProvider>(navigatorContext!, listen: false)
             .updateLibraryItem(libraryItem);
       }
-      var parentFolder = Directory(p.dirname(path));
-      try {
-        parentFolder.deleteSync();
-      } catch (e) {}
       return moveResult.filePath ?? moveResult.parentFolder;
     } catch (e) {
       print("Error moving files to containing folder: ${e.toString()}");

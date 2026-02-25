@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
@@ -322,7 +323,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Learn how to use the application and troubleshoot common issues',
               trailing: Icons.open_in_new,
               onTap: () => _launchUrl(
-                'https://github.com/Gr3gorywolf/Yamata-launcher/wiki',
+                AppConstants.guideLink,
+              ),
+            ),
+            _NavigationTile(
+              icon: Icons.discord,
+              title: 'Be part of the community',
+              subtitle:
+                  'Join the discord server and share your feedback and ideas',
+              trailing: Icons.open_in_new,
+              onTap: () => _launchUrl(
+                AppConstants.discordLink,
               ),
             ),
             _NavigationTile(

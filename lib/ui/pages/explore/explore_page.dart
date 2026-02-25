@@ -3,8 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/ui/widgets/console_card.dart';
 import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
@@ -77,6 +80,15 @@ class ExplorePage_State extends State<ExplorePage> {
     }
   }
 
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri)) {
+      AlertsService.showErrorSnackbar(
+        'Could not launch the url',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext bldContext) {
     final axisCount = max(2, (MediaQuery.of(context).size.width / 220).floor());
@@ -92,6 +104,20 @@ class ExplorePage_State extends State<ExplorePage> {
 
     return Scaffold(
       appBar: Toolbar<Console>(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.discord),
+            onPressed: () {
+              _launchUrl(AppConstants.discordLink);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.menu_book),
+            onPressed: () {
+              _launchUrl(AppConstants.guideLink);
+            },
+          )
+        ],
         settings: ToolbarSettings(title: "Explore", disableSearch: true),
         onChanged: (val) {
           setState(() {

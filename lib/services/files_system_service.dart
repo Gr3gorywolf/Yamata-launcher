@@ -292,15 +292,11 @@ class FileSystemService {
         item.deleteSync();
         continue;
       }
-      if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
-        item.deleteSync(recursive: true);
-      }
-
       item.renameSync(newPath);
     }
 
     try {
-      sourceDir.deleteSync();
+      sourceDir.deleteSync(recursive: true);
     } catch (_) {}
 
     if (Platform.isAndroid) {

@@ -6,8 +6,13 @@ class Toolbar<T> extends StatefulWidget implements PreferredSizeWidget {
   final ToolbarSettings<T> settings;
   final ToolbarValue<T>? initialValues;
   final Function(ToolbarValue<T>)? onChanged;
+  final List<IconButton>? actions;
   const Toolbar(
-      {Key? key, required this.settings, this.initialValues, this.onChanged})
+      {Key? key,
+      required this.settings,
+      this.initialValues,
+      this.onChanged,
+      this.actions})
       : super(key: key);
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -227,6 +232,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
     return AppBar(
       title: buildTitle(),
       actions: [
+        ...?widget.actions,
         if (isSearching)
           IconButton(
             icon: const Icon(Icons.close),

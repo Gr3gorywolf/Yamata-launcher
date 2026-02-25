@@ -316,6 +316,8 @@ class ExtractionService {
     final outputPath = data["output"] as String;
     final taskId = data["id"] as String;
     final passwords = data["passwords"] as List<String>;
+    var prevProgressSent = null;
+    var completedSent = false;
     try {
       await SevenZipAndroidInterface.extract(
         inputPath,
@@ -324,7 +326,8 @@ class ExtractionService {
           final progressInt = progress.floor();
 
           if (progressInt >= 100 || progressInt.isOdd) return;
-
+          if (progressInt == prevProgressSent) return;
+          prevProgressSent = progressInt;
           events.send(progressInt.toDouble());
         },
         passwords: passwords,
@@ -333,7 +336,10 @@ class ExtractionService {
 
       await SevenZipAndroidInterface.wait(taskId);
       await Future.delayed(const Duration(milliseconds: 500));
-      events.send(ExtractionSignal.complete.value);
+      if (!completedSent) {
+        completedSent = true;
+        events.send(ExtractionSignal.complete.value);
+      }
     } catch (e) {
       print("Extraction error: $e");
       events.send({
@@ -352,6 +358,8 @@ class ExtractionService {
     final inputPath = data["input"] as String;
     final outputPath = data["output"] as String;
     final passwords = data["passwords"] as List<String>;
+    var prevProgressSent = null;
+    var completedSent = false;
 
     final controlReceiver = ReceivePort();
     Process? extractionProcess;
@@ -377,6 +385,8 @@ class ExtractionService {
         (progress) {
           final progressInt = progress.floor();
           if (progressInt >= 100 || progressInt.isOdd) return;
+          if (progressInt == prevProgressSent) return;
+          prevProgressSent = progressInt;
           events.send(progressInt.toDouble());
         },
         passwords: passwords,
@@ -386,7 +396,10 @@ class ExtractionService {
       );
 
       await Future.delayed(const Duration(milliseconds: 500));
-      events.send(ExtractionSignal.complete.value);
+      if (!completedSent) {
+        completedSent = true;
+        events.send(ExtractionSignal.complete.value);
+      }
     } catch (e) {
       print("Extraction error: $e");
       events.send({

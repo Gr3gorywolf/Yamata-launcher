@@ -9,6 +9,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 class DatanodesHoster implements Hoster {
   @override
   String get name => 'Datanodes';
+
   static const List<String> _datanodesDomains = [
     'datanodes.to',
   ];
@@ -41,9 +42,7 @@ class DatanodesHoster implements Hoster {
   // =========================
   @override
   Future<String?> extractDownloadUrl(String url) async {
-    if (!canHandleUrl(url)) {
-      return null;
-    }
+    if (!canHandleUrl(url)) return null;
 
     print('[Datanodes] Starting download link extraction for: $url');
 
@@ -55,16 +54,15 @@ class DatanodesHoster implements Hoster {
         throw Exception('Invalid datanodes url');
       }
 
-      // TS: const fileCode = pathSegments[0];
       final fileCode = segments.first;
 
       // -------------------------
-      // 1. Set cookie: lang=english
+      // 1. Cookie: lang=english
       // -------------------------
       _cookies['lang'] = 'english';
 
       // -------------------------
-      // 2. Build form data
+      // 2. Form Data (UPDATED)
       // -------------------------
       final formData = {
         'op': 'download2',
@@ -74,6 +72,7 @@ class DatanodesHoster implements Hoster {
         'method_free': 'Free Download >>',
         'method_premium': '',
         '__dl': '1',
+        'g_captch__a': '1', // <-- NUEVO (clave)
       };
 
       // -------------------------
@@ -88,15 +87,23 @@ class DatanodesHoster implements Hoster {
               HttpHeaders.refererHeader: 'https://datanodes.to/download',
               HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
               HttpHeaders.cookieHeader: _buildCookieHeader(),
+
+              // Simulación de navegador (como Axios)
+              'sec-fetch-dest': 'empty',
+              'sec-fetch-mode': 'cors',
+              'sec-fetch-site': 'same-origin',
+              'sec-ch-ua':
+                  '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+              'sec-ch-ua-mobile': '?0',
+              'sec-ch-ua-platform': '"Windows"',
+              'priority': 'u=1, i',
             },
             body: formData,
           )
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Unexpected status code: ${response.statusCode}',
-        );
+        throw Exception('Unexpected status code: ${response.statusCode}');
       }
 
       // -------------------------
@@ -105,8 +112,7 @@ class DatanodesHoster implements Hoster {
       final decoded = jsonDecode(response.body);
 
       if (decoded is Map && decoded['url'] is String) {
-        final directUrl = Uri.decodeComponent(decoded['url'] as String);
-
+        final directUrl = Uri.decodeComponent(decoded['url']);
         print('[Datanodes] Extracted direct link');
         return directUrl;
       }
@@ -115,6 +121,7 @@ class DatanodesHoster implements Hoster {
     } catch (e) {
       print('[Datanodes] Error in extractDownloadUrl: $e');
       CommonHosterUtils().handleHosterError(e);
+      return null;
     }
   }
 

@@ -9,12 +9,14 @@ import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 class GofileHoster implements Hoster {
   @override
   String get name => 'GoFile';
+
   static const List<String> _gofileDomains = [
     'gofile.io',
   ];
 
   static const String _websiteToken = '4fd6sg89d7s6';
 
+  // Cache token like Axios
   static String? _token;
 
   @override
@@ -60,10 +62,12 @@ class GofileHoster implements Hoster {
 
       await _checkDownloadUrl(directUrl, token);
 
-      return directUrl + "||headers:Cookie: accountToken=$token";
+      // Same behavior as before
+      return '$directUrl||headers:Cookie: accountToken=$token';
     } catch (e) {
-      ('[Gofile] Error in extractDownloadUrl', e);
+      print('[Gofile] Error in extractDownloadUrl: $e');
       CommonHosterUtils().handleHosterError(e);
+      return null;
     }
   }
 
@@ -72,10 +76,16 @@ class GofileHoster implements Hoster {
   // =========================
 
   String? _extractGofileId(String url) {
-    return url.split("/").last;
+    final parts = url.split('/');
+    return parts.isNotEmpty ? parts.last : null;
   }
 
+  // Equivalent to Axios authorize() with cached token
   Future<String> _ensureAuthorized() async {
+    if (_token != null && _token!.isNotEmpty) {
+      return _token!;
+    }
+
     print('[Gofile] Authorizing...');
 
     final response = await http
@@ -87,15 +97,19 @@ class GofileHoster implements Hoster {
     if (body['status'] == 'ok') {
       final data = body['data'] as Map<String, dynamic>;
       final token = data['token'] as String?;
+
       if (token == null || token.isEmpty) {
         throw Exception('Authorize returned empty token');
       }
+
+      _token = token;
       return token;
     }
 
     throw Exception('Failed to authorize');
   }
 
+  // Equivalent to Axios getDownloadLink()
   Future<String> _getDownloadLink({
     required String id,
     required String token,
@@ -105,11 +119,11 @@ class GofileHoster implements Hoster {
     final response = await http.get(
       Uri.parse('https://api.gofile.io/contents/$id'),
       headers: {
-        "Authorization": 'Bearer $token',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
         'X-Website-Token': _websiteToken,
       },
     ).timeout(const Duration(seconds: 30));
-    print('[Gofile] Contents response status: ${response.body}');
+
     final body = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (body['status'] == 'ok') {
@@ -120,17 +134,13 @@ class GofileHoster implements Hoster {
         throw Exception('Only folders are supported');
       }
 
-      final childrenRaw = data['children'];
-      if (childrenRaw is! Map) {
-        throw Exception('Invalid children payload');
+      final children = data['children'];
+      if (children is! Map || children.isEmpty) {
+        throw Exception('Folder is empty or invalid');
       }
 
-      if (childrenRaw.isEmpty) {
-        throw Exception('Folder is empty');
-      }
-
-      // TS: const [firstChild] = Object.values(children);
-      final firstChild = childrenRaw.values.first;
+      // Same as: Object.values(children)[0]
+      final firstChild = children.values.first;
       if (firstChild is! Map) {
         throw Exception('Invalid child payload');
       }
@@ -147,6 +157,7 @@ class GofileHoster implements Hoster {
     throw Exception('Failed to get download link');
   }
 
+  // Equivalent to Axios HEAD check
   Future<void> _checkDownloadUrl(String url, String token) async {
     print('[Gofile] Checking direct url (HEAD): $url');
 
@@ -159,6 +170,8 @@ class GofileHoster implements Hoster {
     ).timeout(const Duration(seconds: 30));
 
     if (response.statusCode >= 400) {
+      // Invalidate token (important improvement)
+      _token = null;
       throw Exception('Direct url check failed: ${response.statusCode}');
     }
   }

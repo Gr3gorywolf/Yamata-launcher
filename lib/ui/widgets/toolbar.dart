@@ -64,7 +64,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
       var isLargeScreen = MediaQuery.of(context).size.width > 800;
       var textField = TextField(
           controller: _controller,
-          autofocus: true,
+          autofocus: false,
           onChanged: (value) {
             setState(() {
               searchText = value;

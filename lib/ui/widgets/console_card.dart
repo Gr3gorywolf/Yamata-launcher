@@ -7,7 +7,13 @@ class ConsoleCard extends StatelessWidget {
   Console console;
   int? romsCount;
   Function? onTap;
-  ConsoleCard(this.console, {this.romsCount, this.onTap});
+  final FocusNode? focusNode;
+  ConsoleCard(
+    this.console, {
+    this.romsCount,
+    this.onTap,
+    this.focusNode,
+  });
   @override
   Widget build(BuildContext context) {
     final focusId = "${console.vendor}_${console.slug}";
@@ -22,6 +28,7 @@ class ConsoleCard extends StatelessWidget {
       ),
       child: FocusableElement(
         focusId: focusId,
+        focusNode: focusNode,
         child: InkWell(
           canRequestFocus: false,
           borderRadius: BorderRadius.all(Radius.circular(8)),

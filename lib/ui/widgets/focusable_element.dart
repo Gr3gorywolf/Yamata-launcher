@@ -11,6 +11,7 @@ class FocusableElement extends StatefulWidget {
   final EdgeInsets padding;
   final BorderRadius borderRadius;
   final String? focusId;
+  final FocusNode? focusNode;
   final bool preventChildrenFocus;
 
   const FocusableElement({
@@ -18,6 +19,7 @@ class FocusableElement extends StatefulWidget {
     required this.child,
     this.onPressed,
     this.focusId,
+    this.focusNode,
     this.preventChildrenFocus = true,
     this.padding = const EdgeInsets.all(4),
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
@@ -28,14 +30,16 @@ class FocusableElement extends StatefulWidget {
 }
 
 class _FocusableElementState extends State<FocusableElement> {
-  final FocusNode _focusNode = FocusNode();
+  FocusNode _focusNode = FocusNode();
   bool _hasFocus = false;
   bool _directionalMode = false;
 
   @override
   void initState() {
     super.initState();
-
+    if (widget.focusNode != null) {
+      _focusNode = widget.focusNode!;
+    }
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _directionalMode = true;

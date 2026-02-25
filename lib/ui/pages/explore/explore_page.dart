@@ -22,9 +22,9 @@ class ExplorePage extends StatefulWidget {
 class ExplorePage_State extends State<ExplorePage> {
   List<Console> _consoles = ConsoleService.getConsoles()
     ..sort((a, b) => a.name?.compareTo(b.name ?? "") ?? 0);
-
-  FocusNode searchFocusNode = FocusNode();
   bool _initialFocusDone = false;
+  final FocusNode firstCardFocusNode = FocusNode();
+  FocusNode searchFocusNode = FocusNode();
   ToolbarValue<Console>? filterValues;
   var textController = TextEditingController();
 
@@ -73,8 +73,7 @@ class ExplorePage_State extends State<ExplorePage> {
             FocusManager.instance.primaryFocus,
           );
         } else {
-          FocusScope.of(context).nextFocus();
-          FocusScope.of(context).nextFocus();
+          firstCardFocusNode.requestFocus();
         }
       });
     }
@@ -139,6 +138,7 @@ class ExplorePage_State extends State<ExplorePage> {
                         child: TextField(
                           focusNode: searchFocusNode,
                           controller: textController,
+                          autofocus: false,
                           decoration: const InputDecoration(
                             hintText: 'Search for roms',
                             prefixIcon: Icon(Icons.search),
@@ -168,7 +168,9 @@ class ExplorePage_State extends State<ExplorePage> {
             ),
 
             // Vendor sections
-            ...grouped.entries.expand((entry) {
+            ...grouped.entries.toList().asMap().entries.expand((entryMap) {
+              final vendorIndex = entryMap.key;
+              final entry = entryMap.value;
               final vendor = entry.key;
               final consoles = entry.value;
 
@@ -191,10 +193,15 @@ class ExplorePage_State extends State<ExplorePage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final console = consoles[index];
+
+                        final isFirstGlobalItem =
+                            vendorIndex == 0 && index == 0;
+
                         return ConsoleCard(
                           console,
+                          focusNode:
+                              isFirstGlobalItem ? firstCardFocusNode : null,
                           onTap: () {
-                            print("Tapped on ${console.name}");
                             context.push("/explore/console-roms",
                                 extra: console);
                           },

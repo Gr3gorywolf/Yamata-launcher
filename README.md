@@ -48,6 +48,8 @@
 - [Key Features](#features)
 - [How to Install](#how-to-install)
 - [Documentation](#documentation)
+- [Common issues](#common-issues)
+- [Join the discord server](#join-the-discord-server)
 - [Contributing](#contributing)
 - [Building from source](#building-from-source)
 - [License](#license)
@@ -93,6 +95,15 @@ This command will install the app and create a ports shortcut
 ```sh 
 curl -sSL https://links.gregoryc.dev/yamata-launcher | sh -s -- --variant=batocera
 ```
+
+## Common issues
+You may run into issues when installing or running the app, for those cases there's a doc to troubleshoot those issues [Here](https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Common-issues)
+
+## Join the Discord server
+Become part of the Yamata Launcher community  Discord. Stay up to date with the latest releases, get help and support, report issues, and suggest new features. Connect with other users and contributors, share feedback, and help shape the future of the project.
+
+[Discord Server](https://discord.gg/4TegCDgQkx)
+
 
 ## Documentation
 

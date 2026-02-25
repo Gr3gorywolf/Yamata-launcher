@@ -19,10 +19,6 @@ class ConsoleCard extends StatelessWidget {
     final focusId = "${console.vendor}_${console.slug}";
 
     return Card(
-      /* decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.all(Radius.circular(18)),
-          border: Border.all(color: Colors.green, width: 1.5)),*/
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(8)),
       ),

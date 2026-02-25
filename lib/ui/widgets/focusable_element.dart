@@ -66,7 +66,9 @@ class _FocusableElementState extends State<FocusableElement> {
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 

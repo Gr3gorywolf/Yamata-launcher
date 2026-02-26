@@ -8,7 +8,11 @@ import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dar
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/gofile_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/google_drive_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/mega_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/megaup_net_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/one_fichier.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
@@ -23,6 +27,10 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
+    OneFichierHoster(),
+    MegaCoNzHoster(),
+    MegaupNetHoster(),
+    GoogleDriveHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 

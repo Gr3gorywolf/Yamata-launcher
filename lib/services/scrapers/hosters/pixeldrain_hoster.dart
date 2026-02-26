@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -9,113 +10,133 @@ class PixelDrainHoster implements Hoster {
   @override
   String get name => 'PixelDrain';
 
-  static const List<String> _pixeldrainDomains = [
+  static const List<String> _domains = [
     'pixeldrain.com',
-    'pd.cybar.xyz',
   ];
 
   @override
   bool canHandleUrl(String url) {
     final lower = url.toLowerCase();
-    return _pixeldrainDomains.any(lower.contains);
+    return _domains.any(lower.contains);
   }
 
-  // =========================
-  // FILENAME
-  // =========================
   @override
   Future<String?> extractFileName(String url) async {
     try {
       final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
+      return CommonHosterUtils().extractHosterFilename(
+        url,
+        directUrl: directUrl,
+      );
     } catch (e) {
       print('[PixelDrain] extractFileName failed: $e');
       return null;
     }
   }
 
-  // =========================
-  // DIRECT DOWNLOAD URL
-  // =========================
   @override
   Future<String?> extractDownloadUrl(String url) async {
     if (!canHandleUrl(url)) return null;
 
-    print('[PixelDrain] Starting download link extraction for: $url');
-
     try {
-      final fileId = _extractFileId(url);
-      if (fileId == null || fileId.isEmpty) {
-        throw Exception('Could not extract PixelDrain file id');
+      final parsed = Uri.parse(url.trim());
+      final idInfo = _extractId(parsed);
+
+      if (idInfo == null) {
+        throw Exception('Could not extract PixelDrain id from url');
       }
 
-      final requestUrl = 'https://pd.cybar.xyz/$fileId';
-      print('[PixelDrain] GET (no redirects): $requestUrl');
+      late final String directUrl;
 
-      final response = await http
-          .get(
-            Uri.parse(requestUrl),
-            headers: _browserHeaders(),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      // http NO sigue redirects automáticamente en Dart
-      final location = response.headers['location'];
-
-      if (location != null && location.isNotEmpty) {
-        print('[PixelDrain] Redirect detected → $location');
-        return location;
+      if (idInfo.type == _PixelDrainType.file) {
+        directUrl = 'https://pixeldrain.com/api/file/${idInfo.id}?download';
+      } else {
+        final fileId = await _getFirstFileIdFromList(idInfo.id);
+        directUrl = 'https://pixeldrain.com/api/file/$fileId?download';
       }
 
-      if (response.statusCode == 200) {
-        throw Exception(
-          'No redirect URL found (status: 200)',
-        );
-      }
+      await _checkDownloadUrl(directUrl);
 
-      throw Exception(
-        'No redirect URL found (status: ${response.statusCode})',
-      );
+      return directUrl;
     } catch (e) {
       print('[PixelDrain] Error in extractDownloadUrl: $e');
       CommonHosterUtils().handleHosterError(e);
+      return null;
     }
   }
 
-  // =========================
-  // INTERNALS
-  // =========================
-
-  String? _extractFileId(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return null;
+  _PixelDrainId? _extractId(Uri uri) {
+    final seg = uri.pathSegments;
+    if (seg.length < 2) return null;
 
     // https://pixeldrain.com/u/<id>
-    // https://pd.cybar.xyz/<id>
-    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-
-    if (segments.isEmpty) return null;
-
-    // pixeldrain.com/u/<id>
-    if (segments.length >= 2 && segments.first == 'u') {
-      return segments[1];
+    if (seg[0] == 'u' && seg[1].isNotEmpty) {
+      return _PixelDrainId(type: _PixelDrainType.file, id: seg[1]);
     }
 
-    // pd.cybar.xyz/<id>
-    return segments.first;
+    // https://pixeldrain.com/l/<id>
+    if (seg[0] == 'l' && seg[1].isNotEmpty) {
+      return _PixelDrainId(type: _PixelDrainType.list, id: seg[1]);
+    }
+
+    return null;
   }
 
-  Map<String, String> _browserHeaders() {
-    return {
-      HttpHeaders.userAgentHeader: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-          'AppleWebKit/537.36 (KHTML, like Gecko) '
-          'Chrome/121.0.0.0 Safari/537.36',
-      HttpHeaders.acceptHeader:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      HttpHeaders.acceptLanguageHeader: 'en-US,en;q=0.9',
-      'DNT': '1',
-      HttpHeaders.connectionHeader: 'keep-alive',
-    };
+  Future<String> _getFirstFileIdFromList(String listId) async {
+    final response = await http.get(
+      Uri.parse('https://pixeldrain.com/api/list/$listId'),
+      headers: {
+        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+        HttpHeaders.acceptHeader: 'application/json',
+      },
+    ).timeout(const Duration(seconds: 30));
+
+    if (response.statusCode >= 400) {
+      throw Exception('List lookup failed: ${response.statusCode}');
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final files = body['files'];
+
+    if (files is! List || files.isEmpty) {
+      throw Exception('PixelDrain list is empty or invalid');
+    }
+
+    final first = files.first;
+    if (first is! Map<String, dynamic>) {
+      throw Exception('Invalid list file payload');
+    }
+
+    final fileId = first['id'] as String?;
+    if (fileId == null || fileId.isEmpty) {
+      throw Exception('No file id found in list');
+    }
+
+    return fileId;
   }
+
+  Future<void> _checkDownloadUrl(String url) async {
+    final response = await http.head(
+      Uri.parse(url),
+      headers: {
+        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+      },
+    ).timeout(const Duration(seconds: 30));
+
+    if (response.statusCode >= 400) {
+      throw Exception('Direct url check failed: ${response.statusCode}');
+    }
+  }
+}
+
+enum _PixelDrainType { file, list }
+
+class _PixelDrainId {
+  final _PixelDrainType type;
+  final String id;
+
+  _PixelDrainId({
+    required this.type,
+    required this.id,
+  });
 }

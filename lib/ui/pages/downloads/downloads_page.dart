@@ -77,7 +77,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   "Games you download will appear here. Add download sources, then start exploring the library and find something to download.",
               action: PlaceHolderAction(
                 label: "Go to catalog",
-                onPressed: () => context.push('/home'),
+                onPressed: () => context.push('/explore'),
               ),
             );
           }

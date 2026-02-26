@@ -19,6 +19,7 @@ import 'package:yamata_launcher/services/aria2c/aria2c_client.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
 import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/native/download_foreground_service_android_interface.dart';
 import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -95,13 +96,11 @@ class DownloadProvider extends ChangeNotifier {
 
   // This method is used to handle common logic after changing the state
   void handleNotifyListeners() {
-    if (_activeDownloadInfos.isEmpty) {
-      if (Platform.isAndroid) {
-        WakelockAndroidInterface.setWakeLock(false);
-      }
-    } else {
-      if (Platform.isAndroid) {
-        WakelockAndroidInterface.setWakeLock(true);
+    if (Platform.isAndroid) {
+      if (_activeDownloadInfos.isEmpty) {
+        DownloadForegroundServiceAndroidInterface.stopService();
+      } else {
+        DownloadForegroundServiceAndroidInterface.startService();
       }
     }
     notifyListeners();
@@ -472,13 +471,11 @@ class DownloadProvider extends ChangeNotifier {
         libraryItem.filePath = extractedFile.path;
         libraryProvider.updateLibraryItem(libraryItem);
       }
+      await Future.delayed(Duration(seconds: 2));
       try {
         await zipFile.delete();
       } on Exception catch (e) {
         print("Failed to delete zip file: ${e.toString()}");
-        AlertsService.showErrorSnackbar(
-            "Failed to delete zip file: ${e.toString()}",
-            exception: e);
       }
       var newPath = await _handleMoveContentToParentFolder(
           libraryItem!, extractedFile.path, outputDir.path,

@@ -32,12 +32,15 @@ class Aria2cClient {
       "--allow-overwrite=true",
       "--summary-interval=3",
       "--console-log-level=info",
+      "--max-connection-per-server=1",
     ];
     if (downloadUrl != null && downloadUrl.contains("||")) {
       var headers = Aria2cUtils.extractHeadersFromUrl(downloadUrl);
       if (headers != null) {
-        print('Extracted headers for aria2c:' + '--header="$headers"');
-        params.add('--header=$headers');
+        for (final header in headers) {
+          params.add('--header="$header"');
+          print('Adding header to aria2c' + '--header="$header"');
+        }
       }
     }
     if (certPath != null) {

@@ -28,8 +28,7 @@ class BuzzHeavierHoster implements Hoster {
   Future<String?> extractFileName(String url) async {
     try {
       final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
+      return CommonHosterUtils().extractHosterFilename(url, directUrl: url);
     } catch (e) {
       print('[BuzzHeavier] extractFileName failed: $e');
       return null;

@@ -138,10 +138,17 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
           return;
         }
         var loading = AlertsService.showLoadingAlert(
-            context, loadingTitle, loadingMessage);
-        var directDownloadLink = await DownloadSourcesRepository()
-            .extractDirectDownloadUrl(selectedHoster.uri);
-        loading.close();
+            navigatorContext!, loadingTitle, loadingMessage);
+        String? directDownloadLink = null;
+        try {
+          directDownloadLink = await DownloadSourcesRepository()
+              .extractDirectDownloadUrl(selectedHoster.uri);
+          loading.close();
+        } catch (e) {
+          loading.close();
+          AlertsService.showErrorSnackbar(e.toString());
+          return;
+        }
         if (directDownloadLink == null || directDownloadLink.isEmpty) {
           AlertsService.showErrorSnackbar(
               "Could not extract download link for ${sourceRom.title}");
@@ -178,14 +185,27 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
           ));
       return;
     }
-    var link = await DownloadSourcesRepository()
-        .extractDirectDownloadUrl(sourceRom.uris!.first);
-    var fileName = await DownloadSourcesRepository()
-        .getHosterFileName(sourceRom.uris!.first);
-    loading.close();
+    var link = null;
+    var fileName = null;
+    try {
+      link = await DownloadSourcesRepository()
+          .extractDirectDownloadUrl(sourceRom.uris!.first);
+      fileName = await DownloadSourcesRepository()
+          .getHosterFileName(sourceRom.uris!.first);
+    } catch (e) {
+      Future.microtask(() {
+        AlertsService.showErrorSnackbar(e.toString());
+      });
+      return;
+    } finally {
+      loading.close();
+    }
+
     if (link == null || link.isEmpty) {
-      AlertsService.showErrorSnackbar(
-          "Could not extract download link for ${sourceRom.title}");
+      Future.microtask(() {
+        AlertsService.showErrorSnackbar(
+            "Could not extract download link for ${sourceRom.title}");
+      });
       return;
     }
     Navigator.pop(

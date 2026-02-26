@@ -1,13 +1,16 @@
 import 'package:yamata_launcher/models/aria2c.dart';
 
 class Aria2cUtils {
-  static String? extractHeadersFromUrl(String url) {
-    if (!url.contains("||")) return null;
+  static List<String> extractHeadersFromUrl(String url) {
+    if (!url.contains("||")) return const [];
     final fragment = url.split("||")[1];
-    if (fragment.contains("headers:")) {
-      return fragment.split("headers:")[1];
-    }
-    return null;
+    if (!fragment.contains("headers:")) return const [];
+    final raw = fragment.split("headers:")[1];
+    return raw
+        .split(RegExp(r'\r?\n'))
+        .map((h) => h.trim())
+        .where((h) => h.isNotEmpty)
+        .toList();
   }
 
   /**

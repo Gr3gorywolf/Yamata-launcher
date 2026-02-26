@@ -154,7 +154,7 @@ class GofileHoster implements Hoster {
       return link;
     }
 
-    throw Exception('Failed to get download link');
+    throw Exception('Failed to get download link, file not found or deleted');
   }
 
   // Equivalent to Axios HEAD check

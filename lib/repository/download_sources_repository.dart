@@ -8,11 +8,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dar
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/gofile_hoster.dart';
-import 'package:yamata_launcher/services/scrapers/hosters/google_drive_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart';
-import 'package:yamata_launcher/services/scrapers/hosters/mega_hoster.dart';
-import 'package:yamata_launcher/services/scrapers/hosters/megaup_net_hoster.dart';
-import 'package:yamata_launcher/services/scrapers/hosters/one_fichier.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
@@ -27,10 +23,6 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
-    OneFichierHoster(),
-    MegaCoNzHoster(),
-    MegaupNetHoster(),
-    GoogleDriveHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 
@@ -54,7 +46,7 @@ class DownloadSourcesRepository {
       return directDownloadUris[url]!;
     }
     try {
-      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 3));
+      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 6));
       final contentDisposition = res.headers['content-disposition'];
       final contentType = res.headers['content-type'];
 
@@ -148,9 +140,13 @@ class DownloadSourcesRepository {
   Future<String?> getHosterFileName(String url) async {
     for (var hoster in _allHosters) {
       if (hoster.canHandleUrl(url)) {
-        final fileName = await hoster.extractFileName(url);
-        if (fileName != null && fileName.isNotEmpty) {
-          return fileName;
+        try {
+          final fileName = await hoster.extractFileName(url);
+          if (fileName != null && fileName.isNotEmpty) {
+            return fileName;
+          }
+        } catch (e) {
+          print('Error extracting filename for hoster ${hoster.name}: $e');
         }
       }
     }
@@ -172,18 +168,18 @@ class DownloadSourcesRepository {
       return null;
     }
 
-    try {
-      for (var hoster in _allHosters) {
-        if (hoster.canHandleUrl(url)) {
+    for (var hoster in _allHosters) {
+      if (hoster.canHandleUrl(url)) {
+        try {
           final directUrl = await hoster.extractDownloadUrl(url);
           if (directUrl != null && directUrl.isNotEmpty) {
             return directUrl;
           }
+        } on Exception catch (e) {
+          throw Exception(
+              'Error extracting direct download url for hoster ${hoster.name}: ${e.toString()}');
         }
       }
-    } catch (_) {
-      print(
-          '[DownloadSourcesRepository] Error processing hoster for url: $url ${_.toString()}');
     }
   }
 }

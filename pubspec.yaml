@@ -65,6 +65,9 @@ dependencies:
   dmg: ^0.1.7
   flutter_app_installer: ^1.0.2
   qr_flutter: ^4.1.0
+  pointycastle: ^3.7.0
+
+
 
 
 dev_dependencies:

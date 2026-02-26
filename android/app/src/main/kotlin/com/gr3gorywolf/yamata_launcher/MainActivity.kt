@@ -12,6 +12,7 @@ import android.os.Environment
 import java.io.File
 import com.gr3gorywolf.yamata_launcher.utils.ZipUtils
 import com.gr3gorywolf.yamata_launcher.utils.SevenZipHelper
+import com.gr3gorywolf.yamata_launcher.services.DownloadForegroundService
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
@@ -190,6 +191,18 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.error("PATHS_ERROR", e.message, null)
                     }
+                }
+
+
+                 "startDownloadService" -> {
+                    val intent = Intent(context, DownloadForegroundService::class.java)
+                    ContextCompat.startForegroundService(context, intent)
+                    result.success(null)
+                }
+                "stopDownloadService" -> {
+                    val intent = Intent(context, DownloadForegroundService::class.java)
+                    context.stopService(intent)
+                    result.success(null)
                 }
 
                 "setWakeLock" -> {

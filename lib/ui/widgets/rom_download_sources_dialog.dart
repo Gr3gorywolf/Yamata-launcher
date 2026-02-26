@@ -235,7 +235,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                           subtitle: Opacity(
                             opacity: 0.7,
                             child: Text(
-                              ' ${item.sourceTitle} • $prefix  • ${item.rom.fileSize}',
+                              ' ${item.sourceTitle} • $prefix  • ${item.rom.fileSize ?? "--"}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

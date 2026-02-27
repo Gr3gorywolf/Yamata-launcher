@@ -8,9 +8,13 @@ class CommonHosterUtils {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0';
 
   Future<String> extractHosterFilename(
-    String url, {
+    String rawUrl, {
     String? directUrl,
   }) async {
+    var url = rawUrl.trim();
+    if (url.contains("||")) {
+      url = url.split("||").first;
+    }
     // =========================
     // 1. Fragment (#filename)
     // =========================

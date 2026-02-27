@@ -257,6 +257,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
     if (uriType == DownloadUriType.direct) {
       var certArgs =
           Aria2cClient.getCommonArgs(args.certPath, downloadUrl: args.uri);
+      print('Starting direct download with aria2c with args: ${certArgs}');
       final proc = await Process.start(
         args.aria2cPath!,
         [
@@ -280,7 +281,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
           proc, () => aborted, 'Direct download failed');
 
       var fileName = p.basename(
-          args?.source?.fileName ?? Aria2cUtils.getCleanUrl(args.uri!));
+          Aria2cUtils.getCleanUrl(args?.source?.fileName ?? args.uri!));
       var validExtensions = [
         ...VALID_COMPRESSED_EXTENSIONS,
         ...VALID_EXECUTABLE_EXTENSIONS,

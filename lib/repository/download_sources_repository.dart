@@ -8,9 +8,14 @@ import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dar
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/gofile_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/krakenfiles_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/mega_nz_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/megaup_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/qiwi_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/send_cm_hoster.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -23,6 +28,11 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
+    MegaHoster(),
+    QiwiHoster(),
+    SendCmHoster(),
+    MegaupHoster(),
+    KrakenfilesHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 
@@ -176,6 +186,8 @@ class DownloadSourcesRepository {
             return directUrl;
           }
         } on Exception catch (e) {
+          print(
+              'Error extracting direct download url for hoster ${hoster.name} with link $url: ${e.toString()}');
           throw Exception(
               'Error extracting direct download url for hoster ${hoster.name}: ${e.toString()}');
         }

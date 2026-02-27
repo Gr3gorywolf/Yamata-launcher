@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:yamata_launcher/constants/torrents_constants.dart';
 import 'package:yamata_launcher/models/aria2c.dart';
 import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -33,13 +34,13 @@ class Aria2cClient {
       "--summary-interval=3",
       "--console-log-level=info",
       "--max-connection-per-server=1",
+      '--header=User-Agent: ${CommonHosterUtils().hosterUserAgent}',
     ];
     if (downloadUrl != null && downloadUrl.contains("||")) {
       var headers = Aria2cUtils.extractHeadersFromUrl(downloadUrl);
       if (headers != null) {
         for (final header in headers) {
-          params.add('--header="$header"');
-          print('Adding header to aria2c' + '--header="$header"');
+          params.add('--header=$header');
         }
       }
     }

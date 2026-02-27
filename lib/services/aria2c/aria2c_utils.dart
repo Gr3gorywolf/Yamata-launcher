@@ -7,7 +7,7 @@ class Aria2cUtils {
     if (!fragment.contains("headers:")) return const [];
     final raw = fragment.split("headers:")[1];
     return raw
-        .split(RegExp(r'\r?\n'))
+        .split("^")
         .map((h) => h.trim())
         .where((h) => h.isNotEmpty)
         .toList();

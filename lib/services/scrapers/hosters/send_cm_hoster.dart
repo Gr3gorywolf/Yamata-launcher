@@ -1,0 +1,132 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as html_parser;
+import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
+
+class SendCmHoster implements Hoster {
+  @override
+  String get name => 'Send.cm';
+
+  static const _domains = [
+    'send.cm',
+  ];
+
+  static const _baseUrl = 'https://send.cm/';
+
+  @override
+  bool canHandleUrl(String url) {
+    final lower = url.toLowerCase();
+    return _domains.any(lower.contains);
+  }
+
+  // =========================
+  // PUBLIC
+  // =========================
+
+  @override
+  Future<String?> extractFileName(String url) async {
+    try {
+      final directUrl = await extractDownloadUrl(url);
+      return CommonHosterUtils()
+          .extractHosterFilename(url, directUrl: directUrl);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> extractDownloadUrl(String url) async {
+    if (!canHandleUrl(url)) return null;
+
+    try {
+      if (url.contains('/d/')) {
+        final id = _extractId(url);
+        final link = await _getFileLink(id);
+        return _format(link);
+      }
+
+      if (!url.contains('/s/')) {
+        final id = _extractId(url);
+        final link = await _getFileLink(id);
+        return _format(link);
+      }
+
+      final firstId = await _extractFirstFileFromFolder(url);
+      if (firstId == null) {
+        throw Exception('Folder is empty');
+      }
+
+      final link = await _getFileLink(firstId);
+      return _format(link);
+    } catch (e) {
+      print('[Send.cm] $e');
+      CommonHosterUtils().handleHosterError(e);
+      return null;
+    }
+  }
+
+  // =========================
+  // INTERNAL
+  // =========================
+
+  String _extractId(String url) {
+    final uri = Uri.parse(url);
+    return uri.pathSegments.last;
+  }
+
+  Future<String> _getFileLink(String fileId) async {
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: {
+        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+        HttpHeaders.refererHeader: _baseUrl,
+      },
+      body: {
+        'op': 'download2',
+        'id': fileId,
+      },
+    ).timeout(const Duration(seconds: 30));
+
+    final location = response.headers['location'];
+
+    if (location == null || location.isEmpty) {
+      throw Exception('Direct link not found');
+    }
+
+    return location;
+  }
+
+  Future<String?> _extractFirstFileFromFolder(String url) async {
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+      },
+    ).timeout(const Duration(seconds: 30));
+
+    if (response.statusCode >= 400) {
+      throw Exception('Folder page not accessible');
+    }
+
+    final document = html_parser.parse(response.body);
+
+    final linkElement = document.querySelector(
+      'tr.selectable a',
+    );
+
+    if (linkElement == null) return null;
+
+    final href = linkElement.attributes['href'];
+    if (href == null) return null;
+
+    final uri = Uri.parse(href);
+    return uri.pathSegments.last;
+  }
+
+  String _format(String url) {
+    return '$url||headers:Referer: https://send.cm/^User-Agent: ${CommonHosterUtils().hosterUserAgent}';
+  }
+}

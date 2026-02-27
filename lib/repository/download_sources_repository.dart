@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:yamata_launcher/constants/console_constants.dart';
+import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dart';
@@ -16,6 +18,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart
 import 'package:yamata_launcher/services/scrapers/hosters/qiwi_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/send_cm_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -55,10 +58,28 @@ class DownloadSourcesRepository {
     if (directDownloadUris.containsKey(url)) {
       return directDownloadUris[url]!;
     }
+
+    final headers = {
+      "User-Agent": CommonHosterUtils().hosterUserAgent,
+      "Accept": "*/*",
+      "Connection": "close",
+    };
+
+    final client = http.Client();
+
     try {
-      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 6));
-      final contentDisposition = res.headers['content-disposition'];
-      final contentType = res.headers['content-type'];
+      final request = http.Request("GET", Uri.parse(url))
+        ..headers.addAll(headers);
+
+      final streamed =
+          await client.send(request).timeout(const Duration(seconds: 10));
+
+      // 🔹 Headers disponibles inmediatamente
+      final responseHeaders = streamed.headers;
+      print(responseHeaders);
+
+      final contentDisposition = responseHeaders['content-disposition'];
+      final contentType = responseHeaders['content-type'];
 
       final isAttachment = contentDisposition != null &&
           contentDisposition.toLowerCase().contains('attachment');
@@ -66,11 +87,34 @@ class DownloadSourcesRepository {
       final isDownloadType =
           contentType != null && _isDownloadContentType(contentType);
 
-      if (isAttachment || isDownloadType) {
-        directDownloadUris[url] = true;
-        return true;
-      }
-    } catch (_) {}
+      StreamSubscription<List<int>>? sub;
+
+      sub = streamed.stream.listen(
+        (_) {
+          sub?.cancel();
+          client.close();
+        },
+        onError: (_) {
+          sub?.cancel();
+          client.close();
+        },
+        cancelOnError: true,
+      );
+
+      // Safety timeout (in case no data is ever sent)
+      Future.delayed(const Duration(seconds: 2), () {
+        sub?.cancel();
+        client.close();
+      });
+
+      final result = isAttachment || isDownloadType;
+      directDownloadUris[url] = result;
+      return result;
+    } catch (e) {
+      print("Header probe failed: $e");
+      client.close();
+    }
+
     directDownloadUris[url] = false;
     return false;
   }

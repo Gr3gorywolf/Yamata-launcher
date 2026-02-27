@@ -7,6 +7,7 @@ class DownloadSourceRom {
   String? fileName;
   int? fileIndex;
   String? uploadDate;
+  String? extractableUrl;
   String? console;
   bool? isExtraContent;
 
@@ -20,6 +21,7 @@ class DownloadSourceRom {
       this.fileName,
       this.uploadDate,
       this.isExtraContent,
+      this.extractableUrl,
       this.console});
 
   DownloadSourceRom copyWith({
@@ -31,6 +33,7 @@ class DownloadSourceRom {
     String? fileName,
     int? fileIndex,
     String? uploadDate,
+    String? extractableUrl,
     String? console,
     bool? isExtraContent,
   }) {
@@ -43,6 +46,7 @@ class DownloadSourceRom {
         filePath: filePath ?? this.filePath,
         fileIndex: fileIndex ?? this.fileIndex,
         uploadDate: uploadDate ?? this.uploadDate,
+        extractableUrl: extractableUrl ?? this.extractableUrl,
         console: console ?? this.console,
         isExtraContent: isExtraContent ?? this.isExtraContent,
         fileName: fileName ?? this.fileName);
@@ -59,6 +63,7 @@ class DownloadSourceRom {
     titleClean = json['titleClean'] ?? null;
     fileName = json['fileName'] ?? null;
     isExtraContent = json['isExtraContent'] ?? false;
+    extractableUrl = json['extractableUrl'] ?? null;
   }
 
   Map<String, dynamic> toJson() {
@@ -73,6 +78,7 @@ class DownloadSourceRom {
     data['titleClean'] = this.titleClean;
     data['fileName'] = this.fileName;
     data['isExtraContent'] = this.isExtraContent;
+    data['extractableUrl'] = this.extractableUrl;
     return data;
   }
 }

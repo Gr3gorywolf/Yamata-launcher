@@ -11,7 +11,9 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/download_history_dao.dart';
+import 'package:yamata_launcher/database/daos/download_tasks_dao.dart';
 import 'package:yamata_launcher/models/download_history_item.dart';
+import 'package:yamata_launcher/models/download_task.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -64,7 +66,8 @@ class DownloadProvider extends ChangeNotifier {
     ..sort((a, b) => b.downloadedAt!.compareTo(a.downloadedAt!));
 
   bool isRomDownloading(RomInfo rom) {
-    return activeDownloadInfos.any((d) => d.romSlug == rom.slug);
+    return activeDownloadInfos
+        .any((d) => d.romSlug == rom.slug && d.isPaused == false);
   }
 
   double get totalDownloadPercent {
@@ -106,9 +109,67 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void restoreDownloadTasks() async {
+    DownloadTasksDao(db!).getAll().then((tasks) {
+      for (var task in tasks) {
+        var taskDownloadInfo = task.download;
+        var foundActiveDownloadIdx = _activeDownloadInfos.indexWhere(
+            (element) => tasks.any((task) =>
+                taskDownloadInfo.romSlug == element.romSlug &&
+                taskDownloadInfo.sourceExtractableUrl ==
+                    element.sourceExtractableUrl));
+
+        taskDownloadInfo.isPaused = true;
+        if (foundActiveDownloadIdx == -1) {
+          _activeDownloadInfos.add(task.download);
+        } else {
+          _activeDownloadInfos[foundActiveDownloadIdx] = task.download;
+        }
+        NotificationsService.cancelNotificationByTag(task.download.romSlug);
+      }
+    });
+    handleNotifyListeners();
+  }
+
   Future setDownloadHistory(List<DownloadHistoryItem> history) async {
     _downloadHistory.clear();
     _downloadHistory.addAll(history);
+    handleNotifyListeners();
+  }
+
+  Future<void> continueDownload(
+      DownloadTask download, Aria2DownloadHandle handle) async {
+    final downloadId = handle.id;
+    final rom = download.download.romInfo!;
+    final source = download.sourceRom;
+    var downloadInfo = download.download;
+    downloadInfo.downloadId = downloadId;
+    downloadInfo.isPaused = false;
+    var foundActiveDownloadIdx = _activeDownloadInfos.indexWhere((element) =>
+        element.romSlug == downloadInfo.romSlug &&
+        element.sourceExtractableUrl == downloadInfo.sourceExtractableUrl);
+    if (foundActiveDownloadIdx == -1) {
+      return;
+    }
+    _activeDownloadInfos[foundActiveDownloadIdx] = downloadInfo;
+
+    final sub = handle.events!.listen((event) {
+      _handleAria2Event(
+        event,
+        rom,
+        source,
+        handle,
+        downloadInfo,
+      );
+    });
+
+    _aria2cDownloadProcesses[downloadId] = _ActiveAria2Download(
+      rom: rom,
+      source: source,
+      handle: handle,
+      sub: sub,
+    );
+    _handleProgressChanged();
     handleNotifyListeners();
   }
 
@@ -118,17 +179,26 @@ class DownloadProvider extends ChangeNotifier {
       String? contentTitle,
       bool? shouldExtract}) async {
     final downloadId = handle.id;
+
     final info = DownloadInfo(
-      romSlug: rom.slug,
-      downloadId: downloadId,
-      downloadPercent: 0,
-      romInfo: rom,
-      isExtraContent: isExtraContent,
-      contentTitle: contentTitle,
-      shouldExtract: shouldExtract,
-      downloadInfo: 'Starting download...',
-      totalSize: source.fileSize,
-    );
+        romSlug: rom.slug,
+        downloadId: downloadId,
+        downloadPercent: 0,
+        romInfo: rom,
+        isExtraContent: isExtraContent,
+        contentTitle: contentTitle,
+        shouldExtract: shouldExtract,
+        downloadInfo: 'Starting download...',
+        totalSize: source.fileSize,
+        downloadUrl: source.uris != null && source.uris!.isNotEmpty
+            ? source.uris!.first
+            : null,
+        sourceExtractableUrl: source.extractableUrl,
+        downloadFolder: handle.folder,
+        isPaused: false);
+
+    await DownloadTasksDao(db!).insert(
+        DownloadTask(slug: rom.slug, download: info, sourceRom: source));
 
     if (Platform.isAndroid) {
       NotificationsService.showNotification(
@@ -160,6 +230,25 @@ class DownloadProvider extends ChangeNotifier {
     handleNotifyListeners();
   }
 
+  pauseDownload(DownloadInfo info) async {
+    final active = _aria2cDownloadProcesses[info.downloadId];
+    if (active != null) {
+      var foundActiveDownload = _activeDownloadInfos
+          .indexWhere((element) => element.downloadId == info.downloadId);
+      info.isPaused = true;
+      _activeDownloadInfos[foundActiveDownload] = info;
+      active.handle!.abort!(deleteFiles: false);
+      _disposeActive(info.downloadId);
+      await DownloadTasksDao(db!).updateDownloadInfo(info);
+      if (Platform.isAndroid) {
+        print("Cancelling notification for tag: ${info.romSlug}");
+        NotificationsService.cancelNotificationByTag(info.romSlug);
+      }
+      handleNotifyListeners();
+      _handleProgressChanged();
+    }
+  }
+
   abortDownload(DownloadInfo info) async {
     if (info.isExtracting) {
       await ExtractionService.cancel(info.downloadId ?? "");
@@ -178,6 +267,21 @@ class DownloadProvider extends ChangeNotifier {
           .removeWhere((element) => element.downloadId == info.downloadId);
       active.handle!.abort!(deleteFiles: !info.isExtraContent);
       _disposeActive(info.downloadId);
+      if (Platform.isAndroid) {
+        print("Cancelling notification for tag: ${info.romSlug}");
+        NotificationsService.cancelNotificationByTag(info.romSlug);
+      }
+      await DownloadTasksDao(db!).delete(info);
+      handleNotifyListeners();
+      _handleProgressChanged();
+    }
+    // For paused downloads
+    else {
+      _activeDownloadInfos
+          .removeWhere((element) => element.downloadId == info.downloadId);
+
+      await DownloadService.deleteDownloadFolder(info);
+      await DownloadTasksDao(db!).delete(info);
       if (Platform.isAndroid) {
         print("Cancelling notification for tag: ${info.romSlug}");
         NotificationsService.cancelNotificationByTag(info.romSlug);
@@ -201,6 +305,9 @@ class DownloadProvider extends ChangeNotifier {
           int.tryParse(p.percent?.replaceAll('%', '') ?? '0');
 
       info.downloadInfo = Aria2cUtils.formatProgress(p);
+      if ((info.downloadPercent ?? 0) % 10 == 0) {
+        DownloadTasksDao(db!).updateDownloadInfo(info);
+      }
       print("Download info: ${info.downloadInfo}");
       handleNotifyListeners();
       _handleProgressChanged();
@@ -230,6 +337,7 @@ class DownloadProvider extends ChangeNotifier {
       info.downloadInfo = 'Download completed';
       print("Download completed: ${event.outputFilePath}");
       _registerCompletedDownload(info, rom, event.outputFilePath ?? "");
+      DownloadTasksDao(db!).delete(info);
       _disposeActive(handle.id);
       handleNotifyListeners();
       return;
@@ -243,6 +351,7 @@ class DownloadProvider extends ChangeNotifier {
         _activeDownloadInfos.removeAt(_activeDownloadInfos.indexOf(info));
         handleNotifyListeners();
         _handleProgressChanged();
+        DownloadTasksDao(db!).delete(info);
         NotificationsService.showNotification(
           title: 'Failed to download ${rom.name}',
           body:

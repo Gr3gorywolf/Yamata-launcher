@@ -13,7 +13,8 @@ enum SettingsKeys {
   ENABLE_EXTRACTION,
   MAX_CONCURRENT_EXTRACTIONS,
   DARK_MODE_ENABLED,
-  CLOSE_TO_SYSTEM_TRAY
+  CLOSE_TO_SYSTEM_TRAY,
+  ANDROID_NOTIFICATIONS_TAGS
 }
 
 final _systemIsDarkThemed =
@@ -64,5 +65,10 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'move_roms_to_named_subfolder',
     type: SettingType.bool,
     defaultValue: false,
+  ),
+  SettingsKeys.ANDROID_NOTIFICATIONS_TAGS: Setting<String>(
+    key: 'android_notifications_tags',
+    type: SettingType.string,
+    defaultValue: "{}",
   ),
 };

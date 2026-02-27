@@ -80,6 +80,7 @@ class Aria2cDownloadManager {
     required RomInfo rom,
     required DownloadSourceRom source,
     String? aria2cPath,
+    String? selectedDownloadPath,
   }) async {
     final uri = source.uris!.first;
     final id = StringHelper.hash20(rom.name! + rom.console!);
@@ -104,17 +105,21 @@ class Aria2cDownloadManager {
       downloadPath = p.join(customDownloadPath.folderPath, romSubFolder);
     }
 
+    if (selectedDownloadPath != null) {
+      downloadPath = selectedDownloadPath;
+    }
+
     var downloadMarkFile = File(p.join(downloadPath, DOWNLOAD_MARK_FILENAME));
     if (!await Directory(downloadPath).exists()) {
       await Directory(downloadPath).create(recursive: true);
-      await downloadMarkFile.create();
+      await downloadMarkFile.writeAsString(rom.slug ?? '');
     } else {
       if (!downloadMarkFile.existsSync()) {
         downloadPath =
             downloadPath + "_${StringHelper.generateUUID().substring(0, 5)}";
         await Directory(downloadPath).create(recursive: true);
         downloadMarkFile = File(p.join(downloadPath, DOWNLOAD_MARK_FILENAME));
-        await downloadMarkFile.create();
+        await downloadMarkFile.writeAsString(rom.slug ?? '');
       }
     }
 
@@ -214,6 +219,7 @@ class Aria2cDownloadManager {
 
     return Aria2DownloadHandle(
       id: id,
+      folder: downloadPath,
       events: controller.stream,
       done: doneCompleter.future,
       abort: abort,

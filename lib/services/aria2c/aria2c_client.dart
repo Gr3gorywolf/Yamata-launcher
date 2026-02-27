@@ -30,10 +30,12 @@ class Aria2cClient {
     List<String> params = [
       '--bt-tracker="${BT_TRACKERS.join(',')}"',
       "--auto-file-renaming=false",
-      "--allow-overwrite=true",
       "--summary-interval=3",
       "--console-log-level=info",
       "--max-connection-per-server=1",
+      "--auto-save-interval=2",
+      "--continue=true",
+      "--max-resume-failure-tries=15",
       '--header=User-Agent: ${CommonHosterUtils().hosterUserAgent}',
     ];
     if (downloadUrl != null && downloadUrl.contains("||")) {

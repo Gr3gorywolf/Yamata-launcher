@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -6,8 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:windows_notification/notification_message.dart';
 import 'package:windows_notification/windows_notification.dart';
 import 'package:yamata_launcher/app_router.dart';
-import 'package:yamata_launcher/constants/app_constants.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
@@ -43,6 +42,26 @@ class NotificationsService {
   static const String _channelName = 'yamata_launcher Notifications';
   static const String _channelDescription = 'Notifications for Yamata Launcher';
   static final Map<String, int> _tagIds = {};
+
+  static void saveTags() {
+    SettingsService()
+        .set(SettingsKeys.ANDROID_NOTIFICATIONS_TAGS, jsonEncode(_tagIds));
+  }
+
+  static Future<void> loadTags() async {
+    var savedTags = await SettingsService()
+        .get<String>(SettingsKeys.ANDROID_NOTIFICATIONS_TAGS);
+    if (savedTags.isNotEmpty) {
+      var decoded = jsonDecode(savedTags);
+      if (decoded is Map<String, dynamic>) {
+        decoded.forEach((key, value) {
+          if (value is int) {
+            _tagIds[key] = value;
+          }
+        });
+      }
+    }
+  }
 
   static void _onDidReceiveNotificationResponse(
       NotificationResponse notificationResponse) {
@@ -96,8 +115,10 @@ class NotificationsService {
   }
 
   static int getIdForTag(String tag) {
-    return _tagIds.putIfAbsent(
+    var tagId = _tagIds.putIfAbsent(
         tag, () => DateTime.now().millisecondsSinceEpoch ~/ 1000);
+    saveTags();
+    return tagId;
   }
 
   static Future<void> init() async {
@@ -144,6 +165,8 @@ class NotificationsService {
       settings,
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
     );
+
+    await loadTags();
 
     if (Platform.isAndroid) {
       await _notifications
@@ -211,6 +234,7 @@ class NotificationsService {
     final id = _tagIds[tag];
     if (id != null) {
       await _notifications.cancel(id, tag: tag);
+      _tagIds.remove(tag);
     }
   }
 

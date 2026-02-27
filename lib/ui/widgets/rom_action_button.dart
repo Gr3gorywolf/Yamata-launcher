@@ -117,6 +117,9 @@ class _RomActionButtonState extends State<RomActionButton> {
     final isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
     final hasDownloadSources =
         downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty;
+    final downloadInfo = provider.getDownloadInfo(rom);
+    final isPaused = downloadInfo?.isPaused == true;
+    final isExtracting = downloadInfo?.isExtracting == true;
 
     bool shouldCheckFileExists = libraryItem != null &&
         libraryItem.filePath != null &&
@@ -156,6 +159,24 @@ class _RomActionButtonState extends State<RomActionButton> {
       AlertsService.showSnackbar("Download started", duration: 3);
     }
 
+    Future<void> handleCancelDownload() async {
+      var downloadInfo = provider.getDownloadInfo(rom);
+      if (downloadInfo == null) return;
+      AlertsService.showAlert(
+        navigatorContext!,
+        "Warning",
+        "You are sure you want to cancel this ${downloadInfo.isExtracting ? "extraction" : "download"}?",
+        acceptTitle: "Yes",
+        callback: () {
+          Provider.of<DownloadProvider>(context, listen: false)
+              .abortDownload(downloadInfo);
+          AlertsService.showSnackbar(
+              "${downloadInfo.isExtracting ? "Extraction" : "Download"} cancelled");
+        },
+        cancelable: true,
+      );
+    }
+
     Future<void> handleButtonPress() async {
       if (isPlaying) {
         if (FileSystemService.isDesktop) {
@@ -165,21 +186,20 @@ class _RomActionButtonState extends State<RomActionButton> {
         return;
       }
       if (isDownloading) {
-        var downloadInfo = provider.getDownloadInfo(rom);
         if (downloadInfo == null) return;
-        AlertsService.showAlert(
-          navigatorContext!,
-          "Warning",
-          "You are sure you want to cancel this ${downloadInfo.isExtracting ? "extraction" : "download"}?",
-          acceptTitle: "Yes",
-          callback: () {
-            Provider.of<DownloadProvider>(context, listen: false)
-                .abortDownload(downloadInfo);
-            AlertsService.showSnackbar(
-                "${downloadInfo.isExtracting ? "Extraction" : "Download"} cancelled");
-          },
-          cancelable: true,
-        );
+        if (downloadInfo.isExtracting) {
+          return await handleCancelDownload();
+        }
+
+        await Provider.of<DownloadProvider>(context, listen: false)
+            .pauseDownload(downloadInfo);
+        AlertsService.showSnackbar("Download Paused");
+        return;
+      }
+      if (isPaused) {
+        if (downloadInfo == null) return;
+        await DownloadService.continueDownload(downloadInfo);
+        AlertsService.showSnackbar("Resuming Download...");
         return;
       }
       if (isReadyToPlay && !_fileExists!) {
@@ -266,8 +286,16 @@ class _RomActionButtonState extends State<RomActionButton> {
       icon = FileSystemService.isDesktop ? Icons.close : Icons.videogame_asset;
       text = FileSystemService.isDesktop ? "Close" : "Playing";
     } else if (isDownloading) {
-      icon = Icons.stop;
-      text = "Cancel";
+      if (isExtracting) {
+        icon = Icons.stop;
+        text = "Cancel";
+      } else {
+        icon = Icons.pause;
+        text = "Pause";
+      }
+    } else if (isPaused) {
+      icon = Icons.play_arrow;
+      text = "Resume";
     } else if (isReadyToPlay) {
       if (fileExists) {
         if (getFileIsCompressed()) {
@@ -286,17 +314,28 @@ class _RomActionButtonState extends State<RomActionButton> {
       text = "Download";
     }
 
-    return ElevatedButton.icon(
-      icon: Icon(icon, size: iconSize),
-      label: Text(
-        text,
-        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+    return Row(children: [
+      ElevatedButton.icon(
+        icon: Icon(icon, size: iconSize),
+        label: Text(
+          text,
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+        ),
+        style: ElevatedButton.styleFrom(padding: padding),
+        onPressed: (hasDownloadSources ||
+                    isReadyToPlay ||
+                    isDownloading ||
+                    isPaused) ||
+                (isPlaying && FileSystemService.isDesktop)
+            ? handleButtonPress
+            : null,
       ),
-      style: ElevatedButton.styleFrom(padding: padding),
-      onPressed: (hasDownloadSources || isReadyToPlay || isDownloading) ||
-              (isPlaying && FileSystemService.isDesktop)
-          ? handleButtonPress
-          : null,
-    );
+      if ((isDownloading && !isExtracting) || isPaused) ...[
+        SizedBox(width: spacing),
+        IconButton(
+            onPressed: handleCancelDownload,
+            icon: Icon(Icons.close, size: iconSize)),
+      ]
+    ]);
   }
 }

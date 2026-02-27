@@ -51,6 +51,56 @@ class RomService {
     });
   }
 
+  static Future<bool> deleteRomFiles(RomLibraryItem downloadedRom) async {
+    if (downloadedRom.filePath == null) {
+      return false;
+    }
+    final file = File(downloadedRom.filePath!);
+    if (!await file.exists()) return false;
+
+    final romNameClean =
+        StringHelper.removeInvalidPathCharacters(downloadedRom.rom.name);
+
+    Directory? currentDir = file.parent;
+    Directory? folderWithMark;
+
+    Future<bool> hasMarkFile(Directory dir) async {
+      final markFile = File('${dir.path}/$DOWNLOAD_MARK_FILENAME');
+      return await markFile.exists();
+    }
+
+    while (true) {
+      if (currentDir == null) {
+        return false;
+      }
+      if (await hasMarkFile(currentDir)) {
+        folderWithMark = currentDir;
+        break;
+      }
+
+      final parent = currentDir.parent;
+      if (parent.path == currentDir.path) {
+        break;
+      }
+
+      currentDir = parent;
+    }
+
+    if (folderWithMark != null) {
+      final folderName = folderWithMark.path.split(Platform.pathSeparator).last;
+      var markContent =
+          await File('${folderWithMark.path}/$DOWNLOAD_MARK_FILENAME')
+              .readAsString();
+      if (folderName.contains(romNameClean) ||
+          markContent == downloadedRom.rom.slug) {
+        await folderWithMark.delete(recursive: true);
+        return true;
+      }
+    }
+    await file.delete();
+    return true;
+  }
+
   static String normalizeRomTitle(String input, {bool deleteRunes = false}) {
     final buffer = StringBuffer();
 

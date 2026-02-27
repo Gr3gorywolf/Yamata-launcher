@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class CommonHosterUtils {
   String hosterUserAgent =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0';
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36";
 
   Future<String> extractHosterFilename(
     String rawUrl, {

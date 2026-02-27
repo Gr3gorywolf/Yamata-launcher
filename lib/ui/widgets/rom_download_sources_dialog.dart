@@ -133,12 +133,14 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
               RomDownloadSourcesDialogResult(
                   rom: sourceRom.copyWith(
                     uris: [selectedHoster.uri],
+                    extractableUrl: selectedHoster.uri,
                   ),
                   extractAfterDownload: extractAfterDownload));
           return;
         }
         var loading = AlertsService.showLoadingAlert(
             navigatorContext!, loadingTitle, loadingMessage);
+        final selectedHosterUrl = selectedHoster.uri;
         String? directDownloadLink = null;
         try {
           directDownloadLink = await DownloadSourcesRepository()
@@ -157,6 +159,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         var romDownload = sourceRom.copyWith(
           fileName: selectedHoster.fileName,
           uris: [directDownloadLink],
+          extractableUrl: selectedHosterUrl,
         );
         Navigator.pop(
             context,
@@ -176,6 +179,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       loading.close();
       var romDownload = sourceRom.copyWith(
         uris: [sourceRom.uris!.first],
+        extractableUrl: sourceRom.uris!.first,
       );
       Navigator.pop(
           context,
@@ -187,11 +191,12 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     }
     var link = null;
     var fileName = null;
+    final sourceRomLink = sourceRom.uris!.first;
     try {
       link = await DownloadSourcesRepository()
-          .extractDirectDownloadUrl(sourceRom.uris!.first);
-      fileName = await DownloadSourcesRepository()
-          .getHosterFileName(sourceRom.uris!.first);
+          .extractDirectDownloadUrl(sourceRomLink);
+      fileName =
+          await DownloadSourcesRepository().getHosterFileName(sourceRomLink);
     } catch (e) {
       Future.microtask(() {
         AlertsService.showErrorSnackbar(e.toString());
@@ -214,6 +219,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
           rom: sourceRom.copyWith(
             fileName: fileName,
             uris: [link],
+            extractableUrl: sourceRomLink,
           ),
           extractAfterDownload: extractAfterDownload,
         ));

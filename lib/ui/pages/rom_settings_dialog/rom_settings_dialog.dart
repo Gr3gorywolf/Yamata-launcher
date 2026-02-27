@@ -122,7 +122,7 @@ class RomSettingsDialog extends StatelessWidget {
 
     _removeFromLibrary() async {
       await AlertsService.showAlert(context, "Remove from library",
-          "Are you sure you want to remove this ROM from your library? all the rom settings will be removed as well (No files will be deleted)",
+          "Are you sure you want to remove this game from your library? all the game settings will be removed as well (No files will be deleted)",
           callback: () async {
         await provider.removeLibraryItem(rom.slug);
         Navigator.of(context).pop();
@@ -153,22 +153,24 @@ class RomSettingsDialog extends StatelessWidget {
     }
 
     _deleteRomFile() async {
-      await AlertsService.showAlert(context, "Remove rom file",
-          "Are you sure you want to remove this ROM from your computer? This action cannot be undone.",
+      await AlertsService.showAlert(context, "Remove game file",
+          "Are you sure you want to remove this game from your computer? This action cannot be undone.",
           callback: () async {
         if (libraryItem != null && libraryItem.filePath!.isNotEmpty) {
-          final file = File(libraryItem.filePath!);
-          if (await file.exists()) {
-            await file.delete();
+          var deleted = await RomService.deleteRomFiles(libraryItem);
+          if (deleted) {
+            libraryItem.filePath = "";
+            await provider.updateLibraryItem(libraryItem);
+          } else {
+            AlertsService.showErrorSnackbar(
+                "Failed to delete Game files. It may have already been removed or is inaccessible.");
           }
-          libraryItem.filePath = "";
-          await provider.updateLibraryItem(libraryItem);
         }
       });
     }
 
     return AlertDialog(
-      title: Text('ROM Settings'),
+      title: Text('Game Settings'),
       insetPadding:
           const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
       contentPadding: const EdgeInsets.all(10.0),

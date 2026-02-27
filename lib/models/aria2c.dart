@@ -68,12 +68,14 @@ class Aria2ErrorEvent extends Aria2Event {
 /// Handle returned to the caller to listen to events and abort.
 class Aria2DownloadHandle {
   final String id;
+  final String folder;
   final Stream<Aria2Event> events;
   final Future<Aria2DoneEvent> done;
   final void Function({bool deleteFiles}) abort;
 
   Aria2DownloadHandle({
     required this.id,
+    required this.folder,
     required this.events,
     required this.done,
     required this.abort,

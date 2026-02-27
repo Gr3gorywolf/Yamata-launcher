@@ -78,7 +78,8 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
 
   print("Isolate: Compiling ${payload.roms.length} roms");
   var normalizedRoms = payload.roms.map((rom) {
-    rom.name = RomService.normalizeRomTitle(_removeMisplacedWords(rom.name));
+    rom.name = RomService.normalizeRomTitle(_removeMisplacedWords(rom.name),
+        deleteRunes: true);
     return rom;
   }).toList();
 
@@ -90,6 +91,7 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
 
       d.titleClean = RomService.normalizeRomTitle(
         _removeMisplacedWords(d.title ?? ""),
+        deleteRunes: true,
       );
       if (d.titleClean!.isEmpty) continue;
 
@@ -190,15 +192,17 @@ class DownloadSourcesProvider extends ChangeNotifier {
     DownloadSourceWithDownloads source,
     RomInfo rom,
   ) {
-    final normalizedRomName =
-        RomService.normalizeRomTitle(_removeMisplacedWords(rom.name));
+    final normalizedRomName = RomService.normalizeRomTitle(
+        _removeMisplacedWords(rom.name),
+        deleteRunes: true);
 
     return source.downloads
         .where((sourceRom) =>
             sourceRom.console == rom.console &&
             _isRomMatch(
                 RomService.normalizeRomTitle(
-                    _removeMisplacedWords(sourceRom.title ?? "")),
+                    _removeMisplacedWords(sourceRom.title ?? ""),
+                    deleteRunes: true),
                 normalizedRomName))
         .toList();
   }

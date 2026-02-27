@@ -59,6 +59,9 @@ class RomService {
     if (deleteRunes == true) {
       return cleaned.replaceAll(RegExp(r'[^a-zA-Z0-9]+'), '').trim();
     }
+    for (final character in StringHelper.diacriticsMap.entries) {
+      cleaned.replaceAll(character.key, character.value);
+    }
     for (final rune in cleaned.runes) {
       final mapped = StringHelper.unicodeMap[rune];
       if (mapped != null) {

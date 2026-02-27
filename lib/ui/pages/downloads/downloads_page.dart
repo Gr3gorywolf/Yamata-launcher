@@ -58,7 +58,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
       body: Consumer<DownloadProvider>(
         builder: (context, downloadProvider, _) {
           final ongoingDownloads = downloadProvider.activeDownloadInfos
-              .where((d) => d.romInfo != null)
+              .where((d) => d.romInfo != null && d.isPaused == false)
+              .toList();
+
+          final pausedDownloads = downloadProvider.activeDownloadInfos
+              .where((d) => d.romInfo != null && d.isPaused == true)
               .toList();
 
           final completedDownloads = downloadProvider.downloadHistory
@@ -66,8 +70,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
               .map((d) => d)
               .toList();
 
-          final hasAnything =
-              ongoingDownloads.isNotEmpty || completedDownloads.isNotEmpty;
+          final hasAnything = ongoingDownloads.isNotEmpty ||
+              pausedDownloads.isNotEmpty ||
+              completedDownloads.isNotEmpty;
 
           if (!hasAnything) {
             return EmptyPlaceholder(
@@ -117,6 +122,40 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           );
                         },
                         childCount: ongoingDownloads.length,
+                      ),
+                    ),
+                  ),
+                  const SliverPadding(padding: EdgeInsets.only(top: 16)),
+                ],
+                // Paused downloads
+                if (pausedDownloads.isNotEmpty) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Text(
+                        "Paused",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverPadding(padding: EdgeInsets.only(top: 10)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final download = pausedDownloads[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: RomListItem(
+                                romItem: download.romInfo!, showConsole: true),
+                          );
+                        },
+                        childCount: pausedDownloads.length,
                       ),
                     ),
                   ),

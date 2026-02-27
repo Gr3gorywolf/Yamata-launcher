@@ -279,7 +279,7 @@ class _RomActionButtonState extends State<RomActionButton> {
 
     IconData icon = Icons.cloud_off_rounded;
     String text = "No downloads";
-    if (isCompilingSource || isVerifying) {
+    if ((isCompilingSource || isVerifying) && !(isDownloading || isPaused)) {
       icon = Icons.hourglass_top;
       text = "Loading...";
     } else if (isPlaying) {

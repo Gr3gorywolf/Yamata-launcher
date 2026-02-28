@@ -4,6 +4,7 @@ import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/hltb.dart';
 import 'package:yamata_launcher/models/launchbox.dart';
 import 'package:yamata_launcher/models/tgdb.dart';
+import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/rom_details_repository.dart';
 import 'package:yamata_launcher/ui/widgets/Images_carousel.dart';
@@ -41,8 +42,17 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
   @override
   void initState() {
     super.initState();
+    compileDownloadSources();
     fetchHltbInfo();
     fetchLaunchbox();
+  }
+
+  void compileDownloadSources() {
+    var sourcesProvider =
+        Provider.of<DownloadSourcesProvider>(context, listen: false);
+    var downloadSources = sourcesProvider.compileRomDownloadSources([
+      widget.rom,
+    ]);
   }
 
   void fetchHltbInfo() async {

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
+import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
@@ -27,7 +28,8 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> with TrayListener {
+class _MainLayoutState extends State<MainLayout>
+    with TrayListener, WidgetsBindingObserver {
   late final FocusScopeNode _navScopeNode;
   late final FocusScopeNode _contentScopeNode;
 
@@ -40,6 +42,7 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
     super.initState();
     _navScopeNode = FocusScopeNode(debugLabel: 'NavScope');
     _contentScopeNode = FocusScopeNode(debugLabel: 'ContentScope');
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -47,6 +50,17 @@ class _MainLayoutState extends State<MainLayout> with TrayListener {
     _navScopeNode.dispose();
     _contentScopeNode.dispose();
     super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print("State: $state");
+
+    if (state == AppLifecycleState.paused) {
+      print("App paused, pausing active downloads...");
+      NotificationsService.closeOngoingNotifications();
+    }
   }
 
   @override

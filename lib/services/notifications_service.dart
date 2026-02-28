@@ -42,6 +42,7 @@ class NotificationsService {
   static const String _channelName = 'yamata_launcher Notifications';
   static const String _channelDescription = 'Notifications for Yamata Launcher';
   static final Map<String, int> _tagIds = {};
+  static final Set<String> _ongoingTags = {};
 
   static void saveTags() {
     SettingsService()
@@ -61,6 +62,12 @@ class NotificationsService {
         });
       }
     }
+  }
+
+  static void closeOngoingNotifications() {
+    _ongoingTags.forEach((tag) {
+      cancelNotificationByTag(tag);
+    });
   }
 
   static void _onDidReceiveNotificationResponse(
@@ -217,6 +224,9 @@ class NotificationsService {
     var id = tag != null
         ? getIdForTag(tag)
         : DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    if (notificationDetails.android?.ongoing == true && tag != null) {
+      _ongoingTags.add(tag);
+    }
     try {
       await _notifications.show(
         id,
@@ -236,6 +246,7 @@ class NotificationsService {
       await _notifications.cancel(id, tag: tag);
       _tagIds.remove(tag);
     }
+    _ongoingTags.remove(tag);
   }
 
   // android

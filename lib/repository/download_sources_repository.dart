@@ -31,11 +31,11 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
-    MegaHoster(),
-    QiwiHoster(),
-    SendCmHoster(),
-    MegaupHoster(),
-    KrakenfilesHoster()
+    // MegaHoster(),
+    // QiwiHoster(),
+    // SendCmHoster(),
+    // MegaupHoster(),
+    // KrakenfilesHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 

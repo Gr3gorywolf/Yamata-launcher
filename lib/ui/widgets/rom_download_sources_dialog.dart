@@ -1,9 +1,11 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/ui/widgets/download_link_web_extractor.dart';
 import 'package:yamata_launcher/ui/widgets/download_source_hoster_select_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -148,9 +151,20 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
           loading.close();
         } catch (e) {
           loading.close();
-          AlertsService.showErrorSnackbar(e.toString());
-          return;
+          if (e is DownloadRequireManualException) {
+            directDownloadLink = await Navigator.of(context).push<String?>(
+              MaterialPageRoute(
+                builder: (_) =>
+                    DownloadLinkWebExtractor(rawLink: selectedHoster.uri),
+                fullscreenDialog: true, // opcional
+              ),
+            );
+          } else {
+            AlertsService.showErrorSnackbar(e.toString());
+            return;
+          }
         }
+
         if (directDownloadLink == null || directDownloadLink.isEmpty) {
           AlertsService.showErrorSnackbar(
               "Could not extract download link for ${sourceRom.title}");
@@ -198,10 +212,20 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       fileName =
           await DownloadSourcesRepository().getHosterFileName(sourceRomLink);
     } catch (e) {
-      Future.microtask(() {
-        AlertsService.showErrorSnackbar(e.toString());
-      });
-      return;
+      loading.close();
+      if (e is DownloadRequireManualException) {
+        link = await Navigator.of(context).push<String?>(
+          MaterialPageRoute(
+            builder: (_) => DownloadLinkWebExtractor(rawLink: sourceRomLink),
+            fullscreenDialog: true,
+          ),
+        );
+      } else {
+        Future.microtask(() {
+          AlertsService.showErrorSnackbar(e.toString());
+        });
+        return;
+      }
     } finally {
       loading.close();
     }

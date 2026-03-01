@@ -6,6 +6,7 @@ import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
@@ -31,11 +32,11 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
-    // MegaHoster(),
-    // QiwiHoster(),
-    // SendCmHoster(),
-    // MegaupHoster(),
-    // KrakenfilesHoster()
+    MegaHoster(),
+    QiwiHoster(),
+    SendCmHoster(),
+    MegaupHoster(),
+    KrakenfilesHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 
@@ -207,6 +208,15 @@ class DownloadSourcesRepository {
     return null;
   }
 
+  Hoster? getHosterForUrl(String url) {
+    for (var hoster in _allHosters) {
+      if (hoster.canHandleUrl(url)) {
+        return hoster;
+      }
+    }
+    return null;
+  }
+
   /**
    * Extracts the direct download URL from a given source URL by checking against known hosters.
    */
@@ -232,6 +242,9 @@ class DownloadSourcesRepository {
         } on Exception catch (e) {
           print(
               'Error extracting direct download url for hoster ${hoster.name} with link $url: ${e.toString()}');
+          if (e is DownloadRequireManualException) {
+            throw e;
+          }
           throw Exception(
               'Error extracting direct download url for hoster ${hoster.name}: ${e.toString()}');
         }

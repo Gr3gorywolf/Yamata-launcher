@@ -17,6 +17,11 @@ class DatanodesHoster implements Hoster {
   final Map<String, String> _cookies = {};
 
   @override
+  bool isValidDirectDownloadUrl(String url) {
+    return true;
+  }
+
+  @override
   bool canHandleUrl(String url) {
     final lower = url.toLowerCase();
     return _datanodesDomains.any(lower.contains);

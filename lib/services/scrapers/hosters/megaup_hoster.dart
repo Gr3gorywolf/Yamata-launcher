@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as parser;
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class MegaupHoster implements Hoster {
@@ -14,6 +16,11 @@ class MegaupHoster implements Hoster {
   bool canHandleUrl(String url) {
     final lower = url.toLowerCase();
     return _domains.any(lower.contains);
+  }
+
+  @override
+  bool isValidDirectDownloadUrl(String url) {
+    return url.contains("download_token=");
   }
 
   // =========================
@@ -31,6 +38,17 @@ class MegaupHoster implements Hoster {
     }
   }
 
+  String? extractMegaUpUrlFromScript(String content) {
+    final regex = RegExp(
+      r'''\.html\(\s*["'].*?href=["']([^"']+)["']''',
+      dotAll: true,
+      caseSensitive: false,
+    );
+
+    final match = regex.firstMatch(content);
+    return match?.group(1);
+  }
+
   @override
   Future<String?> extractDownloadUrl(String url) async {
     if (!canHandleUrl(url)) return null;
@@ -38,16 +56,10 @@ class MegaupHoster implements Hoster {
     try {
       final page = await _getPage(url);
 
-      // 1️⃣ Wait time
-      final wait = _extractWait(page);
-      if (wait > 0 && wait <= 30) {
-        await Future.delayed(Duration(seconds: wait));
-      }
-
       // 2️⃣ Extract encrypted params
       final params = _extractParams(page);
       if (params == null) {
-        throw Exception('Megaup params not found');
+        throw DownloadRequireManualException('Megaup params not found');
       }
 
       // 3️⃣ Call download endpoint

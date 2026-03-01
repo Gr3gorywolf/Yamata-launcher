@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class PixelDrainHoster implements Hoster {
@@ -26,6 +27,11 @@ class PixelDrainHoster implements Hoster {
   @override
   bool canHandleUrl(String url) {
     return _domains.any((d) => url.toLowerCase().contains(d));
+  }
+
+  @override
+  bool isValidDirectDownloadUrl(String url) {
+    return url.contains("api/file");
   }
 
   // =========================
@@ -67,11 +73,13 @@ class PixelDrainHoster implements Hoster {
       // Redirect expected
       if (response.isRedirect ||
           response.statusCode == 301 ||
-          response.statusCode == 302) {
+          response.statusCode == 302 ||
+          response.statusCode == 200) {
         final location = response.headers[HttpHeaders.locationHeader];
 
         if (location == null || location.isEmpty) {
-          throw Exception('No redirect URL found');
+          throw DownloadRequireManualException(
+              'PixelDrain: No redirect URL found');
         }
 
         return '$location||headers:User-Agent:${CommonHosterUtils().hosterUserAgent}';

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class BuzzHeavierHoster implements Hoster {
@@ -18,6 +19,11 @@ class BuzzHeavierHoster implements Hoster {
   bool canHandleUrl(String url) {
     final lower = url.toLowerCase();
     return _domains.any(lower.contains);
+  }
+
+  @override
+  bool isValidDirectDownloadUrl(String url) {
+    return url.contains("dl.buzzheavier.com");
   }
 
   // =========================
@@ -73,7 +79,8 @@ class BuzzHeavierHoster implements Hoster {
       final hxRedirect = response.headers['hx-redirect'];
 
       if (hxRedirect == null || hxRedirect.isEmpty) {
-        throw Exception('Buzzheavier: hx-redirect not found');
+        throw DownloadRequireManualException(
+            'Buzzheavier: hx-redirect not found');
       }
 
       // 3️⃣ Build final link

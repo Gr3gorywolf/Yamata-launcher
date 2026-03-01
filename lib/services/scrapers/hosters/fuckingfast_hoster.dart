@@ -21,6 +21,11 @@ class FuckingFastHoster implements Hoster {
   );
 
   @override
+  bool isValidDirectDownloadUrl(String url) {
+    return true;
+  }
+
+  @override
   bool canHandleUrl(String url) {
     final lower = url.toLowerCase();
     return _fuckingfastDomains.any(lower.contains);

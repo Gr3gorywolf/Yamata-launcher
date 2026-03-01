@@ -66,6 +66,8 @@ dependencies:
   flutter_app_installer: ^1.0.2
   qr_flutter: ^4.1.0
   pointycastle: ^3.7.0
+  webview_win_floating: ^3.0.0
+  webview_flutter: ^4.8.0
 
 
 

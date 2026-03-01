@@ -27,6 +27,11 @@ class MediafireHoster implements Hoster {
     return _domains.any((d) => url.toLowerCase().contains(d));
   }
 
+  @override
+  bool isValidDirectDownloadUrl(String url) {
+    return true;
+  }
+
   // =========================
   // PUBLIC
   // =========================

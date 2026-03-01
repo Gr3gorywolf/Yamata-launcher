@@ -21,6 +21,11 @@ class MegaHoster implements Hoster {
     return _domains.any(lower.contains);
   }
 
+  @override
+  bool isValidDirectDownloadUrl(String url) {
+    return true;
+  }
+
   // =========================
   // PUBLIC
   // =========================

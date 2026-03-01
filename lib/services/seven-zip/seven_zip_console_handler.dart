@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:yamata_launcher/utils/process_helper.dart';
 
@@ -16,22 +18,41 @@ class SevenZipConsoleHandler {
       String sevenZipBinary, String archivePath) async {
     final proc = await Process.start(
       sevenZipBinary,
-      ['t', '-bd', '-p', archivePath],
+      ['l', '-slt', '-bd', '-p-', archivePath],
     );
 
-    bool needsPassword = false;
+    final stdoutBuffer = StringBuffer();
+    final stderrBuffer = StringBuffer();
 
-    await proc.stderr.transform(SystemEncoding().decoder).forEach((line) {
-      print(line);
-      if (line.toLowerCase().contains('password') ||
-          line.toLowerCase().contains('wrong password') ||
-          line.toLowerCase().contains('can not open encrypted archive')) {
-        needsPassword = true;
+    final stdoutSub = proc.stdout
+        .transform(SystemEncoding().decoder)
+        .listen(stdoutBuffer.write);
+
+    final stderrSub = proc.stderr
+        .transform(SystemEncoding().decoder)
+        .listen(stderrBuffer.write);
+
+    try {
+      final exitCode = await proc.exitCode.timeout(const Duration(seconds: 8));
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+
+      final combined =
+          (stdoutBuffer.toString() + stderrBuffer.toString()).toLowerCase();
+
+      if (combined.contains('can not open encrypted archive') ||
+          combined.contains('wrong password') ||
+          exitCode != 0) {
+        return true;
       }
-    });
 
-    await proc.exitCode;
-    return needsPassword;
+      return false;
+    } on TimeoutException {
+      proc.kill(ProcessSignal.sigkill);
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+      return true;
+    }
   }
 
   Future<bool> _testPassword(
@@ -58,6 +79,8 @@ class SevenZipConsoleHandler {
     final needsPassword =
         await _archiveNeedsPassword(sevenZipBinary, archivePath);
     print('Archive needs password: $needsPassword');
+
+    print('The archive path: $archivePath');
     if (needsPassword) {
       for (final pwd in passwords) {
         final ok = await _testPassword(sevenZipBinary, archivePath, pwd);

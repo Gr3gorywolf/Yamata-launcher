@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   screen_retriever_linux
   tray_manager
   url_launcher_linux
+  webview_win_floating
   window_manager
 )
 

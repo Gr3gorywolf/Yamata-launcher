@@ -114,6 +114,9 @@ class MegaHoster implements Hoster {
     }
 
     final data = json[0];
+    if (data is! Map) {
+      throw Exception('File not found');
+    }
 
     if (data['e'] != null) {
       throw Exception('MEGA error: ${data['e']}');

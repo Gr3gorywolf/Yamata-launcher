@@ -11,6 +11,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dar
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/gofile_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/google_drive_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/krakenfiles_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mega_nz_hoster.dart';
@@ -20,8 +21,6 @@ import 'package:yamata_launcher/services/scrapers/hosters/qiwi_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/send_cm_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
-import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
 
 class DownloadSourcesRepository {
   var _allHosters = [
@@ -36,7 +35,8 @@ class DownloadSourcesRepository {
     QiwiHoster(),
     SendCmHoster(),
     MegaupHoster(),
-    KrakenfilesHoster()
+    KrakenfilesHoster(),
+    GoogleDriveHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
 
@@ -222,7 +222,7 @@ class DownloadSourcesRepository {
    */
   Future<String?> extractDirectDownloadUrl(String url) async {
     if (url.isEmpty) return null;
-
+    print("Extracting direct download URL for: $url");
     if (_isUrlTorrent(url)) {
       return url;
     }

@@ -47,9 +47,6 @@ class _DownloadLinkWebExtractorState extends State<DownloadLinkWebExtractor> {
             context.pop(request.url);
             return NavigationDecision.prevent;
           }
-          if (!Uri.parse(request.url).host.contains(host)) {
-            return NavigationDecision.prevent;
-          }
           return NavigationDecision.navigate;
         },
       ),

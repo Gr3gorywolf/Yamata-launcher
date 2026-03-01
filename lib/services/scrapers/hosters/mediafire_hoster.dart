@@ -62,7 +62,7 @@ class MediafireHoster implements Hoster {
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode >= 400) {
-        throw Exception('Failed to fetch Mediafire page');
+        throw Exception('File not found');
       }
 
       final html = response.body;

@@ -31,7 +31,7 @@ class DownloadSourcesRepository {
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
-    MegaHoster(),
+    //TODO: correct this hoster MegaHoster(),
     // TODO: correct the manual flow for this QiwiHoster(),
     //TODO: correct the manual flow for this  SendCmHoster(),
     MegaupHoster(),

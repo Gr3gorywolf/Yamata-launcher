@@ -4,15 +4,14 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class SendCmHoster implements Hoster {
   @override
   String get name => 'Send.cm';
 
-  static const _domains = [
-    'send.cm',
-  ];
+  static const _domains = ['send.cm', 'send.now'];
 
   static const _baseUrl = 'https://send.cm/';
 
@@ -49,13 +48,13 @@ class SendCmHoster implements Hoster {
     try {
       if (url.contains('/d/')) {
         final id = _extractId(url);
-        final link = await _getFileLink(id);
+        final link = await _getFileLink(id, url);
         return _format(link);
       }
 
       if (!url.contains('/s/')) {
         final id = _extractId(url);
-        final link = await _getFileLink(id);
+        final link = await _getFileLink(id, url);
         return _format(link);
       }
 
@@ -64,7 +63,7 @@ class SendCmHoster implements Hoster {
         throw Exception('Folder is empty');
       }
 
-      final link = await _getFileLink(firstId);
+      final link = await _getFileLink(firstId, url);
       return _format(link);
     } catch (e) {
       print('[Send.cm] $e');
@@ -82,7 +81,7 @@ class SendCmHoster implements Hoster {
     return uri.pathSegments.last;
   }
 
-  Future<String> _getFileLink(String fileId) async {
+  Future<String> _getFileLink(String fileId, String url) async {
     final response = await http.post(
       Uri.parse(_baseUrl),
       headers: {
@@ -93,11 +92,32 @@ class SendCmHoster implements Hoster {
         'op': 'download2',
         'id': fileId,
       },
-    ).timeout(const Duration(seconds: 30));
+    ).timeout(const Duration(seconds: 10));
 
     final location = response.headers['location'];
 
     if (location == null || location.isEmpty) {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+          HttpHeaders.acceptHeader: 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 404) {
+        throw Exception('File not found');
+      }
+      if (response.body
+          .contains("The file you were looking for doesn't exist.")) {
+        throw Exception('File not found or deleted');
+      }
+
+      if (response.body.contains("Security verification")) {
+        throw DownloadRequireManualException(
+            'Download requires manual verification. Please download the file manually.');
+      }
+
       throw Exception('Direct link not found');
     }
 

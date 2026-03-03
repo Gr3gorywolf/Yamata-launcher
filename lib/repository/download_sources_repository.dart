@@ -32,11 +32,11 @@ class DownloadSourcesRepository {
     PixelDrainHoster(),
     RootzHoster(),
     MegaHoster(),
-    QiwiHoster(),
-    SendCmHoster(),
+    // TODO: correct the manual flow for this QiwiHoster(),
+    //TODO: correct the manual flow for this  SendCmHoster(),
     MegaupHoster(),
     KrakenfilesHoster(),
-    GoogleDriveHoster()
+    GoogleDriveHoster(),
   ];
   static Map<String, bool> directDownloadUris = {};
 

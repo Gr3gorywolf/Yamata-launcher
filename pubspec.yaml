@@ -68,6 +68,11 @@ dependencies:
   pointycastle: ^3.7.0
   webview_win_floating: ^3.0.0
   webview_flutter: ^4.8.0
+  adblocker_webview:
+    git:
+      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
+      path: .
+      ref: "3.22-downgrade"
 
 
 
@@ -103,6 +108,16 @@ flutter:
 dependency_overrides:
   file: 6.1.4
   platform: 3.1.0
+  adblocker_core:
+    git:
+      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
+      path: packages/adblocker_core
+      ref: "3.22-downgrade"
+  adblocker_manager:
+    git:
+      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
+      path: packages/adblocker_manager
+      ref: "3.22-downgrade"
 
 
 inno_bundle:

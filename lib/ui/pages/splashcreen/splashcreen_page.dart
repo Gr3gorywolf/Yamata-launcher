@@ -20,6 +20,7 @@ import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
+import 'package:yamata_launcher/services/webview_service.dart';
 import 'package:yamata_launcher/utils/animation_helper.dart';
 import 'package:yamata_launcher/services/assets_service.dart';
 import 'package:yamata_launcher/services/download_service.dart';
@@ -58,6 +59,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
         .initialize();
     await DownloadService.initDownloadHistory();
+    WebviewService.init();
     UpdateService.initialize();
     RomService.initializeGameFilenames();
     Provider.of<AppProvider>(context, listen: false).setAppLoaded(true);

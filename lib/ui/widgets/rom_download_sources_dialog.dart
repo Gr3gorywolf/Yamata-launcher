@@ -17,7 +17,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
-import 'package:yamata_launcher/ui/widgets/download_link_web_extractor.dart';
+import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor.dart';
 import 'package:yamata_launcher/ui/widgets/download_source_hoster_select_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 

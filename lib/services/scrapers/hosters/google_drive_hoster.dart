@@ -67,7 +67,7 @@ class GoogleDriveHoster implements Hoster {
       final form = doc.querySelector('#download-form');
 
       if (form == null) {
-        throw Exception('Google Drive download form not found');
+        throw Exception('File not found');
       }
 
       final action = form.attributes['action'];

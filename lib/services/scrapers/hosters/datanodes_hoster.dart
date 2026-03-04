@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class DatanodesHoster implements Hoster {
@@ -27,19 +28,14 @@ class DatanodesHoster implements Hoster {
     return _datanodesDomains.any(lower.contains);
   }
 
-  // =========================
-  // FILENAME
-  // =========================
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (e) {
-      print('[Datanodes] extractFileName failed: $e');
-      return null;
-    }
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var extractedUrl = await extractDownloadUrl(url);
+    if (extractedUrl == null)
+      return HosterMetadata(status: HosterStatus.Invalid);
+
+    CommonHosterUtils.directDownloadUris[url] = extractedUrl;
+    return HosterMetadata(fileName: null, status: HosterStatus.Valid);
   }
 
   // =========================
@@ -47,6 +43,10 @@ class DatanodesHoster implements Hoster {
   // =========================
   @override
   Future<String?> extractDownloadUrl(String url) async {
+    if (CommonHosterUtils.directDownloadUris.containsKey(url)) {
+      print('[Datanodes] Using cached direct link');
+      return CommonHosterUtils.directDownloadUris[url];
+    }
     if (!canHandleUrl(url)) return null;
 
     print('[Datanodes] Starting download link extraction for: $url');

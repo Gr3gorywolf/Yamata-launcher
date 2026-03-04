@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-
+import 'package:html/dom.dart';
+import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 
 class CommonHosterUtils {
+  static Map<String, String> directDownloadUris = {};
   String hosterUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36";
 
@@ -69,6 +71,22 @@ class CommonHosterUtils {
     // 4. Default fallback
     // =========================
     return 'downloaded_file';
+  }
+
+  Future<Document?> fetchHtml(String url) async {
+    try {
+      var res = await http.get(Uri.parse(url), headers: {
+        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+      }).timeout(const Duration(seconds: 5));
+
+      if (res.statusCode >= 400) {
+        return null;
+      }
+      return parser.parse(res.body);
+    } catch (err) {
+      print('[CommonHosterUtils] fetchHtml error: $err');
+      return null;
+    }
   }
 
   Never handleHosterError(Object error, [http.Response? response]) {

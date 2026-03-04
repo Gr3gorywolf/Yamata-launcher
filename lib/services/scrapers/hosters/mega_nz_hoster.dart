@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class MegaHoster implements Hoster {
@@ -24,6 +25,10 @@ class MegaHoster implements Hoster {
   }
 
   Future<String?> extractDownloadUrl(String url) async {
+    if (CommonHosterUtils.directDownloadUris.containsKey(url)) {
+      print('[MEGA] Using cached direct link');
+      return CommonHosterUtils.directDownloadUris[url];
+    }
     if (!canHandleUrl(url)) return null;
 
     try {
@@ -49,13 +54,15 @@ class MegaHoster implements Hoster {
   }
 
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final direct = await extractDownloadUrl(url);
-      return CommonHosterUtils().extractHosterFilename(url, directUrl: direct);
-    } catch (_) {
-      return null;
-    }
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var extractedUrl = await extractDownloadUrl(url);
+    if (extractedUrl == null)
+      return HosterMetadata(status: HosterStatus.Invalid);
+    CommonHosterUtils.directDownloadUris[url] = extractedUrl;
+    return HosterMetadata(
+        fileName: await CommonHosterUtils()
+            .extractHosterFilename(url, directUrl: extractedUrl),
+        status: HosterStatus.Valid);
   }
 
   @override

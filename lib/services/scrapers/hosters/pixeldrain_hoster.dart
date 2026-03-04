@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class PixelDrainHoster implements Hoster {
@@ -34,19 +35,17 @@ class PixelDrainHoster implements Hoster {
     return url.contains("api/file");
   }
 
-  // =========================
-  // PUBLIC
-  // =========================
-
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (_) {
-      return null;
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var document = await CommonHosterUtils().fetchHtml(url);
+    if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
+    var fileName = document.querySelector('title')?.text.trim();
+    var status = HosterStatus.Valid;
+    if ((document.querySelector('title')?.text?.trim()?.contains("404") ??
+        false)) {
+      status = HosterStatus.Invalid;
     }
+    return HosterMetadata(fileName: fileName, status: status);
   }
 
   @override

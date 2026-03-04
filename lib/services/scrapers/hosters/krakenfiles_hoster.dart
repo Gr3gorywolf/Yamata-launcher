@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class KrakenfilesHoster implements Hoster {
@@ -24,23 +25,24 @@ class KrakenfilesHoster implements Hoster {
     return true;
   }
 
-  // =========================
-  // PUBLIC
-  // =========================
-
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (_) {
-      return null;
-    }
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var extractedUrl = await extractDownloadUrl(url);
+    if (extractedUrl == null)
+      return HosterMetadata(status: HosterStatus.Invalid);
+    CommonHosterUtils.directDownloadUris[url] = extractedUrl;
+    return HosterMetadata(
+        fileName: await CommonHosterUtils()
+            .extractHosterFilename(url, directUrl: extractedUrl),
+        status: HosterStatus.Valid);
   }
 
   @override
   Future<String?> extractDownloadUrl(String url) async {
+    if (CommonHosterUtils.directDownloadUris.containsKey(url)) {
+      print('[Krakenfiles] Using cached direct link');
+      return CommonHosterUtils.directDownloadUris[url];
+    }
     if (!canHandleUrl(url)) return null;
 
     try {

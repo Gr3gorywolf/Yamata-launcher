@@ -9,7 +9,7 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/rom_details_repository.dart';
 import 'package:yamata_launcher/ui/widgets/Images_carousel.dart';
 import 'package:yamata_launcher/ui/widgets/rom_action_button.dart';
-import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_library_actions.dart';
 import 'package:yamata_launcher/ui/widgets/rom_rating.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';

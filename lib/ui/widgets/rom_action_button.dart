@@ -14,7 +14,7 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/emulator_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/ui/widgets/download_spinner.dart';
-import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:provider/provider.dart';

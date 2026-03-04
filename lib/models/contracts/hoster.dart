@@ -1,7 +1,9 @@
+import 'package:yamata_launcher/models/hoster_metadata.dart';
+
 abstract class Hoster {
-  bool canHandleUrl(String url);
   String get name;
-  Future<String?> extractFileName(String url);
   Future<String?> extractDownloadUrl(String url);
+  Future<HosterMetadata?> extractMetadata(String url);
+  bool canHandleUrl(String url);
   bool isValidDirectDownloadUrl(String url);
 }

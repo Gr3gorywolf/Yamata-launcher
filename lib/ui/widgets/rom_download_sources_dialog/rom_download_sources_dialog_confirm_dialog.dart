@@ -1,0 +1,369 @@
+import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/main.dart';
+import 'package:yamata_launcher/models/download_source_rom.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
+import 'package:yamata_launcher/models/hoster_info.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
+import 'package:yamata_launcher/models/rom_info.dart';
+import 'package:provider/provider.dart';
+import 'package:yamata_launcher/providers/download_sources_provider.dart';
+import 'package:yamata_launcher/models/download_source.dart';
+import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/repository/download_sources_repository.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor.dart';
+import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/status_tag.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
+
+class DownloadSourcesDialogConfirmDialog extends StatefulWidget {
+  RomDownloadSourceItem item;
+
+  DownloadSourcesDialogConfirmDialog({
+    Key? key,
+    required this.item,
+  }) : super(key: key);
+
+  @override
+  State<DownloadSourcesDialogConfirmDialog> createState() =>
+      _DownloadSourcesDialogConfirmDialogState();
+}
+
+class _DownloadSourcesDialogConfirmDialogState
+    extends State<DownloadSourcesDialogConfirmDialog> {
+  final validStatuses = [
+    HosterStatus.Valid,
+    HosterStatus.NeedsManual,
+  ];
+  List<HosterInfo> hosters = [];
+  HosterInfo? selectedHoster;
+  bool isLoadingDirectLink = false;
+  var extractAfterDownload = false;
+
+  void updateHoster(HosterInfo updated) {
+    var index = hosters.indexWhere((h) => h.uri == updated.uri);
+    if (index != -1) {
+      hosters[index] = updated;
+      setState(() {});
+    }
+  }
+
+  Future<HosterInfo> getHosterInfoFromUrl(String uri) async {
+    var hosterName =
+        DownloadSourcesRepository().getDownloadSourceUrlHosterName(uri);
+
+    var isDirect = await DownloadSourcesRepository().isDirectDownload(uri);
+    var isTorrent = await DownloadSourcesRepository().urlIsTorrent(uri);
+
+    var domainName = hosterName ?? StringHelper.getDomainName(uri);
+    var domain = isDirect ? "$domainName - Direct download " : domainName;
+
+    HosterMetadata? hosterMetadata;
+
+    if (hosterName != null && !isTorrent) {
+      hosterMetadata =
+          await DownloadSourcesRepository().extractHosterMetadata(uri);
+    } else {
+      hosterMetadata = HosterMetadata(
+        status: isDirect || isTorrent
+            ? HosterStatus.Valid
+            : HosterStatus.Unsupported,
+      );
+    }
+
+    return HosterInfo(
+      uri: uri,
+      domain: domain,
+      isDirect: isDirect,
+      metadata: hosterMetadata,
+      isTorrent: isTorrent,
+      canExtractLink: isDirect || hosterName != null,
+    );
+  }
+
+  Future<void> loadHosters() async {
+    final futures = (widget.item.rom.uris ?? []).map((uri) async {
+      return await getHosterInfoFromUrl(uri);
+    }).toList();
+
+    var hostersToAdd = await Future.wait(futures);
+
+    hostersToAdd = getSortedHosters(hostersToAdd);
+
+    if (!mounted) return;
+
+    setState(() {
+      hosters = hostersToAdd;
+    });
+  }
+
+  void handleSendResult(String link) {
+    Navigator.pop(
+        context,
+        RomDownloadSourcesDialogResult(
+          rom: widget.item.rom.copyWith(
+            fileName: selectedHoster?.metadata?.fileName,
+            uris: [link],
+            extractableUrl: selectedHoster?.uri,
+          ),
+          extractAfterDownload: extractAfterDownload,
+        ));
+  }
+
+  void handleDownload() async {
+    var link = null;
+    final sourceRomLink = selectedHoster!.uri;
+    var isDirectDownload = selectedHoster!.isDirect;
+    if (isDirectDownload) {
+      handleSendResult(sourceRomLink);
+      return;
+    }
+    isLoadingDirectLink = true;
+    try {
+      link = await DownloadSourcesRepository()
+          .extractDirectDownloadUrl(sourceRomLink);
+    } catch (e) {
+      isLoadingDirectLink = false;
+      if (e is DownloadRequireManualException) {
+        link = await Navigator.of(context).push<String?>(
+          MaterialPageRoute(
+            builder: (_) => DownloadLinkWebExtractor(rawLink: sourceRomLink),
+            fullscreenDialog: true,
+          ),
+        );
+      } else {
+        Future.microtask(() {
+          AlertsService.showErrorSnackbar(e.toString());
+        });
+        return;
+      }
+    } finally {
+      isLoadingDirectLink = false;
+    }
+
+    if (link == null || link.isEmpty) {
+      Future.microtask(() {
+        AlertsService.showErrorSnackbar(
+            "Could not extract download link for ${widget.item.rom.title}");
+      });
+      return;
+    }
+    handleSendResult(link);
+  }
+
+  List<HosterInfo> getSortedHosters(List<HosterInfo> hostersToSort) {
+    final sorted = List<HosterInfo>.from(hostersToSort);
+    sorted.sort((a, b) {
+      if (a.canExtractLink && !b.canExtractLink) return -1;
+      if (!a.canExtractLink && b.canExtractLink) return 1;
+      return a.domain.compareTo(b.domain) + a.uri.compareTo(b.uri);
+    });
+    return sorted;
+  }
+
+  void handleSelectFirstValidSource() {
+    Future.doWhile(() async {
+      if (selectedHoster != null) return false;
+      var validHoster = hosters
+          .firstWhereOrNull((h) => validStatuses.contains(h.metadata?.status));
+      if (validHoster != null) {
+        if (mounted)
+          setState(() {
+            selectedHoster = validHoster;
+          });
+        return false;
+      }
+      await Future.delayed(Duration(milliseconds: 50));
+      return true;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadHosters();
+    handleSelectFirstValidSource();
+    SettingsService().get(SettingsKeys.ENABLE_EXTRACTION).then((value) {
+      if (mounted)
+        setState(() {
+          extractAfterDownload = value ?? false;
+        });
+    });
+  }
+
+  Widget buildStatusChip(HosterInfo item) {
+    var text = "Loading";
+    var type = StatusTagType.normal;
+    var metadataStatus = item.metadata?.status;
+    if (metadataStatus == null) {
+      return Container();
+    }
+    switch (metadataStatus) {
+      case HosterStatus.Invalid:
+        text = "File not found or link is broken";
+        type = StatusTagType.error;
+        break;
+      case HosterStatus.NeedsManual:
+        text = "Needs Manual Interaction";
+        type = StatusTagType.warning;
+        break;
+      case HosterStatus.Valid:
+        text = "Compatible";
+        type = StatusTagType.success;
+        break;
+      case HosterStatus.Unsupported:
+        text = "Unsupported";
+        type = StatusTagType.error;
+        break;
+      case HosterStatus.Unknown:
+        text = "Loading";
+        type = StatusTagType.normal;
+        break;
+    }
+    return StatusTag(
+      text: text,
+      type: type,
+      size: StatusTagSize.sm,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(children: [
+        Text("Select your preferred download hoster"),
+        IconButton(
+          icon: Icon(Icons.close),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        )
+      ], mainAxisAlignment: MainAxisAlignment.spaceBetween),
+      content: Container(
+        width: 400,
+        constraints:
+            BoxConstraints(maxWidth: 600, maxHeight: 500, minWidth: 400),
+        child: hosters.isEmpty
+            ? const Center(
+                heightFactor: 0.8,
+                child: CircularProgressIndicator(),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hosters
+                      .where((HosterInfo hoster) =>
+                          hoster.metadata?.status == HosterStatus.Unknown)
+                      .isNotEmpty)
+                    LinearProgressIndicator(
+                      value: null,
+                    ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: hosters.length,
+                      itemBuilder: (_, index) {
+                        final item = hosters[index];
+                        var isDisabled = [
+                          HosterStatus.Invalid,
+                          HosterStatus.Unsupported,
+                          HosterStatus.Unknown
+                        ].contains(item.metadata?.status);
+                        return Card(
+                          child: ListTile(
+                            enabled: !isDisabled,
+                            hoverColor: Colors.transparent,
+                            leading: Radio(
+                              value: selectedHoster?.uri == item.uri,
+                              groupValue: true,
+                              onChanged: isDisabled
+                                  ? null
+                                  : (changed) {
+                                      setState(() {
+                                        selectedHoster = item;
+                                      });
+                                    },
+                            ),
+                            title: Text(
+                              item.domain,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Opacity(
+                              opacity: 0.7,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (item.metadata?.fileName != null) ...[
+                                      Text(
+                                        item.metadata?.fileName ?? '',
+                                        maxLines: 2,
+                                        style: TextStyle(fontSize: 12),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 4),
+                                    ],
+                                    buildStatusChip(item),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                selectedHoster = item;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  CheckboxListTile(
+                    value: extractAfterDownload,
+                    onChanged: (checked) => {
+                      setState(() {
+                        extractAfterDownload = checked ?? false;
+                      })
+                    },
+                    title: Text("Extract contents after download"),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: selectedHoster == null || isLoadingDirectLink
+                          ? null
+                          : handleDownload,
+                      label: Text(
+                        "Download now",
+                      ),
+                      icon: Icon(Icons.download)),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _Result {
+  final DownloadSourceRom rom;
+  final String? sourceTitle;
+
+  _Result({
+    required this.rom,
+    required this.sourceTitle,
+  });
+}

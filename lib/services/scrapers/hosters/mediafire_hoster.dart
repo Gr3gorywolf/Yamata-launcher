@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class MediafireHoster implements Hoster {
@@ -32,19 +33,16 @@ class MediafireHoster implements Hoster {
     return true;
   }
 
-  // =========================
-  // PUBLIC
-  // =========================
-
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (_) {
-      return null;
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var document = await CommonHosterUtils().fetchHtml(url);
+    if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
+    var fileName = document.querySelector('.dl-btn-label')?.text.trim();
+    var status = HosterStatus.Valid;
+    if (fileName == null || fileName.isEmpty) {
+      status = HosterStatus.Invalid;
     }
+    return HosterMetadata(fileName: fileName, status: status);
   }
 
   @override

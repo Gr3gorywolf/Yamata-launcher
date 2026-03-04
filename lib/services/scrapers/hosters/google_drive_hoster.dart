@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class GoogleDriveHoster implements Hoster {
@@ -13,10 +14,6 @@ class GoogleDriveHoster implements Hoster {
   static const _base = 'https://drive.usercontent.google.com/download';
 
   final Map<String, String> _cookies = {};
-
-  // =========================
-  // CONTRACT
-  // =========================
 
   @override
   bool canHandleUrl(String url) {
@@ -29,13 +26,20 @@ class GoogleDriveHoster implements Hoster {
   }
 
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final direct = await extractDownloadUrl(url);
-      return CommonHosterUtils().extractHosterFilename(url, directUrl: direct);
-    } catch (_) {
-      return null;
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var document = await CommonHosterUtils().fetchHtml(url);
+    if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
+    var fileName = document
+        .querySelector('head > title')
+        ?.text
+        .trim()
+        .split(' - Google Drive')
+        .first;
+    var status = HosterStatus.Valid;
+    if (document.querySelector(".errorMessage") != null) {
+      status = HosterStatus.Invalid;
     }
+    return HosterMetadata(fileName: fileName, status: status);
   }
 
   @override

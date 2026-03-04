@@ -1,14 +1,18 @@
+import 'package:yamata_launcher/models/hoster_metadata.dart';
+
 class HosterInfo {
-  final String uri;
-  final String domain;
-  final String? fileName;
-  final bool isDirect;
-  final bool canExtractLink;
+  String uri;
+  String domain;
+  bool isDirect;
+  bool isTorrent;
+  HosterMetadata? metadata;
+  bool canExtractLink;
 
   HosterInfo(
       {required this.uri,
       required this.domain,
-      this.fileName,
+      this.metadata = const HosterMetadata(),
+      required this.isTorrent,
       required this.isDirect,
       required this.canExtractLink});
 }

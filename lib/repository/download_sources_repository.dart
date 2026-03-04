@@ -7,6 +7,7 @@ import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
@@ -39,6 +40,7 @@ class DownloadSourcesRepository {
     GoogleDriveHoster(),
   ];
   static Map<String, bool> directDownloadUris = {};
+  static Map<String, HosterMetadata> metadataCache = {};
 
   bool _isDownloadContentType(String? contentType) {
     if (contentType == null) return false;
@@ -50,7 +52,7 @@ class DownloadSourcesRepository {
         !ct.contains('html');
   }
 
-  bool _isUrlTorrent(String url) {
+  bool urlIsTorrent(String url) {
     return url.toLowerCase().endsWith('.torrent') ||
         url.toLowerCase().startsWith('magnet:');
   }
@@ -59,6 +61,8 @@ class DownloadSourcesRepository {
     if (directDownloadUris.containsKey(url)) {
       return directDownloadUris[url]!;
     }
+
+    final uri = Uri.tryParse(url);
 
     final headers = {
       "User-Agent": CommonHosterUtils().hosterUserAgent,
@@ -183,27 +187,8 @@ class DownloadSourcesRepository {
         return hoster.name;
       }
     }
-    if (_isUrlTorrent(url)) {
+    if (urlIsTorrent(url)) {
       return "Torrent";
-    }
-    return null;
-  }
-
-  /**
-   * Gets the file name from a given source URL by checking against known hosters.
-   */
-  Future<String?> getHosterFileName(String url) async {
-    for (var hoster in _allHosters) {
-      if (hoster.canHandleUrl(url)) {
-        try {
-          final fileName = await hoster.extractFileName(url);
-          if (fileName != null && fileName.isNotEmpty) {
-            return fileName;
-          }
-        } catch (e) {
-          print('Error extracting filename for hoster ${hoster.name}: $e');
-        }
-      }
     }
     return null;
   }
@@ -218,12 +203,41 @@ class DownloadSourcesRepository {
   }
 
   /**
+   * Extracts metadata (like file name, validity) for a given download source URL by checking against known hosters.
+   */
+  Future<HosterMetadata> extractHosterMetadata(String url) async {
+    if (metadataCache.containsKey(url)) {
+      print('[Metadata] Using cached metadata for $url');
+      return metadataCache[url]!;
+    }
+    var invalidMetadata = HosterMetadata(status: HosterStatus.Invalid);
+    print("Extracting hoster metadata for: $url");
+    final hoster = getHosterForUrl(url);
+    if (hoster == null) {
+      return invalidMetadata;
+    }
+    try {
+      var extractedMetadata = await hoster.extractMetadata(url);
+      if (extractedMetadata == null) {
+        return invalidMetadata;
+      }
+      metadataCache[url] = extractedMetadata;
+      return extractedMetadata;
+    } on Exception catch (e) {
+      if (e is DownloadRequireManualException) {
+        return HosterMetadata(status: HosterStatus.NeedsManual);
+      }
+      return invalidMetadata;
+    }
+  }
+
+  /**
    * Extracts the direct download URL from a given source URL by checking against known hosters.
    */
   Future<String?> extractDirectDownloadUrl(String url) async {
     if (url.isEmpty) return null;
     print("Extracting direct download URL for: $url");
-    if (_isUrlTorrent(url)) {
+    if (urlIsTorrent(url)) {
       return url;
     }
 

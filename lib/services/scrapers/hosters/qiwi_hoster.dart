@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class QiwiHoster implements Hoster {
@@ -24,19 +25,15 @@ class QiwiHoster implements Hoster {
     return true;
   }
 
-  // =========================
-  // PUBLIC
-  // =========================
-
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (_) {
-      return null;
-    }
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var extractedUrl = await extractDownloadUrl(url);
+    if (extractedUrl == null)
+      return HosterMetadata(status: HosterStatus.Invalid);
+    return HosterMetadata(
+        fileName: await CommonHosterUtils()
+            .extractHosterFilename(url, directUrl: extractedUrl),
+        status: HosterStatus.Valid);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
+import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
 class BuzzHeavierHoster implements Hoster {
@@ -31,14 +32,16 @@ class BuzzHeavierHoster implements Hoster {
   // =========================
 
   @override
-  Future<String?> extractFileName(String url) async {
-    try {
-      final directUrl = await extractDownloadUrl(url);
-      return CommonHosterUtils()
-          .extractHosterFilename(url, directUrl: directUrl);
-    } catch (_) {
-      return null;
+  Future<HosterMetadata?> extractMetadata(String url) async {
+    var document = await CommonHosterUtils().fetchHtml(url);
+    if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
+
+    var fileName = document.querySelector('.text-2xl')?.text.trim();
+    var status = HosterStatus.Valid;
+    if (fileName == null || fileName.isEmpty) {
+      status = HosterStatus.Invalid;
     }
+    return HosterMetadata(fileName: fileName, status: status);
   }
 
   @override
@@ -54,7 +57,7 @@ class BuzzHeavierHoster implements Hoster {
       };
 
       // 1️⃣ Initial GET (required)
-      await http
+      var res = await http
           .get(
             uri,
             headers: headers,
@@ -74,9 +77,13 @@ class BuzzHeavierHoster implements Hoster {
         });
 
       final response =
-          await request.send().timeout(const Duration(seconds: 30));
+          await request.send().timeout(const Duration(seconds: 10));
 
       final hxRedirect = response.headers['hx-redirect'];
+
+      if (res.body.contains("This file could not be found")) {
+        throw Exception('File not found');
+      }
 
       if (hxRedirect == null || hxRedirect.isEmpty) {
         throw DownloadRequireManualException(

@@ -13,6 +13,16 @@ class AssetsService {
     }
   }
 
+  static getGif(String name, {double size = 24, double? width}) {
+    var hasExtension = name.contains('.');
+    return Image.asset(
+      gaplessPlayback: true,
+      "assets/gifs/$name${hasExtension ? '' : '.gif'}",
+      height: size,
+      width: width ?? size,
+    );
+  }
+
   static getImage(String name, {double size = 24, double? width}) {
     var hasExtension = name.contains('.');
     return Image.asset(

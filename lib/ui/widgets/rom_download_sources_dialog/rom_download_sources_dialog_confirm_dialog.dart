@@ -16,6 +16,7 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/assets_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
@@ -127,6 +128,24 @@ class _DownloadSourcesDialogConfirmDialogState
         ));
   }
 
+  void handleManualLinkExtraction(String rawLink) async {
+    var link = await Navigator.of(context).push<String?>(
+      MaterialPageRoute(
+        builder: (_) => DownloadLinkWebExtractor(rawLink: rawLink),
+        fullscreenDialog: true,
+      ),
+    );
+    print("Extracted link: $link");
+    if (link == null || link.isEmpty) {
+      Future.microtask(() {
+        AlertsService.showErrorSnackbar(
+            "Could not extract download link for ${widget.item.rom.title}");
+      });
+      return;
+    }
+    handleSendResult(link);
+  }
+
   void handleDownload() async {
     var link = null;
     final sourceRomLink = selectedHoster!.uri;
@@ -135,19 +154,29 @@ class _DownloadSourcesDialogConfirmDialogState
       handleSendResult(sourceRomLink);
       return;
     }
-    isLoadingDirectLink = true;
+    setState(() {
+      isLoadingDirectLink = true;
+    });
+
     try {
       link = await DownloadSourcesRepository()
           .extractDirectDownloadUrl(sourceRomLink);
     } catch (e) {
-      isLoadingDirectLink = false;
+      setState(() {
+        isLoadingDirectLink = false;
+      });
       if (e is DownloadRequireManualException) {
-        link = await Navigator.of(context).push<String?>(
-          MaterialPageRoute(
-            builder: (_) => DownloadLinkWebExtractor(rawLink: sourceRomLink),
-            fullscreenDialog: true,
-          ),
-        );
+        AlertsService.showAlert(
+            navigatorContext!,
+            "Manual interaction required",
+            "The selected download source requires manual interaction to retrieve the download link. Please follow the instructions in the opened web view to get the direct download link, This embedded browser its equipped with ad-blocking capabilities, you will need to trigger the download in order to retrieve the direct download link.",
+            acceptTitle: "Open web view",
+            extraContent: AssetsService.getGif("manual-interaction-guide.gif",
+                size: 300, width: 450),
+            onClose: () {}, callback: () {
+          handleManualLinkExtraction(sourceRomLink);
+        });
+        return;
       } else {
         Future.microtask(() {
           AlertsService.showErrorSnackbar(e.toString());
@@ -155,7 +184,9 @@ class _DownloadSourcesDialogConfirmDialogState
         return;
       }
     } finally {
-      isLoadingDirectLink = false;
+      setState(() {
+        isLoadingDirectLink = false;
+      });
     }
 
     if (link == null || link.isEmpty) {
@@ -358,9 +389,16 @@ class _DownloadSourcesDialogConfirmDialogState
                           ? null
                           : handleDownload,
                       label: Text(
-                        "Download now",
+                        isLoadingDirectLink ? "Loading..." : "Download now",
                       ),
-                      icon: Icon(Icons.download)),
+                      icon: isLoadingDirectLink
+                          ? Container(
+                              child: CircularProgressIndicator(
+                                color: const Color.fromARGB(71, 255, 255, 255),
+                              ),
+                              height: 16,
+                              width: 16)
+                          : Icon(Icons.download)),
                 ],
               ),
       ),

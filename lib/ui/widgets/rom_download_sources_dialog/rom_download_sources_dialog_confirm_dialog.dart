@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
@@ -105,11 +106,20 @@ class _DownloadSourcesDialogConfirmDialogState
   }
 
   void handleSendResult(String link) {
+    var isValidFileExtensions = [
+      ...VALID_ROM_EXTENSIONS,
+      ...VALID_COMPRESSED_EXTENSIONS
+    ].any((ext) => link.toLowerCase().endsWith(".$ext"));
+    var isLinkFileName =
+        link.split('/').last.contains('.') && isValidFileExtensions;
+
     Navigator.pop(
         context,
         RomDownloadSourcesDialogResult(
           rom: widget.item.rom.copyWith(
-            fileName: selectedHoster?.metadata?.fileName,
+            fileName: isLinkFileName
+                ? Uri.decodeComponent(link.split('/').last)
+                : selectedHoster?.metadata?.fileName,
             uris: [link],
             extractableUrl: selectedHoster?.uri,
           ),

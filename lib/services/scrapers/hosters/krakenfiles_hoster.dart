@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
@@ -22,19 +23,22 @@ class KrakenfilesHoster implements Hoster {
 
   @override
   bool isValidDirectDownloadUrl(String url) {
-    return true;
+    return url.contains("krakencloud.net/force-download");
   }
 
   @override
   Future<HosterMetadata?> extractMetadata(String url) async {
-    var extractedUrl = await extractDownloadUrl(url);
-    if (extractedUrl == null)
+    var document = await CommonHosterUtils().fetchHtml(url);
+    if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
+    var fileName = document.querySelector('title')?.text.trim();
+    if (fileName == null ||
+        fileName.isEmpty ||
+        fileName.contains('File not found')) {
       return HosterMetadata(status: HosterStatus.Invalid);
-    CommonHosterUtils.directDownloadUris[url] = extractedUrl;
+    }
     return HosterMetadata(
-        fileName: await CommonHosterUtils()
-            .extractHosterFilename(url, directUrl: extractedUrl),
-        status: HosterStatus.Valid);
+        fileName: fileName.replaceAll(" - Krakenfiles.com", ""),
+        status: HosterStatus.NeedsManual);
   }
 
   @override
@@ -43,103 +47,7 @@ class KrakenfilesHoster implements Hoster {
       print('[Krakenfiles] Using cached direct link');
       return CommonHosterUtils.directDownloadUris[url];
     }
-    if (!canHandleUrl(url)) return null;
-
-    try {
-      final pageHtml = await _loadPage(url);
-
-      final postInfo = _extractFormData(pageHtml);
-      if (postInfo == null) {
-        throw Exception('Unable to find download form');
-      }
-
-      final directUrl = await _requestDownloadUrl(
-        postInfo.postUrl,
-        postInfo.token,
-        referer: url,
-      );
-
-      return '$directUrl||headers:Referer:$url^User-Agent:${CommonHosterUtils().hosterUserAgent}';
-    } catch (e) {
-      print('[Krakenfiles] $e');
-      CommonHosterUtils().handleHosterError(e);
-      return null;
-    }
+    throw DownloadRequireManualException(
+        "This hoster doesn't support automatic download url extraction yet");
   }
-
-  // =========================
-  // INTERNAL
-  // =========================
-
-  Future<String> _loadPage(String url) async {
-    final res = await http.get(
-      Uri.parse(url),
-      headers: {
-        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    if (res.statusCode >= 400) {
-      throw Exception('Failed to load Krakenfiles page');
-    }
-
-    return res.body;
-  }
-
-  _KrakenFormData? _extractFormData(String html) {
-    final document = html_parser.parse(html);
-
-    final form = document.querySelector('#dl-form');
-    if (form == null) return null;
-
-    final action = form.attributes['action'];
-    if (action == null || action.isEmpty) return null;
-
-    final tokenElement = document.querySelector('#dl-token');
-    final token = tokenElement?.attributes['value'];
-
-    if (token == null || token.isEmpty) return null;
-
-    final postUrl =
-        action.startsWith('http') ? action : 'https://krakenfiles.com$action';
-
-    return _KrakenFormData(postUrl, token);
-  }
-
-  Future<String> _requestDownloadUrl(
-    String postUrl,
-    String token, {
-    required String referer,
-  }) async {
-    final res = await http.post(
-      Uri.parse(postUrl),
-      headers: {
-        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
-        HttpHeaders.refererHeader: referer,
-        HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
-      },
-      body: {
-        'token': token,
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    final body = jsonDecode(res.body);
-
-    if (body['status'] != 'ok' || body['url'] == null) {
-      throw Exception('Krakenfiles download URL not found');
-    }
-
-    return body['url'];
-  }
-}
-
-// =========================
-// MODEL
-// =========================
-
-class _KrakenFormData {
-  final String postUrl;
-  final String token;
-
-  _KrakenFormData(this.postUrl, this.token);
 }

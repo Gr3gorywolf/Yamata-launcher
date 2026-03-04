@@ -22,6 +22,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/qiwi_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/send_cm_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/vik1ngfile_hoster.dart';
 
 class DownloadSourcesRepository {
   var _allHosters = [
@@ -38,6 +39,7 @@ class DownloadSourcesRepository {
     MegaupHoster(),
     KrakenfilesHoster(),
     GoogleDriveHoster(),
+    Vik1ngfileHoster()
   ];
   static Map<String, bool> directDownloadUris = {};
   static Map<String, HosterMetadata> metadataCache = {};

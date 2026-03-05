@@ -1,7 +1,9 @@
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
@@ -60,10 +62,11 @@ class _DownloadSourcesDialogConfirmDialogState
   Future<HosterInfo> getHosterInfoFromUrl(String uri) async {
     var hosterName =
         DownloadSourcesRepository().getDownloadSourceUrlHosterName(uri);
-
-    var isDirect = await DownloadSourcesRepository().isDirectDownload(uri);
+    var isDirect = false;
+    if (hosterName == null) {
+      isDirect = await DownloadSourcesRepository().isDirectDownload(uri);
+    }
     var isTorrent = await DownloadSourcesRepository().urlIsTorrent(uri);
-
     var domainName = hosterName ?? StringHelper.getDomainName(uri);
     var domain = isDirect ? "$domainName - Direct download " : domainName;
 
@@ -79,8 +82,7 @@ class _DownloadSourcesDialogConfirmDialogState
             : HosterStatus.Unsupported,
       );
     }
-
-    return HosterInfo(
+    var hosterInfo = HosterInfo(
       uri: uri,
       domain: domain,
       isDirect: isDirect,
@@ -88,21 +90,59 @@ class _DownloadSourcesDialogConfirmDialogState
       isTorrent: isTorrent,
       canExtractLink: isDirect || hosterName != null,
     );
+    var foundHosterIndex = hosters.indexWhere((h) => h.uri == uri);
+    if (foundHosterIndex != -1) {
+      hosters[foundHosterIndex] = hosterInfo;
+      hosters = getSortedHosters(hosters);
+      if (mounted) setState(() {});
+      return hosterInfo;
+    }
+    return hosterInfo;
+  }
+
+  List<HosterInfo> getHostersWithoutMetadata() {
+    var romUris = widget.item.rom.uris ?? [];
+    if (romUris.isEmpty) return [];
+    return romUris.map((uri) {
+      var hosterName =
+          DownloadSourcesRepository().getDownloadSourceUrlHosterName(uri);
+      return HosterInfo(
+        uri: uri,
+        domain: hosterName ?? StringHelper.getDomainName(uri),
+        isDirect: false,
+        metadata: HosterMetadata(status: HosterStatus.Unknown),
+        isTorrent: false,
+        canExtractLink: false,
+      );
+    }).toList();
   }
 
   Future<void> loadHosters() async {
+    setState(() {
+      hosters = getHostersWithoutMetadata();
+    });
     final futures = (widget.item.rom.uris ?? []).map((uri) async {
       return await getHosterInfoFromUrl(uri);
     }).toList();
 
-    var hostersToAdd = await Future.wait(futures);
+    await Future.wait(futures);
+  }
 
-    hostersToAdd = getSortedHosters(hostersToAdd);
-
-    if (!mounted) return;
-
-    setState(() {
-      hosters = hostersToAdd;
+  void handleOpenManualExtractionDialog(String link) {
+    AlertsService.showAlert(navigatorContext!, "Manual interaction required",
+        "The selected download source has a captcha or a timers that requires manual interaction to retrieve the download link. Please follow the instructions in the opened web view to get the direct download link, This embedded browser its equipped with ad-blocking capabilities, you will need to trigger the download in order to retrieve the direct download link.",
+        acceptTitle: "Continue",
+        extraContent: ListTile(
+          iconColor: Theme.of(context).colorScheme.primary,
+          textColor: Theme.of(context).colorScheme.primary,
+          onTap: () {
+            launchUrl(Uri.parse(AppConstants.manualExtractionGuideEntry));
+          },
+          title: Text("Know more here"),
+          trailing: Icon(Icons.open_in_new),
+        ),
+        onClose: () {}, callback: () {
+      handleManualLinkExtraction(link);
     });
   }
 
@@ -166,16 +206,7 @@ class _DownloadSourcesDialogConfirmDialogState
         isLoadingDirectLink = false;
       });
       if (e is DownloadRequireManualException) {
-        AlertsService.showAlert(
-            navigatorContext!,
-            "Manual interaction required",
-            "The selected download source requires manual interaction to retrieve the download link. Please follow the instructions in the opened web view to get the direct download link, This embedded browser its equipped with ad-blocking capabilities, you will need to trigger the download in order to retrieve the direct download link.",
-            acceptTitle: "Open web view",
-            extraContent: AssetsService.getGif("manual-interaction-guide.gif",
-                size: 300, width: 450),
-            onClose: () {}, callback: () {
-          handleManualLinkExtraction(sourceRomLink);
-        });
+        handleOpenManualExtractionDialog(sourceRomLink);
         return;
       } else {
         Future.microtask(() {
@@ -260,7 +291,7 @@ class _DownloadSourcesDialogConfirmDialogState
         type = StatusTagType.success;
         break;
       case HosterStatus.Unsupported:
-        text = "Unsupported";
+        text = "Unsupported / Unreachable";
         type = StatusTagType.error;
         break;
       case HosterStatus.Unknown:

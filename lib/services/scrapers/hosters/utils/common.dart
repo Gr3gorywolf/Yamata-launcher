@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
@@ -75,14 +76,33 @@ class CommonHosterUtils {
 
   Future<Document?> fetchHtml(String url) async {
     try {
-      var res = await http.get(Uri.parse(url), headers: {
-        HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
-      }).timeout(const Duration(seconds: 5));
+      final headers = {
+        "User-Agent": "curl/8.0.1",
+        HttpHeaders.acceptHeader: '*/*',
+        "Referer": url,
+        "Connection": "keep-alive",
+      };
 
-      if (res.statusCode >= 400) {
+      final dio = Dio(
+        BaseOptions(
+          followRedirects: true,
+          maxRedirects: 10,
+          validateStatus: (s) => true,
+          headers: headers,
+        ),
+      );
+
+      final res = await dio.get(
+        url,
+      );
+
+      if (res == null) {
         return null;
       }
-      return parser.parse(res.body);
+      if ((res?.statusCode ?? 404) >= 400) {
+        return null;
+      }
+      return parser.parse(res.data.toString());
     } catch (err) {
       print('[CommonHosterUtils] fetchHtml error: $err');
       return null;

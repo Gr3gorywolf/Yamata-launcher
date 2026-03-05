@@ -41,9 +41,18 @@ class SevenZipConsoleHandler {
           (stdoutBuffer.toString() + stderrBuffer.toString()).toLowerCase();
 
       if (combined.contains('can not open encrypted archive') ||
-          combined.contains('wrong password') ||
-          exitCode != 0) {
+          combined.contains('wrong password')) {
         return true;
+      }
+
+      if (exitCode != 0) {
+        proc.kill(ProcessSignal.sigkill);
+        if (combined.contains("error = missing volume")) {
+          throw Exception(
+              'Archive is a multi-part split archive and a part is missing. Please ensure all parts are present before extraction.');
+        }
+        throw Exception(
+            'Cannot open the archive. It may be corrupted or in an unsupported format.');
       }
 
       return false;
@@ -51,7 +60,8 @@ class SevenZipConsoleHandler {
       proc.kill(ProcessSignal.sigkill);
       await stdoutSub.cancel();
       await stderrSub.cancel();
-      return true;
+      throw Exception(
+          'Cannot read the archive. It may be corrupted or in an unsupported format.');
     }
   }
 

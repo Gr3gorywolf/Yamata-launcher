@@ -68,6 +68,7 @@ dependencies:
   pointycastle: ^3.7.0
   webview_win_floating: ^3.0.0
   webview_flutter: ^4.8.0
+  dio: ^5.9.2
   adblocker_webview:
     git:
       url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
@@ -97,7 +98,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
       - assets/images/
-      - assets/gifs/
       - assets/icons/
       - assets/icons/consoles/
       - assets/svgs/

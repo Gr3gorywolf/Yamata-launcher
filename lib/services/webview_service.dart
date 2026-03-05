@@ -7,14 +7,12 @@ class WebviewService {
   static List<ResourceRule> _blockingRules = [];
   static List<ResourceRule> get blockingRules => _blockingRules;
   static init() async {
-    var blocklist = await rootBundle.loadString("assets/web/blocklist.txt");
     await _adBlockManager.init(FilterConfig(
-        filterTypes: [
-          FilterType.easyList,
-          FilterType.adGuard,
-        ],
-        blockedDomains:
-            blocklist.split("\n").where((line) => line.isNotEmpty).toList()));
+      filterTypes: [
+        FilterType.easyList,
+        FilterType.adGuard,
+      ],
+    ));
     blockingRules.addAll(_adBlockManager.getAllResourceRules());
   }
 }

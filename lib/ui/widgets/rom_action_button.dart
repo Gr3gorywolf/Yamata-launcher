@@ -279,10 +279,7 @@ class _RomActionButtonState extends State<RomActionButton> {
 
     IconData icon = Icons.cloud_off_rounded;
     String text = "No downloads";
-    if ((isCompilingSource || isVerifying) && !(isDownloading || isPaused)) {
-      icon = Icons.hourglass_top;
-      text = "Loading...";
-    } else if (isPlaying) {
+    if (isPlaying) {
       icon = FileSystemService.isDesktop ? Icons.close : Icons.videogame_asset;
       text = FileSystemService.isDesktop ? "Close" : "Playing";
     } else if (isDownloading) {
@@ -309,6 +306,9 @@ class _RomActionButtonState extends State<RomActionButton> {
         icon = Icons.folder_off;
         text = "File not found";
       }
+    } else if ((isCompilingSource || isVerifying)) {
+      icon = Icons.hourglass_top;
+      text = "Loading...";
     } else if (hasDownloadSources) {
       icon = Icons.cloud_download_outlined;
       text = "Download";

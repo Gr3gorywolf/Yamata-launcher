@@ -77,7 +77,7 @@ class GofileHoster implements Hoster {
       headers: {
         HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
       },
-    ).timeout(const Duration(seconds: 5));
+    );
 
     final body = jsonDecode(response.body);
 
@@ -97,7 +97,7 @@ class GofileHoster implements Hoster {
         'X-Website-Token': _websiteToken,
         HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
       },
-    ).timeout(const Duration(seconds: 5));
+    );
 
     final body = jsonDecode(response.body);
 

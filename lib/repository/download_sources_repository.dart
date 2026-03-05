@@ -29,7 +29,7 @@ class DownloadSourcesRepository {
     BuzzHeavierHoster(),
     DatanodesHoster(),
     FuckingFastHoster(),
-    GofileHoster(),
+    //TODO: correct this GofileHoster(),
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
@@ -64,8 +64,6 @@ class DownloadSourcesRepository {
       return directDownloadUris[url]!;
     }
 
-    final uri = Uri.tryParse(url);
-
     final headers = {
       "User-Agent": CommonHosterUtils().hosterUserAgent,
       "Accept": "*/*",
@@ -81,9 +79,7 @@ class DownloadSourcesRepository {
       final streamed =
           await client.send(request).timeout(const Duration(seconds: 10));
 
-      // 🔹 Headers disponibles inmediatamente
       final responseHeaders = streamed.headers;
-      print(responseHeaders);
 
       final contentDisposition = responseHeaders['content-disposition'];
       final contentType = responseHeaders['content-type'];
@@ -108,8 +104,7 @@ class DownloadSourcesRepository {
         cancelOnError: true,
       );
 
-      // Safety timeout (in case no data is ever sent)
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 1), () {
         sub?.cancel();
         client.close();
       });

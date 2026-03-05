@@ -1,11 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:yamata_launcher/app_router.dart';
-import 'package:yamata_launcher/constants/settings_constants.dart';
-import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
-import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:provider/provider.dart';
@@ -15,13 +10,8 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
-import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/services/settings_service.dart';
-import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
-import 'package:yamata_launcher/utils/time_helpers.dart';
 
 class RomDownloadSourcesDialog extends StatefulWidget {
   final RomInfo rom;
@@ -41,6 +31,8 @@ class RomDownloadSourcesDialog extends StatefulWidget {
 class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   Map<String, HosterInfo> urlHosters = {};
   List<RomDownloadSourceItem> results = [];
+
+  String selectedSource = "All";
 
   locateAndAddToLibrary() async {
     final file = await FileSystemService.showFilePicker();
@@ -68,8 +60,19 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         ));
       }
     }
+
     results = filteredResults;
     setState(() {});
+  }
+
+  Set<String> getAvailableSources() {
+    return results.map((e) => e.sourceTitle ?? "Unknown").toSet();
+  }
+
+  List<RomDownloadSourceItem> getFilteredResults() {
+    if (selectedSource == "All") return results;
+
+    return results.where((item) => item.sourceTitle == selectedSource).toList();
   }
 
   handleOpenConfirmDialog(RomDownloadSourceItem item) async {
@@ -77,6 +80,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
       context: context,
       builder: (_) => DownloadSourcesDialogConfirmDialog(item: item),
     );
+
     if (result != null) {
       Navigator.pop(context, result);
     }
@@ -91,12 +95,15 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   @override
   Widget build(BuildContext context) {
     var mediaQuery = MediaQuery.of(context);
+
+    final filteredResults = getFilteredResults();
+
     return AlertDialog(
-      title: Text("Download Options"),
+      title: const Text("Download Options"),
       content: Container(
         width: mediaQuery.size.width * 0.5,
         constraints: const BoxConstraints(
-            maxWidth: 600, maxHeight: 800, minWidth: 550, minHeight: 420),
+            maxWidth: 500, maxHeight: 600, minWidth: 420, minHeight: 320),
         child: results.isEmpty
             ? const Center(
                 child: Text(
@@ -107,17 +114,40 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedSource,
+                    items: [
+                      const DropdownMenuItem(
+                        value: "All",
+                        child: Text("All"),
+                      ),
+                      ...getAvailableSources().map(
+                        (source) => DropdownMenuItem(
+                          value: source,
+                          child: Text(source),
+                        ),
+                      )
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedSource = value!;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: results.length,
+                      itemCount: filteredResults.length,
                       itemBuilder: (_, index) {
-                        final item = results[index];
+                        final item = filteredResults[index];
+
                         final hosterNames = (item.rom.uris ?? [])
                             .map((uri) =>
                                 DownloadSourcesRepository()
                                     .getDownloadSourceUrlHosterName(uri) ??
                                 Uri.parse(uri).host)
                             .toSet();
+
                         return Card(
                           elevation: 0,
                           child: ListTile(
@@ -139,20 +169,17 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Wrap(
-                                    spacing: 8,
-                                    runSpacing: 4,
-                                    children: hosterNames
-                                        .map((name) => StatusTag(
-                                              text: name,
-                                            ))
-                                        .toList()),
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: hosterNames
+                                      .map((name) => StatusTag(text: name))
+                                      .toList(),
+                                ),
                               ],
                             ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                            ),
+                            trailing: const Icon(Icons.chevron_right),
                             onTap: () {
                               handleOpenConfirmDialog(item);
                             },

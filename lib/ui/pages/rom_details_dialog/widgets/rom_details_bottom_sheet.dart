@@ -113,10 +113,10 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
 
     final thumbnail = RomThumbnail(widget.rom);
     var gameplayThumbnail = RomThumbnail(
-      widget.rom!,
-      customUrl: widget.rom!.gameplayCovers != null &&
-              widget.rom!.gameplayCovers!.isNotEmpty
-          ? widget.rom!.gameplayCovers!.first
+      widget.rom,
+      customUrl: widget.rom.gameplayCovers != null &&
+              widget.rom.gameplayCovers!.isNotEmpty
+          ? widget.rom.gameplayCovers!.first
           : null,
       timeout: Duration(milliseconds: 60),
     );

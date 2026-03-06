@@ -95,11 +95,7 @@ class CommonHosterUtils {
       final res = await dio.get(
         url,
       );
-
-      if (res == null) {
-        return null;
-      }
-      if ((res?.statusCode ?? 404) >= 400) {
+      if ((res.statusCode ?? 404) >= 400) {
         return null;
       }
       return parser.parse(res.data.toString());

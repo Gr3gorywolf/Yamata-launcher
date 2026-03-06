@@ -40,15 +40,13 @@ class Aria2cClient {
     ];
     if (downloadUrl != null && downloadUrl.contains("||")) {
       var headers = Aria2cUtils.extractHeadersFromUrl(downloadUrl);
-      if (headers != null) {
-        for (final header in headers) {
-          params.add('--header=$header');
-        }
+      for (final header in headers) {
+        params.add('--header=$header');
       }
     }
     if (certPath != null) {
       params.add("--ca-certificate=${certPath}");
-      var dhtPath = "${p.dirname(certPath!)}/dht.dat";
+      var dhtPath = "${p.dirname(certPath)}/dht.dat";
       if (Platform.isAndroid) {
         var dhtFile = File(dhtPath);
         if (!dhtFile.existsSync()) {
@@ -57,7 +55,7 @@ class Aria2cClient {
         params.add("--bt-require-crypto=true");
         params.add("--disable-ipv6=true");
         params.add("--dht-file-path=${dhtPath}");
-        params.add("--dht-file-path6=${p.dirname(certPath!)}/dht6.dat");
+        params.add("--dht-file-path6=${p.dirname(certPath)}/dht6.dat");
         params.addAll(dhtSources);
         params.addAll(
             ["--async-dns=true", "--async-dns-server=1.1.1.1,8.8.8.8,8.8.4.4"]);

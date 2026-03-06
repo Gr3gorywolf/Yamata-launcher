@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
-import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_form.dart';

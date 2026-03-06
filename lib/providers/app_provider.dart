@@ -53,14 +53,10 @@ class AppProvider extends ChangeNotifier {
     await SettingsService()
         .get<bool>(SettingsKeys.DARK_MODE_ENABLED)
         .then((value) {
-      if (value != null) {
-        if (value) {
-          _theme = ThemeMode.dark;
-        } else {
-          _theme = ThemeMode.light;
-        }
+      if (value) {
+        _theme = ThemeMode.dark;
       } else {
-        _theme = ThemeMode.system;
+        _theme = ThemeMode.light;
       }
       notifyListeners();
     });

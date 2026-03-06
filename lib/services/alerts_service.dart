@@ -272,7 +272,7 @@ class AlertsService {
                       Navigator.of(context, rootNavigator: true).pop();
                     }
                   },
-                  child: Text(update?.downloadedFilePath != null
+                  child: Text(update.downloadedFilePath != null
                       ? "Install"
                       : "Download")),
               TextButton(

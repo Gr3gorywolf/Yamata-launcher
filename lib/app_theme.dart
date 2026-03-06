@@ -35,11 +35,9 @@ ThemeData appThemeLight = ThemeData(
   colorScheme: const ColorScheme.light(
     primary: primaryGreen,
     secondary: secondaryGreen,
-    background: backgroundColorLight,
     surface: surfaceColorLight,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
-    onBackground: textPrimaryLight,
     onSurface: textPrimaryLight,
     inverseSurface: inverseSurfaceColorLight,
     outlineVariant: grayBorderColorLight,
@@ -55,7 +53,7 @@ ThemeData appThemeLight = ThemeData(
     ),
     iconTheme: IconThemeData(color: textPrimaryLight),
   ),
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     color: surfaceColorLight,
     surfaceTintColor: Colors.transparent,
     elevation: 0,
@@ -106,7 +104,7 @@ ThemeData appThemeLight = ThemeData(
       color: textSecondaryLight.withOpacity(0.7),
     ),
   ),
-  dialogTheme: DialogTheme(
+  dialogTheme: DialogThemeData(
     backgroundColor: surfaceColorLight,
     surfaceTintColor: Colors.transparent,
     titleTextStyle: const TextStyle(

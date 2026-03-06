@@ -1,10 +1,8 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
@@ -13,9 +11,6 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/update_service.dart';
-import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_catalog_sources_page.dart';
-import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
-import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 

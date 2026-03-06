@@ -135,10 +135,10 @@ class WebSourcesManagerService {
 
       final data = sources
           .map((e) => {
-                'id': e.sourceInfo!.downloadUrl,
-                'title': e.sourceInfo!.title,
-                'type': e.sourceInfo!.type?.name,
-                'games': e.downloads!.length,
+                'id': e.sourceInfo.downloadUrl,
+                'title': e.sourceInfo.title,
+                'type': e.sourceInfo.type?.name,
+                'games': e.downloads.length,
               })
           .toList();
 
@@ -169,7 +169,7 @@ class WebSourcesManagerService {
       final provider = Provider.of<DownloadSourcesProvider>(navigatorContext!,
           listen: false);
       final source = provider.downloadSources
-          .firstWhere((e) => e.sourceInfo!.downloadUrl == id);
+          .firstWhere((e) => e.sourceInfo.downloadUrl == id);
       provider.removeDownloadSource(source);
       _json(req, {'ok': true});
       return;
@@ -180,7 +180,7 @@ class WebSourcesManagerService {
       var foundSource =
           Provider.of<DownloadSourcesProvider>(navigatorContext!, listen: false)
               .downloadSources
-              .firstWhereOrNull((e) => e.sourceInfo!.downloadUrl == id);
+              .firstWhereOrNull((e) => e.sourceInfo.downloadUrl == id);
       try {
         if (foundSource == null) {
           throw Exception("This source type does not support refreshing.");

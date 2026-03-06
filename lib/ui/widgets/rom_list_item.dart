@@ -55,19 +55,19 @@ class RomListItem extends StatelessWidget {
     );
 
     var hasDownloadInfo = _currentDownloadInfo != null || download != null;
-    var console = ConsoleService.getConsoleFromName(romItem!.console);
+    var console = ConsoleService.getConsoleFromName(romItem.console);
 
     navigateToDetails() {
       showModalBottomSheet(
           context: context,
           isScrollControlled: true,
           builder: (context) => RomDetailsDialog(
-                rom: romItem!,
+                rom: romItem,
               ));
     }
 
     String getSubHeader() {
-      var releaseDate = (romItem?.releaseDate?.isNotEmpty ?? false
+      var releaseDate = (romItem.releaseDate?.isNotEmpty ?? false
               ? romItem.releaseDate
               : "---") ??
           "";
@@ -174,7 +174,7 @@ class RomListItem extends StatelessWidget {
                             right: 0,
                             bottom: 0,
                             child: RomRating(
-                              rating: romItem!.rating,
+                              rating: romItem.rating,
                             ),
                           )
                         ],
@@ -192,7 +192,7 @@ class RomListItem extends StatelessWidget {
                                 Container(
                                   margin: EdgeInsets.only(right: 82),
                                   child: Text(
-                                    romItem!.name,
+                                    romItem.name,
                                     style:
                                         Theme.of(context).textTheme.titleMedium,
                                   ),
@@ -322,7 +322,7 @@ class RomListItem extends StatelessWidget {
                               right: 0,
                               bottom: 0,
                               child: RomRating(
-                                rating: romItem!.rating,
+                                rating: romItem.rating,
                                 size: 12,
                               ),
                             )
@@ -332,7 +332,7 @@ class RomListItem extends StatelessWidget {
                           height: 7,
                         ),
                         Text(
-                          romItem!.name,
+                          romItem.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleSmall,

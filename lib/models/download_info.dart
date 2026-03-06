@@ -1,5 +1,4 @@
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/models/rom_library_item.dart';
 
 class DownloadInfo {
   String romSlug;

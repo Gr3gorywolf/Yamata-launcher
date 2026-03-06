@@ -140,7 +140,7 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
       if (source.downloads.any(
         (d) => _isRomMatch(d.titleClean!, name),
       )) {
-        romResult.add(source.sourceInfo!);
+        romResult.add(source.sourceInfo);
       }
     }
   }
@@ -250,7 +250,7 @@ class DownloadSourcesProvider extends ChangeNotifier {
     if (!validFile) return false;
 
     final index = _downloadSources.indexWhere(
-      (s) => s.sourceInfo.downloadUrl == parsed.sourceInfo!.downloadUrl,
+      (s) => s.sourceInfo.downloadUrl == parsed.sourceInfo.downloadUrl,
     );
 
     if (index != -1) {

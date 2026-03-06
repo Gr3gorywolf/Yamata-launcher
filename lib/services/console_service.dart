@@ -17,7 +17,7 @@ class ConsoleService {
       PlatformCatalogSource source) {
     source.games = source.games.map((game) {
       game.slug =
-          RomService.getRomSlug(source.console?.slug ?? "", game.name ?? "");
+          RomService.getRomSlug(source.console.slug ?? "", game.name ?? "");
       return game;
     }).toList();
     return source;

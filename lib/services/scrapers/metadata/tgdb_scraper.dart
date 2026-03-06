@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart';
-import 'package:html/dom.dart';
 import 'package:yamata_launcher/models/tgdb.dart';
 import 'package:yamata_launcher/services/scrapers/metadata/constants/tgdb_consoles_mapping.dart';
 

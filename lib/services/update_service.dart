@@ -16,7 +16,6 @@ import 'package:yamata_launcher/utils/file_download_fetch.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
-import 'dart:convert';
 
 class UpdateService {
   static FileDownloadFetch? _currentDownload;

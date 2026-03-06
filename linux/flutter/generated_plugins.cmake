@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_inappwebview_linux
+  fullscreen_window
   screen_retriever_linux
   tray_manager
   url_launcher_linux

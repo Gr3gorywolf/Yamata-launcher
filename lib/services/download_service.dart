@@ -69,9 +69,6 @@ class DownloadService {
         source: task.sourceRom,
         aria2cPath: FileSystemService.aria2cPath,
         selectedDownloadPath: task.download.downloadFolder);
-    if (handle == null) {
-      return;
-    }
     downloadProvider.continueDownload(task, handle);
   }
 

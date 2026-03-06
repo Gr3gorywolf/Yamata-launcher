@@ -21,7 +21,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
     final confirmed = await AlertsService.showAlert(
       context,
       "Delete Download Source",
-      "Are you sure you want to delete the source '${source.sourceInfo!.title}'?",
+      "Are you sure you want to delete the source '${source.sourceInfo.title}'?",
       callback: () {
         final provider =
             Provider.of<DownloadSourcesProvider>(context, listen: false);
@@ -32,7 +32,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
   }
 
   _handleSetSource(DownloadSourceWithDownloads? sourceToUpdate) async {
-    var type = sourceToUpdate?.sourceInfo?.type ?? DownloadSourceType.Yamata;
+    var type = sourceToUpdate?.sourceInfo.type ?? DownloadSourceType.Yamata;
     var result = sourceToUpdate == null
         ? await AlertsService.showPrompt(
             context,
@@ -63,7 +63,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
               ),
             ),
           )
-        : sourceToUpdate.sourceInfo!.downloadUrl;
+        : sourceToUpdate.sourceInfo.downloadUrl;
     if (result == null || result.isEmpty) {
       return;
     }
@@ -121,19 +121,19 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
             itemCount: provider.downloadSources.length,
             itemBuilder: (_, index) {
               final source = provider.downloadSources[index];
-              var timeAgo = source.sourceInfo?.lastUpdated != null
+              var timeAgo = source.sourceInfo.lastUpdated != null
                   ? TimeHelpers.getTimeAgo(
-                      DateTime.parse(source.sourceInfo!.lastUpdated!))
+                      DateTime.parse(source.sourceInfo.lastUpdated!))
                   : "Unknown";
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
                   leading: Icon(Icons.cloud_download),
-                  title: Text(source.sourceInfo!.title!),
+                  title: Text(source.sourceInfo.title),
                   subtitle: Opacity(
                       opacity: 0.7,
                       child: Text(
-                          '${source.sourceInfo.type?.name} - ${source.downloads!.length} games - Last Updated: $timeAgo')),
+                          '${source.sourceInfo.type?.name} - ${source.downloads.length} games - Last Updated: $timeAgo')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

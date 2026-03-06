@@ -1,8 +1,6 @@
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
 import 'package:yamata_launcher/models/download_info.dart';
-import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/models/rom_library_item.dart';
 
 class DownloadHistoryItem implements JsonSerializable {
   String romSlug;

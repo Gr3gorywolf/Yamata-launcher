@@ -153,7 +153,7 @@ class DownloadProvider extends ChangeNotifier {
     }
     _activeDownloadInfos[foundActiveDownloadIdx] = downloadInfo;
 
-    final sub = handle.events!.listen((event) {
+    final sub = handle.events.listen((event) {
       _handleAria2Event(
         event,
         rom,
@@ -210,7 +210,7 @@ class DownloadProvider extends ChangeNotifier {
           androidActions: [AndroidNotificationsActionTypes.CancelDownload]);
     }
     _activeDownloadInfos.add(info);
-    final sub = handle.events!.listen((event) {
+    final sub = handle.events.listen((event) {
       _handleAria2Event(
         event,
         rom,
@@ -237,7 +237,7 @@ class DownloadProvider extends ChangeNotifier {
           .indexWhere((element) => element.downloadId == info.downloadId);
       info.isPaused = true;
       _activeDownloadInfos[foundActiveDownload] = info;
-      active.handle!.abort!(deleteFiles: false);
+      active.handle!.abort(deleteFiles: false);
       _disposeActive(info.downloadId);
       await DownloadTasksDao(db!).updateDownloadInfo(info);
       if (Platform.isAndroid) {
@@ -265,7 +265,7 @@ class DownloadProvider extends ChangeNotifier {
     if (active != null) {
       _activeDownloadInfos
           .removeWhere((element) => element.downloadId == info.downloadId);
-      active.handle!.abort!(deleteFiles: !info.isExtraContent);
+      active.handle!.abort(deleteFiles: !info.isExtraContent);
       _disposeActive(info.downloadId);
       if (Platform.isAndroid) {
         print("Cancelling notification for tag: ${info.romSlug}");

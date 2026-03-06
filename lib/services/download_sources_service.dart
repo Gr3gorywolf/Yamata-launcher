@@ -39,7 +39,7 @@ class DownloadSourcesService {
 
   static DownloadSourceWithDownloads parseDownloadSourceNames(
       DownloadSourceWithDownloads input) {
-    input.downloads = input.downloads!.map((e) {
+    input.downloads = input.downloads.map((e) {
       e.titleClean = RomService.normalizeRomTitle(e.title!);
 
       return e;

@@ -58,8 +58,7 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
                     const SizedBox(height: 10),
                     QrImageView(
                       data: url!,
-                      foregroundColor:
-                          Theme.of(context).colorScheme.onBackground,
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
                       size: 220,
                     ),
                     const SizedBox(height: 20),

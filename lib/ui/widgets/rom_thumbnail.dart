@@ -1,12 +1,8 @@
 import 'dart:io';
 
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/ui/widgets/console_card.dart';
-import 'package:yamata_launcher/utils/animation_helper.dart';
 import 'package:yamata_launcher/services/assets_service.dart';
-import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 

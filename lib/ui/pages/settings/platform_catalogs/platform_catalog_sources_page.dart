@@ -4,7 +4,6 @@ import 'package:yamata_launcher/repository/platform_catalog_sources_repository.d
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
-import 'package:path/path.dart' as p;
 
 class ConsoleSourcesPage extends StatefulWidget {
   @override

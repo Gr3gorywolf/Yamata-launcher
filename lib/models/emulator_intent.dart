@@ -5,8 +5,8 @@ class EmulatorIntent implements JsonSerializable {
   String? package;
   String? activity;
   String? action;
-  dynamic? data;
-  dynamic? extras;
+  dynamic data;
+  dynamic extras;
   String? type;
   String? category;
   bool? requireExtraction;

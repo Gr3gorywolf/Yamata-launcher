@@ -133,7 +133,7 @@ class RomLibraryActions extends StatelessWidget {
           backgroundColor: Theme.of(context).colorScheme.inverseSurface,
           padding: EdgeInsets.all(4),
           minimumSize:
-              minimumSize != null ? Size(minimumSize!, minimumSize!) : null);
+              minimumSize != null ? Size(minimumSize, minimumSize) : null);
     }
 
     if (downloadHistoryItem != null) {

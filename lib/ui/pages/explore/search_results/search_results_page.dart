@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sembast/sembast.dart';
-import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
@@ -11,7 +9,6 @@ import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
-import 'package:yamata_launcher/utils/plain_text_search.dart';
 
 class SearchResultsPage extends StatefulWidget {
   String searchQuery = "";

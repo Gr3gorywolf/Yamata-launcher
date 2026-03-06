@@ -64,12 +64,8 @@ class DownloadSourceWithDownloads {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.sourceInfo != null) {
-      data['sourceInfo'] = this.sourceInfo!.toJson();
-    }
-    if (this.downloads != null) {
-      data['downloads'] = this.downloads!.map((v) => v.toJson()).toList();
-    }
+    data['sourceInfo'] = this.sourceInfo!.toJson();
+    data['downloads'] = this.downloads!.map((v) => v.toJson()).toList();
     return data;
   }
 }

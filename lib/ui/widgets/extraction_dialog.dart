@@ -71,7 +71,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         onError: (data) {
           print("Extraction error: $data");
           Future.microtask(() {
-            widget?.onError?.call(data as String);
+            widget.onError?.call(data as String);
           }).then((_) {});
           _cancelWakeLock();
 
@@ -132,7 +132,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
     } on Exception catch (e) {
       print("Extraction completition error: ${e.toString()}");
       Future.microtask(() {
-        widget?.onError?.call(e.toString());
+        widget.onError?.call(e.toString());
       }).then((_) {});
       _cancelWakeLock();
       Navigator.of(context).pop();

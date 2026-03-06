@@ -32,11 +32,9 @@ ThemeData appThemeDark = ThemeData(
     colorScheme: const ColorScheme.dark(
         primary: primaryGreen,
         secondary: secondaryGreen,
-        background: backgroundColor,
         surface: surfaceColor,
         onPrimary: Colors.black,
         onSecondary: Colors.black,
-        onBackground: textPrimary,
         onSurface: textPrimary,
         outlineVariant: grayBorderColor,
         inverseSurface: inverseSurfaceColor),
@@ -51,7 +49,7 @@ ThemeData appThemeDark = ThemeData(
       ),
       iconTheme: IconThemeData(color: textPrimary),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceColor,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
@@ -100,7 +98,7 @@ ThemeData appThemeDark = ThemeData(
         color: textSecondary.withOpacity(0.7),
       ),
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: inverseSurfaceColor,
       surfaceTintColor: Colors.transparent,
       titleTextStyle: TextStyle(
@@ -136,8 +134,8 @@ ThemeData appThemeDark = ThemeData(
       smallSize: 20,
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith<Color>((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.selected)) {
           return inverseSurfaceColor;
         }
         return Colors.grey;

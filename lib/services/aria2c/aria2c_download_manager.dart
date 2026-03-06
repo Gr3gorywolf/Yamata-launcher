@@ -83,7 +83,7 @@ class Aria2cDownloadManager {
     String? selectedDownloadPath,
   }) async {
     final uri = source.uris!.first;
-    final id = StringHelper.hash20(rom.name! + rom.console!);
+    final id = StringHelper.hash20(rom.name + rom.console);
 
     if (_jobs.containsKey(id)) {
       throw StateError('Download already running for id=$id');
@@ -287,7 +287,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
           proc, () => aborted, 'Direct download failed');
 
       var fileName = p.basename(
-          Aria2cUtils.getCleanUrl(args?.source?.fileName ?? args.uri!));
+          Aria2cUtils.getCleanUrl(args.source?.fileName ?? args.uri!));
       var validExtensions = [
         ...VALID_COMPRESSED_EXTENSIONS,
         ...VALID_EXECUTABLE_EXTENSIONS,
@@ -356,7 +356,7 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
       isAborted: () => aborted,
     );
     String? outputPath = args.downloadPath;
-    var canDeleteDirectories = args?.rom != null &&
+    var canDeleteDirectories = args.rom != null &&
         !PLATFORMS_WITH_DIRECTORY_TYPE_GAMES
             .contains(args.rom!.console.toLowerCase());
     if (relPath != null) {

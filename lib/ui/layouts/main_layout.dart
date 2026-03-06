@@ -6,7 +6,6 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
-import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
 

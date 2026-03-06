@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/keyboard_keys_constants.dart';
 import 'package:yamata_launcher/services/os_service.dart';

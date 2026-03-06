@@ -41,7 +41,7 @@ class PixelDrainHoster implements Hoster {
     if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
     var fileName = document.querySelector('title')?.text.trim();
     var status = HosterStatus.Valid;
-    if ((document.querySelector('title')?.text?.trim()?.contains("404") ??
+    if ((document.querySelector('title')?.text.trim().contains("404") ??
         false)) {
       status = HosterStatus.Invalid;
     }

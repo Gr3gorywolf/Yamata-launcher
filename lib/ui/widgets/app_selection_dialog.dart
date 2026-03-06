@@ -108,7 +108,7 @@ class _AppSelectionDialogState extends State<AppSelectionDialog> {
                       child: ListView.builder(
                         itemCount: filteredApps.length,
                         itemBuilder: (context, i) {
-                          final app = filteredApps[i] as ApplicationWithIcon;
+                          final app = filteredApps[i];
 
                           return ListTile(
                             leading:

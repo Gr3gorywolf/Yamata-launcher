@@ -90,7 +90,7 @@ class RomsRepository {
     var importedRoms = await LibraryDao(db!).getImported();
 
     var importedRomsTitles =
-        importedRoms.map((rom) => rom?.rom.name ?? "").toList();
+        importedRoms.map((rom) => rom.rom.name ?? "").toList();
     var importedRomsResults = PlainTextSearch.search(query, importedRomsTitles)
         .map((res) => res.item)
         .toList();

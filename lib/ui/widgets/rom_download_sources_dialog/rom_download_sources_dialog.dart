@@ -53,10 +53,10 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     final List<RomDownloadSourceItem> filteredResults = [];
 
     for (final source in sourcesWithDownloads) {
-      for (final sourceDownload in source.downloads!) {
+      for (final sourceDownload in source.downloads) {
         filteredResults.add(RomDownloadSourceItem(
           rom: sourceDownload,
-          sourceTitle: source.sourceInfo!.title,
+          sourceTitle: source.sourceInfo.title,
         ));
       }
     }

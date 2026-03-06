@@ -1,6 +1,5 @@
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
-import 'package:yamata_launcher/models/rom_info.dart';
 
 class DownloadTask {
   final String slug;

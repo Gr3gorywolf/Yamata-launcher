@@ -59,7 +59,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
   }
 
   Widget buildTitle() {
-    var titleText = Text(widget?.settings?.title ?? 'Search');
+    var titleText = Text(widget.settings.title ?? 'Search');
     if (isSearching) {
       var isLargeScreen = MediaQuery.of(context).size.width > 800;
       var textField = TextField(

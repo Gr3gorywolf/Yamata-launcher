@@ -1,12 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:yamata_launcher/constants/app_constants.dart';
-import 'package:yamata_launcher/models/emulator_intent.dart';
-import 'package:yamata_launcher/services/cache_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
-import 'package:yamata_launcher/services/native/intents_android_interface.dart';
-import 'package:yamata_launcher/utils/cached_fetch.dart';
 import 'package:http/http.dart' as http;
 
 class EmulatorIntentsRepository {

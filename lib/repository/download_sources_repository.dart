@@ -262,5 +262,6 @@ class DownloadSourcesRepository {
         }
       }
     }
+    return null;
   }
 }

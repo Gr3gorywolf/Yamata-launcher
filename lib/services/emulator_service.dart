@@ -11,7 +11,6 @@ import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
 import 'package:yamata_launcher/models/emulator_intent.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
-import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';

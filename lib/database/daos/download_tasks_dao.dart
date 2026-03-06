@@ -59,6 +59,6 @@ class DownloadTasksDao {
   }
 
   Future<void> clear() async {
-    await downloadTaskDbStore.delete(db!);
+    await downloadTaskDbStore.delete(db);
   }
 }

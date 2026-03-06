@@ -11,8 +11,6 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/seven_zip_android_interface.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/seven-zip/seven_zip_console_handler.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
-import 'package:yamata_launcher/utils/system_helpers.dart';
 import 'package:path/path.dart' as path;
 
 /// Represents special extraction progress states.

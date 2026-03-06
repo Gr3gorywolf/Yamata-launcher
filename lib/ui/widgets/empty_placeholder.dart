@@ -67,10 +67,10 @@ class EmptyPlaceholder extends StatelessWidget {
                 child:
                     Text(action?.label ?? '', style: TextStyle(fontSize: 13)),
                 style: ButtonStyle(
-                  padding: MaterialStateProperty.all<EdgeInsets>(
+                  padding: WidgetStateProperty.all<EdgeInsets>(
                     EdgeInsets.symmetric(horizontal: 25, vertical: 20),
                   ),
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),

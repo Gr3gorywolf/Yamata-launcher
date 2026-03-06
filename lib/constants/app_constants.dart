@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/services.dart';
-
 class AppConstants {
   static String repositoryBasePath = "Gr3gorywolf/Yamata-launcher";
   static String apiBasePath =

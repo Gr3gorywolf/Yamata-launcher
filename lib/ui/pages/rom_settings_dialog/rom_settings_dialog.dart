@@ -136,7 +136,7 @@ class RomSettingsDialog extends StatelessWidget {
           context: context,
           builder: (context) => DurationPickerDialog(
             title: "Select Played Time",
-            initialMinutes: libraryItem.playTimeMins?.toInt() ?? 0,
+            initialMinutes: libraryItem.playTimeMins.toInt() ?? 0,
             onSubmit: (minutes) {
               libraryItem.playTimeMins = minutes.toDouble();
               provider.updateLibraryItem(libraryItem);

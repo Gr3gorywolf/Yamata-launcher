@@ -1,7 +1,6 @@
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
-import 'package:yamata_launcher/services/console_service.dart';
 
 class LibraryItemFilters {
   static var consoleFilter = (Console console) =>

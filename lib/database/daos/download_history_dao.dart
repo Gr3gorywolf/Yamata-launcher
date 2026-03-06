@@ -34,5 +34,6 @@ class DownloadHistoryDao {
     await downloadHistoryDbStore
         .record(item.downloadId ?? StringHelper.generateUUID())
         .update(db, item.toJson());
+    return null;
   }
 }

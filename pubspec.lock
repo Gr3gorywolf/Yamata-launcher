@@ -1071,6 +1071,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.1"
+  webview_cef:
+    dependency: "direct main"
+    description:
+      name: webview_cef
+      sha256: "2e660bf593dc1168beb7b765dd477a703e0b29968669f017e178c2c716f6437f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   webview_flutter:
     dependency: "direct main"
     description:

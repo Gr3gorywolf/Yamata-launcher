@@ -104,6 +104,10 @@ class FileSystemService {
     return cachePath + "/web";
   }
 
+  static get webviewCachePath {
+    return cachePath + "/webview";
+  }
+
   /**
    * Shows a file system widget that its not a dialog, so it can be used on fullscreen mode. It returns the selected path or null if the user cancels the operation.
    */
@@ -484,6 +488,7 @@ class FileSystemService {
       notificationImagesPath,
       updatesPath,
       webFilesPath,
+      webviewCachePath
     ];
     for (var path in paths) {
       if (!await Directory(path).exists()) {

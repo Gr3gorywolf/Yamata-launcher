@@ -169,10 +169,9 @@ class _DownloadSourcesDialogConfirmDialogState
   }
 
   void handleManualLinkExtraction(String rawLink) async {
-    var link = await Navigator.of(context).push<String?>(
+    var link = await Navigator.of(navigatorContext!).push<String?>(
       MaterialPageRoute(
         builder: (_) => DownloadLinkWebExtractor(rawLink: rawLink),
-        fullscreenDialog: true,
       ),
     );
     print("Extracted link: $link");

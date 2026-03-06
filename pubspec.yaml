@@ -66,7 +66,7 @@ dependencies:
   flutter_app_installer: ^1.0.2
   qr_flutter: ^4.1.0
   pointycastle: ^3.7.0
-  webview_win_floating: ^3.0.0
+  webview_win_floating: ^3.0.2
   webview_flutter: ^4.8.0
   dio: ^5.9.2
   adblocker_webview:
@@ -74,6 +74,7 @@ dependencies:
       url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
       path: .
       ref: "3.22-downgrade"
+  webview_cef: ^0.2.2
 
 
 

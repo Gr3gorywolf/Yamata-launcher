@@ -6,6 +6,7 @@ import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -34,18 +35,36 @@ class RomService {
     if (resultFile == null) {
       return;
     }
+    var loader = AlertsService.showLoadingAlert(
+        navigatorContext!,
+        "Processing files",
+        "Please wait while the extracted files gets processed.");
+    var filePath = resultFile.path;
     var provider =
+        Provider.of<DownloadProvider>(navigatorContext!, listen: false);
+    var libraryProvider =
         Provider.of<LibraryProvider>(navigatorContext!, listen: false);
-    downloadedRom.filePath = resultFile.path;
+    var markFile = File('${resultFile.parent.path}/$DOWNLOAD_MARK_FILENAME');
+    var hasMark = await markFile.exists();
+    if (hasMark) {
+      var markContent = await markFile.readAsString();
+      if (markContent == downloadedRom.rom.slug) {
+        filePath = await provider.moveLibraryContentToParentFolder(
+            downloadedRom, resultFile.path, resultFile.parent.path);
+      }
+    }
+
+    downloadedRom.filePath = filePath;
     if (Platform.isAndroid) {
       try {
-        MediaScanner.loadMedia(path: resultFile.path);
-        MediaScanner.loadMedia(path: resultFile.parent.path);
+        MediaScanner.loadMedia(path: filePath);
+        MediaScanner.loadMedia(path: File(filePath).parent.path);
       } catch (e) {
         print("Error loading media: ${e.toString()}");
       }
     }
-    provider.updateLibraryItem(downloadedRom);
+    libraryProvider.updateLibraryItem(downloadedRom);
+    loader.close();
     Future.microtask(() {
       AlertsService.showSnackbar("ROM extracted successfully!");
     });

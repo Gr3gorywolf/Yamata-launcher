@@ -459,7 +459,7 @@ class DownloadProvider extends ChangeNotifier {
         download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {
-      var newPath = await _handleMoveContentToParentFolder(
+      var newPath = await moveLibraryContentToParentFolder(
           libraryItem, path, File(path).parent.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
@@ -582,11 +582,13 @@ class DownloadProvider extends ChangeNotifier {
       }
       await Future.delayed(Duration(seconds: 2));
       try {
-        await zipFile.delete();
+        if (File(zipFile.path).existsSync()) {
+          await ExtractionService.deleteZipFiles(zipFile.path);
+        }
       } on Exception catch (e) {
         print("Failed to delete zip file: ${e.toString()}");
       }
-      var newPath = await _handleMoveContentToParentFolder(
+      var newPath = await moveLibraryContentToParentFolder(
           libraryItem!, extractedFile.path, outputDir.path,
           updateLibrary: !download.isExtraContent);
       await _setDownloadToHistory(download, newPath);
@@ -606,7 +608,7 @@ class DownloadProvider extends ChangeNotifier {
     handleNotifyListeners();
   }
 
-  Future<String> _handleMoveContentToParentFolder(
+  Future<String> moveLibraryContentToParentFolder(
       RomLibraryItem libraryItem, String path, String downloadFolder,
       {bool updateLibrary = true}) async {
     var pathFilesCount =

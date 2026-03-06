@@ -5,6 +5,7 @@ import 'package:device_apps/device_apps.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
@@ -156,15 +157,21 @@ class RomSettingsDialog extends StatelessWidget {
       await AlertsService.showAlert(context, "Remove game file",
           "Are you sure you want to remove this game from your computer? This action cannot be undone.",
           callback: () async {
+        var loader = AlertsService.showLoadingAlert(
+            navigatorContext!, "Deleting", "Deleting game files...");
         if (libraryItem != null && libraryItem.filePath!.isNotEmpty) {
           var deleted = await RomService.deleteRomFiles(libraryItem);
           if (deleted) {
             libraryItem.filePath = "";
             await provider.updateLibraryItem(libraryItem);
           } else {
+            loader.close();
             AlertsService.showErrorSnackbar(
                 "Failed to delete Game files. It may have already been removed or is inaccessible.");
+            return;
           }
+
+          loader.close();
         }
       });
     }

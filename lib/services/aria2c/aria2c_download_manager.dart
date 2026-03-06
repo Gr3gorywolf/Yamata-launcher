@@ -293,9 +293,11 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
         ...VALID_EXECUTABLE_EXTENSIONS,
         ...VALID_ROM_EXTENSIONS
       ];
-      if (validExtensions
-              .firstWhereOrNull((extension) => fileName.endsWith(extension)) ==
-          null) {
+      var filePath = p.join(romDir.path, fileName);
+      if (validExtensions.firstWhereOrNull(
+                  (extension) => fileName.endsWith(extension)) ==
+              null ||
+          !File(filePath).existsSync()) {
         var foundFile = RomService.searchRomFile(romDir)?.path;
         if (foundFile != null) {
           fileName = p.basename(foundFile);

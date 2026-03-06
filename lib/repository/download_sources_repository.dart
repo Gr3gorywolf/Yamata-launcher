@@ -80,6 +80,7 @@ class DownloadSourcesRepository {
           await client.send(request).timeout(const Duration(seconds: 10));
 
       final responseHeaders = streamed.headers;
+      print(responseHeaders);
 
       final contentDisposition = responseHeaders['content-disposition'];
       final contentType = responseHeaders['content-type'];

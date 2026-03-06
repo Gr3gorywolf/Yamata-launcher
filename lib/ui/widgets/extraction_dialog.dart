@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/wakelock_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
+import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ExtractionDialog extends StatefulWidget {
   final File zipFile;
@@ -118,7 +120,7 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
             }
           }
           try {
-            await widget.zipFile.delete();
+            await ExtractionService.deleteZipFiles(widget.zipFile.path);
           } catch (e) {}
         }
         try {

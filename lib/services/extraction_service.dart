@@ -11,7 +11,9 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/seven_zip_android_interface.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/seven-zip/seven_zip_console_handler.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
+import 'package:path/path.dart' as path;
 
 /// Represents special extraction progress states.
 enum ExtractionSignal {
@@ -40,6 +42,62 @@ class ExtractionService {
             .downloadSourcesPasswords;
     passwords.addAll(sourcesPasswords);
     return passwords.toList();
+  }
+
+  /**
+   * Deletes all the zip files that have a similar name to the provided zip file. This is useful to clean up any leftover zip files after extraction,
+   *  especially when the original zip file gets renamed or moved during the extraction process.
+   */
+  static Future deleteZipFiles(String zipFilePath) async {
+    final archiveFile = File(zipFilePath);
+
+    if (!await archiveFile.exists()) return;
+
+    final dir = archiveFile.parent;
+    final fileName = path.basename(zipFilePath).toLowerCase();
+    final fileExtension = path.extension(zipFilePath).replaceFirst('.', '');
+
+    // without ext
+    String baseName = path.basenameWithoutExtension(fileName);
+
+    // remove .part01, .z01, .r01, etc
+    baseName = baseName.replaceFirst(RegExp(r'\.part\d+$'), '');
+
+    final patterns = [
+      /// main file
+      RegExp('^${RegExp.escape(fileName)}\$'),
+
+      /// zip split  game.z01 game.z02
+      RegExp('^${RegExp.escape(baseName)}\\.z\\d+\$'),
+
+      /// rar r00 r01
+      RegExp('^${RegExp.escape(baseName)}\\.r\\d+\$'),
+
+      /// file.part01.rar
+      RegExp('^${RegExp.escape(baseName)}\\.part\\d+\\.$fileExtension\$'),
+
+      /// file.ext.001
+      RegExp('^${RegExp.escape(baseName)}\\.$fileExtension\\.\\d+\$'),
+
+      /// file(any number).ext
+      RegExp('^${RegExp.escape(baseName)}.*\\d+\\.$fileExtension\$'),
+    ];
+
+    final files = dir.listSync();
+
+    for (final entity in files) {
+      if (entity is! File) continue;
+
+      final name = path.basename(entity.path).toLowerCase();
+
+      final matches = patterns.any((r) => r.hasMatch(name));
+
+      if (matches) {
+        try {
+          await entity.delete();
+        } catch (_) {}
+      }
+    }
   }
 
   /// Adds an extraction task to the queue.

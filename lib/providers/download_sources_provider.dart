@@ -250,7 +250,7 @@ class DownloadSourcesProvider extends ChangeNotifier {
     if (!validFile) return false;
 
     final index = _downloadSources.indexWhere(
-      (s) => s.sourceInfo.title == parsed.sourceInfo!.title,
+      (s) => s.sourceInfo.downloadUrl == parsed.sourceInfo!.downloadUrl,
     );
 
     if (index != -1) {

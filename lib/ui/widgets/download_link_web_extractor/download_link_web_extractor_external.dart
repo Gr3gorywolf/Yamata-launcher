@@ -134,11 +134,19 @@ class _DownloadLinkWebExtractorExternalState
       Navigator.of(context).pop();
       return;
     }
+
     var extractorPath = p.join(
         FileSystemService.linkExtractorPath,
         "yamata-link-extractor-${Platform.isWindows ? "windows" : Platform.isLinux ? "linux" : "macos"}");
     var extractionBinary = p.join(
         extractorPath, Platform.isWindows ? "extractor.bat" : "extractor.sh");
+
+    if (!Platform.isWindows) {
+      await Process.run("chmod", ["+x", extractionBinary]);
+      await Process.run("chmod", ["+x", p.join(extractorPath, "node", "node")]);
+      await Process.run(
+          "chmod", ["+x", p.join(extractorPath, "chrome", "chrome")]);
+    }
     final args = [widget.rawLink, "no-link-output"];
 
     runningProcess = await Process.start(

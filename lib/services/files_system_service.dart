@@ -76,6 +76,10 @@ class FileSystemService {
     return cachePath + "/torrents";
   }
 
+  static get linkExtractorPath {
+    return _appSupportPath + "/link-extractor";
+  }
+
   static get downloadSourcesPath {
     return _appSupportPath + "/download-sources";
   }

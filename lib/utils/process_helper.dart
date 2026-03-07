@@ -2,6 +2,26 @@ import 'dart:convert';
 import 'dart:io';
 
 class ProcessHelper {
+  static Future<void> killProcessTree(Process process) async {
+    if (Platform.isWindows) {
+      await Process.run('taskkill', [
+        '/PID',
+        process.pid.toString(),
+        '/T',
+        '/F',
+      ]);
+    } else {
+      await Process.run('pkill', [
+        '-TERM',
+        '-P',
+        process.pid.toString(),
+      ]);
+      process.kill(ProcessSignal.sigterm);
+      await Future.delayed(const Duration(milliseconds: 300));
+      process.kill(ProcessSignal.sigkill);
+    }
+  }
+
   static Stream<String> _safeLines(Stream<List<int>> stream) {
     return stream
         .transform(const Utf8Decoder(allowMalformed: true))

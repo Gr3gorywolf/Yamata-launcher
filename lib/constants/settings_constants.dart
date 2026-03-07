@@ -14,7 +14,8 @@ enum SettingsKeys {
   MAX_CONCURRENT_EXTRACTIONS,
   DARK_MODE_ENABLED,
   CLOSE_TO_SYSTEM_TRAY,
-  ANDROID_NOTIFICATIONS_TAGS
+  ANDROID_NOTIFICATIONS_TAGS,
+  USE_BUILT_IN_LINK_EXTRACTOR
 }
 
 final _systemIsDarkThemed =
@@ -70,5 +71,10 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'android_notifications_tags',
     type: SettingType.string,
     defaultValue: "{}",
+  ),
+  SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR: Setting<bool>(
+    key: 'use_built_in_link_extractor',
+    type: SettingType.bool,
+    defaultValue: true,
   ),
 };

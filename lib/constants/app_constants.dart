@@ -17,4 +17,7 @@ class AppConstants {
 
   static String manualExtractionGuideEntry =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Manual-interaction-on-download-sources";
+
+  static String externalLinkExtractorLink =
+      "https://github.com/Gr3gorywolf/yamata-launcher-link-extractor/releases/latest/download/yamata-link-extractor-${Platform.isWindows ? "windows" : Platform.isLinux ? "linux" : "macos"}.zip";
 }

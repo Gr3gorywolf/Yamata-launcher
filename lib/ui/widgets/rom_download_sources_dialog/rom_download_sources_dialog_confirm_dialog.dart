@@ -23,6 +23,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor.dart';
+import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor_external.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -169,9 +170,13 @@ class _DownloadSourcesDialogConfirmDialogState
   }
 
   void handleManualLinkExtraction(String rawLink) async {
+    var useBuiltIn =
+        await SettingsService().get(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR);
     var link = await Navigator.of(context).push<String?>(
       MaterialPageRoute(
-        builder: (_) => DownloadLinkWebExtractor(rawLink: rawLink),
+        builder: (_) => useBuiltIn
+            ? DownloadLinkWebExtractor(rawLink: rawLink)
+            : DownloadLinkWebExtractorExternal(rawLink: rawLink),
         fullscreenDialog: true,
       ),
     );

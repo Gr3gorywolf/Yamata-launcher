@@ -38,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _enableImageCaching = false;
   bool _extractRomsAfterDownload = false;
   bool _closeToSystemTray = false;
+  bool _useBuiltInLinkExtractor = false;
 
   @override
   void initState() {
@@ -65,6 +66,12 @@ class _SettingsPageState extends State<SettingsPage> {
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
     _moveRomToSubfolder = await SettingsService()
         .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER);
+    if (Platform.isLinux) {
+      _useBuiltInLinkExtractor = false;
+    } else {
+      _useBuiltInLinkExtractor = await SettingsService()
+          .get<bool>(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR);
+    }
     setState(() {});
   }
 
@@ -93,6 +100,9 @@ class _SettingsPageState extends State<SettingsPage> {
           break;
         case SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER:
           _moveRomToSubfolder = value as bool;
+          break;
+        case SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR:
+          _useBuiltInLinkExtractor = value as bool;
           break;
         default:
           break;
@@ -306,6 +316,19 @@ class _SettingsPageState extends State<SettingsPage> {
                   opacity: 0.7, child: const Text('Delete all cached files')),
               onTap: _clearCache,
             ),
+            // Tools section
+            const _SectionHeader(title: 'Tools'),
+            _SwitchTile(
+              icon: Icons.link,
+              title: 'Use built-in download link extractor',
+              subtitle:
+                  'Some hosters have captchas and stuffs that needs user interaction, for those cases the app integrates a built-in ad-blocked browser to extract the final download link. if the option is disabled it will pop up a full browser to do the extraction, (This option is not available on linux for now) ',
+              value: _useBuiltInLinkExtractor,
+              disabled: !Platform.isWindows,
+              onChanged: (v) =>
+                  _setSetting(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR, v),
+            ),
+            // About section
             const _SectionHeader(title: 'About'),
             _NavigationTile(
               icon: Icons.code,
@@ -432,12 +455,14 @@ class _SwitchTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
+  final bool disabled;
   final ValueChanged<bool> onChanged;
 
   const _SwitchTile({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.disabled = false,
     required this.value,
     required this.onChanged,
   });
@@ -446,8 +471,8 @@ class _SwitchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon),
-      onTap: () => onChanged(!value),
-      trailing: Switch(value: value, onChanged: onChanged),
+      onTap: disabled ? null : () => onChanged(!value),
+      trailing: Switch(value: value, onChanged: disabled ? null : onChanged),
       title: Text(title),
       subtitle: Opacity(opacity: 0.7, child: Text(subtitle)),
     );

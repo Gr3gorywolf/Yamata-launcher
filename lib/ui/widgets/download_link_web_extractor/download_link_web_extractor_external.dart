@@ -114,17 +114,15 @@ class _DownloadLinkWebExtractorExternalState
   }
 
   handleFullfill(String url) async {
+    var fullUrl =
+        "${url}||headers:User-Agent:${CommonHosterUtils().hosterUserAgent}^Referer:${widget.rawLink}";
+
+    if (cookies != null && cookies?.isNotEmpty == true) {
+      fullUrl += "^Cookie: $cookies";
+    }
+    Navigator.of(context).pop(url);
     await ProcessHelper.killProcessTree(runningProcess!);
     runningProcess = null;
-    Future.delayed(const Duration(milliseconds: 500), () {
-      var fullUrl =
-          "${url}||headers:User-Agent:${CommonHosterUtils().hosterUserAgent}^Referer:${widget.rawLink}";
-
-      if (cookies != null && cookies?.isNotEmpty == true) {
-        fullUrl += "^Cookie: $cookies";
-      }
-      Navigator.of(context).pop(url);
-    });
   }
 
   handleRun() async {

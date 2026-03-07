@@ -27,10 +27,10 @@ AppDir:
     allow_unauthenticated: true
 
     sources:
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ bionic main restricted universe multiverse
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ bionic-updates main restricted universe multiverse
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe multiverse
-      - sourceline: deb http://security.ubuntu.com/ubuntu bionic-security main restricted universe multiverse
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
+      - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
 
     include:
       # GTK
@@ -51,14 +51,17 @@ AppDir:
       - libayatana-indicator3-7
       - libayatana-ido3-0.4
 
+      # browser
+      - webkit2gtk-4.1
+
     exclude:
-      # Temas innecesarios
+
       - humanity-icon-theme
       - hicolor-icon-theme
       - adwaita-icon-theme
       - ubuntu-mono
 
-      # Evitar conflictos GLib/GIO con el host
+
       - gvfs
       - gvfs-common
       - dconf-service

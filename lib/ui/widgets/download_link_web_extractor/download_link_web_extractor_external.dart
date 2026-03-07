@@ -144,8 +144,7 @@ class _DownloadLinkWebExtractorExternalState
     if (!Platform.isWindows) {
       await Process.run("chmod", ["+x", extractionBinary]);
       await Process.run("chmod", ["+x", p.join(extractorPath, "node", "node")]);
-      await Process.run(
-          "chmod", ["+x", p.join(extractorPath, "chrome", "chrome")]);
+      await Process.run("chmod", ["-R", "+x", p.join(extractorPath, "chrome")]);
     }
     final args = [widget.rawLink, "no-link-output"];
 

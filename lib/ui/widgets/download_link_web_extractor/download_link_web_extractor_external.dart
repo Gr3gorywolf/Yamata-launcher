@@ -188,7 +188,7 @@ class _DownloadLinkWebExtractorExternalState
       cancelExtraction!();
     }
     if (runningProcess != null) {
-      runningProcess!.kill();
+      ProcessHelper.killProcessTree(runningProcess!);
     }
     super.dispose();
   }
@@ -212,6 +212,10 @@ class _DownloadLinkWebExtractorExternalState
                     const Text("Waiting for the link extraction to complete…",
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    const Text(
+                        "When the browser opens follow the hoster on-screen instructions until the download gets triggered, the download will start on the application as soon as the download link gets captured",
+                        textAlign: TextAlign.center),
                     const SizedBox(height: 10),
                     const CircularProgressIndicator(),
                   ],

@@ -27,6 +27,7 @@ import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor.dart';
 import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor_external.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog_hint_content.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -131,19 +132,18 @@ class _DownloadSourcesDialogConfirmDialogState
     await Future.wait(futures);
   }
 
-  void handleOpenManualExtractionDialog(String link) {
+  void handleOpenManualExtractionDialog(String link) async {
+    var showDialog =
+        await SettingsService().get(SettingsKeys.SHOW_MANUAL_INTERACTION_HINT);
+    if (showDialog == false) {
+      handleManualLinkExtraction(link);
+      return;
+    }
     AlertsService.showAlert(navigatorContext!, "Manual interaction required",
         "The selected download source has a captcha or a timers that requires manual interaction to retrieve the download link. Please follow the instructions in the opened web view to get the direct download link, This embedded browser its equipped with ad-blocking capabilities, you will need to trigger the download in order to retrieve the direct download link.",
         acceptTitle: "Continue",
-        extraContent: ListTile(
-          iconColor: Theme.of(context).colorScheme.primary,
-          textColor: Theme.of(context).colorScheme.primary,
-          onTap: () {
-            launchUrl(Uri.parse(AppConstants.manualExtractionGuideEntry));
-          },
-          title: Text("Know more here"),
-          trailing: Icon(Icons.open_in_new),
-        ),
+        textColor: Colors.white,
+        extraContent: RomDownloadSourcesDialogConfirmDialogHintContent(),
         onClose: () {}, callback: () {
       handleManualLinkExtraction(link);
     });

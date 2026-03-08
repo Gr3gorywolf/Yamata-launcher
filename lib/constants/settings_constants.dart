@@ -15,7 +15,8 @@ enum SettingsKeys {
   DARK_MODE_ENABLED,
   CLOSE_TO_SYSTEM_TRAY,
   ANDROID_NOTIFICATIONS_TAGS,
-  USE_BUILT_IN_LINK_EXTRACTOR
+  USE_BUILT_IN_LINK_EXTRACTOR,
+  SHOW_MANUAL_INTERACTION_HINT
 }
 
 final _systemIsDarkThemed =
@@ -74,6 +75,11 @@ Map<SettingsKeys, Setting> settingsRegistry = {
   ),
   SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR: Setting<bool>(
     key: 'use_built_in_link_extractor',
+    type: SettingType.bool,
+    defaultValue: true,
+  ),
+  SettingsKeys.SHOW_MANUAL_INTERACTION_HINT: Setting<bool>(
+    key: 'show_manual_interaction_hint',
     type: SettingType.bool,
     defaultValue: true,
   ),

@@ -196,6 +196,7 @@ class AlertsService {
       bool cancelable = true,
       Widget? extraContent = null,
       String acceptTitle = "Ok",
+      Color? textColor = null,
       TextButton? additionalAction = null}) {
     showDialog(
         context: ctx,
@@ -205,7 +206,7 @@ class AlertsService {
             actionsAlignment: MainAxisAlignment.end,
             title: Text(
               title,
-              style: TextStyle(color: Colors.green),
+              style: TextStyle(color: textColor ?? Colors.green),
             ),
             backgroundColor: Colors.grey[900],
             content: Container(
@@ -213,7 +214,8 @@ class AlertsService {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(text, style: TextStyle(color: Colors.green)),
+                    Text(text,
+                        style: TextStyle(color: textColor ?? Colors.green)),
                     if (extraContent != null) ...[
                       SizedBox(height: 10),
                       extraContent,

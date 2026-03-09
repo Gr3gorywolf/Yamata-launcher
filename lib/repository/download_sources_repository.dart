@@ -59,6 +59,19 @@ class DownloadSourcesRepository {
         url.toLowerCase().startsWith('magnet:');
   }
 
+  bool _isDownloadable(Map<String, String> headers) {
+    final contentDisposition = headers['content-disposition'];
+    final contentType = headers['content-type'];
+
+    final isAttachment = contentDisposition != null &&
+        contentDisposition.toLowerCase().contains('attachment');
+
+    final isDownloadType =
+        contentType != null && _isDownloadContentType(contentType);
+
+    return isDownloadType || isAttachment;
+  }
+
   Future<bool> isDirectDownload(String url) async {
     if (directDownloadUris.containsKey(url)) {
       return directDownloadUris[url]!;
@@ -71,7 +84,18 @@ class DownloadSourcesRepository {
     };
 
     final client = http.Client();
+    // Try with head request
+    try {
+      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 3))
+        ..headers.addAll(headers);
 
+      var isDownloadable = _isDownloadable(res.headers);
+      if (isDownloadable) {
+        directDownloadUris[url] = true;
+        return true;
+      }
+    } catch (err) {}
+    // try to get the actual content with a get request
     try {
       final request = http.Request("GET", Uri.parse(url))
         ..headers.addAll(headers);
@@ -80,39 +104,10 @@ class DownloadSourcesRepository {
           await client.send(request).timeout(const Duration(seconds: 10));
 
       final responseHeaders = streamed.headers;
+      var isDownloadble = _isDownloadable(responseHeaders);
       print(responseHeaders);
-
-      final contentDisposition = responseHeaders['content-disposition'];
-      final contentType = responseHeaders['content-type'];
-
-      final isAttachment = contentDisposition != null &&
-          contentDisposition.toLowerCase().contains('attachment');
-
-      final isDownloadType =
-          contentType != null && _isDownloadContentType(contentType);
-
-      StreamSubscription<List<int>>? sub;
-
-      sub = streamed.stream.listen(
-        (_) {
-          sub?.cancel();
-          client.close();
-        },
-        onError: (_) {
-          sub?.cancel();
-          client.close();
-        },
-        cancelOnError: true,
-      );
-
-      Future.delayed(const Duration(seconds: 1), () {
-        sub?.cancel();
-        client.close();
-      });
-
-      final result = isAttachment || isDownloadType;
-      directDownloadUris[url] = result;
-      return result;
+      directDownloadUris[url] = isDownloadble;
+      return isDownloadble;
     } catch (e) {
       print("Header probe failed: $e");
       client.close();

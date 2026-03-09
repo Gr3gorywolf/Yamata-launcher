@@ -11,7 +11,7 @@ class GofileHoster implements Hoster {
   String get name => 'GoFile';
 
   static const _domains = ['gofile.io'];
-  static const _websiteToken = '4fd6sg89d7s6';
+  static const _websiteToken = 'XFyAy8TSbDhAIK898yYL0gjVjpp1mwwA';
 
   static String? _token;
 
@@ -45,7 +45,6 @@ class GofileHoster implements Hoster {
       return CommonHosterUtils.directDownloadUris[url];
     }
     if (!canHandleUrl(url)) return null;
-
     try {
       final id = Uri.parse(url).pathSegments.last;
 
@@ -72,10 +71,11 @@ class GofileHoster implements Hoster {
       return _token!;
     }
 
-    final response = await http.post(
-      Uri.parse('https://api.gofile.io/accounts'),
+    final response = await http.get(
+      Uri.parse('https://api.gofile.io/accounts/website'),
       headers: {
         HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
+        HttpHeaders.authorizationHeader: "Bearer ${_websiteToken}"
       },
     );
 

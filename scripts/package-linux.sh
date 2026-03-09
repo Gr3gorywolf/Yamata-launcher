@@ -20,7 +20,7 @@ else
   APPIMAGE_ARCH="aarch64"
 fi
 echo "Compiling application..."
-flutter build linux --release
+##flutter build linux --release
 echo "Application compiled successfully!"
 
 echo "Building AppImage for $ARCH"

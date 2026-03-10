@@ -44,25 +44,12 @@ class ExtractionService {
     return passwords.toList();
   }
 
-  /**
-   * Deletes all the zip files that have a similar name to the provided zip file. This is useful to clean up any leftover zip files after extraction,
-   *  especially when the original zip file gets renamed or moved during the extraction process.
-   */
-  static Future deleteZipFiles(String zipFilePath) async {
-    final archiveFile = File(zipFilePath);
-
-    if (!await archiveFile.exists()) return;
-
-    final dir = archiveFile.parent;
-    final fileName = path.basename(zipFilePath).toLowerCase();
-    final fileExtension = path.extension(zipFilePath).replaceFirst('.', '');
-
-    // without ext
+  static isMultipartArchive(String filePath) {
+    final fileName = path.basename(filePath).toLowerCase();
     String baseName = path.basenameWithoutExtension(fileName);
-
     // remove .part01, .z01, .r01, etc
     baseName = baseName.replaceFirst(RegExp(r'\.part\d+$'), '');
-
+    final fileExtension = path.extension(filePath).replaceFirst('.', '');
     final patterns = [
       /// main file
       RegExp('^${RegExp.escape(fileName)}\$'),
@@ -83,14 +70,26 @@ class ExtractionService {
       RegExp('^${RegExp.escape(baseName)}.*\\d+\\.$fileExtension\$'),
     ];
 
+    return patterns.any((r) => r.hasMatch(fileName));
+  }
+
+  /**
+   * Deletes all the zip files that have a similar name to the provided zip file. This is useful to clean up any leftover zip files after extraction,
+   *  especially when the original zip file gets renamed or moved during the extraction process.
+   */
+  static Future deleteZipFiles(String zipFilePath) async {
+    final archiveFile = File(zipFilePath);
+
+    if (!await archiveFile.exists()) return;
+
+    final dir = archiveFile.parent;
+
     final files = dir.listSync();
 
     for (final entity in files) {
       if (entity is! File) continue;
 
-      final name = path.basename(entity.path).toLowerCase();
-
-      final matches = patterns.any((r) => r.hasMatch(name));
+      final matches = isMultipartArchive(entity.path);
 
       if (matches) {
         try {
@@ -202,6 +201,8 @@ class ExtractionService {
 
       if (Platform.isAndroid) {
         await SevenZipAndroidInterface.cancelExtract(id);
+      } else {
+        isolate?.kill();
       }
     }
 

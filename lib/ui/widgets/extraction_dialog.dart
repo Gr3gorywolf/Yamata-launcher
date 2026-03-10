@@ -144,7 +144,9 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
     if (_tempDir != null) {
       try {
         Directory(_tempDir).deleteSync(recursive: true);
-      } catch (e) {}
+      } catch (e) {
+        print(e);
+      }
     }
   }
 
@@ -162,11 +164,16 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            cancel!();
-            _cleanupTempDir();
+          onPressed: () async {
             isCanceling = true;
-            Navigator.of(context).pop();
+            cancel!();
+            Future.delayed(Duration(seconds: 1), () {
+              _cleanupTempDir();
+              Navigator.of(context).pop();
+            });
+            setState(() {
+              status = "Aborting...";
+            });
           },
           child: const Text("Cancel"),
         ),

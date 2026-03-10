@@ -474,7 +474,6 @@ class DownloadProvider extends ChangeNotifier {
   ) async {
     final context = navigatorContext;
     if (context == null) return;
-    var endedSent = false;
     final libraryProvider =
         Provider.of<LibraryProvider>(context, listen: false);
 
@@ -588,9 +587,10 @@ class DownloadProvider extends ChangeNotifier {
       } on Exception catch (e) {
         print("Failed to delete zip file: ${e.toString()}");
       }
+      var isMultipartFile = ExtractionService.isMultipartArchive(zipFile.path);
       var newPath = await moveLibraryContentToParentFolder(
           libraryItem!, extractedFile.path, outputDir.path,
-          updateLibrary: !download.isExtraContent);
+          updateLibrary: !download.isExtraContent || isMultipartFile);
       await _setDownloadToHistory(download, newPath);
     }
 

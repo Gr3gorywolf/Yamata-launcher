@@ -11,6 +11,7 @@ class RomLibraryItem extends JsonSerializable {
   DateTime? downloadedAt;
   String? openParams;
   String? overrideEmulator;
+  bool? doesExists = false;
   bool isImported = false;
   RomLibraryItem(
       {required this.rom,
@@ -19,6 +20,7 @@ class RomLibraryItem extends JsonSerializable {
       this.filePath,
       this.addedAt,
       this.lastPlayedAt,
+      this.doesExists,
       this.downloadedAt,
       this.openParams,
       this.overrideEmulator,

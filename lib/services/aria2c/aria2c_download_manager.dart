@@ -196,14 +196,16 @@ class Aria2cDownloadManager {
       job.receivePort!.close();
       job.sub!.cancel();
       job.controller!.close();
-      Future.delayed(const Duration(milliseconds: 300), () {
+      Future.delayed(const Duration(seconds: 5), () {
         if (deleteFiles) {
           try {
             final dir = Directory(downloadPath);
             if (dir.existsSync()) {
               dir.deleteSync(recursive: true);
             }
-          } catch (e) {}
+          } catch (e) {
+            print('Error deleting download folder: $e');
+          }
         }
         job.isolate!.kill(priority: Isolate.immediate);
       });

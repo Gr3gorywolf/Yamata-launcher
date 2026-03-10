@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -21,6 +24,27 @@ class LibraryProvider extends ChangeNotifier {
   Set<String> _runningGames = {};
   List<RomLibraryItem> get libraryItems => _libraryItems.values.toList();
 
+  Future checkGamesExistence() async {
+    final stopwatch = Stopwatch()..start();
+    print("Checking games existence...");
+    var batchSize = Platform.isAndroid ? 200 : 400;
+    Iterable<RomLibraryItem> items =
+        _libraryItems.values.where((e) => e.filePath?.isNotEmpty ?? false);
+    final list = items.toList();
+    for (int i = 0; i < list.length; i += batchSize) {
+      final batch = list.skip(i).take(batchSize);
+
+      await Future.wait(batch.map((item) async {
+        final path = item.filePath!;
+        item.doesExists = await File(path).exists();
+      }));
+    }
+    stopwatch.stop();
+    print(
+        "Finished checking games existence in ${stopwatch.elapsedMilliseconds} ms");
+    notifyListeners();
+  }
+
   init() async {
     if (db == null) {
       return;
@@ -29,6 +53,10 @@ class LibraryProvider extends ChangeNotifier {
     for (var item in library) {
       _libraryItems[item.rom.slug] = item;
     }
+    checkGamesExistence();
+    Timer.periodic(const Duration(minutes: 20), (_) async {
+      await checkGamesExistence();
+    });
   }
 
   List<RomLibraryItem> getDownloads() {
@@ -89,6 +117,7 @@ class LibraryProvider extends ChangeNotifier {
       return;
     }
     await LibraryDao(db!).insert(item);
+    item.doesExists = await File(item.filePath ?? '').exists();
     _libraryItems[item.rom.slug] = item;
     notifyListeners();
     if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
@@ -111,6 +140,7 @@ class LibraryProvider extends ChangeNotifier {
     }
     await LibraryDao(db!).update(item);
     _libraryItems[item.rom.slug] = item;
+    item.doesExists = await File(item.filePath ?? '').exists();
     Future.microtask(() {
       notifyListeners();
     });

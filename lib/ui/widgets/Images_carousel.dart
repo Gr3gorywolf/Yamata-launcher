@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/image_lightbox.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -49,6 +50,17 @@ class _ImagesCarouselState extends State<ImagesCarousel> {
       _canScrollLeft = offset > 0;
       _canScrollRight = offset < max;
     });
+  }
+
+  void _handleShow(String image) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => ImageLightbox(
+        images: widget.images,
+        initialIndex: widget.images.indexOf(image),
+      ),
+    );
   }
 
   void _scrollLeft() {
@@ -124,33 +136,28 @@ class _ImagesCarouselState extends State<ImagesCarousel> {
                 padding: const EdgeInsets.all(8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: true,
-                        builder: (_) => ImageLightbox(
-                          images: widget.images,
-                          initialIndex: index,
+                  child: FocusableElement(
+                    child: GestureDetector(
+                      onTap: () {
+                        _handleShow(widget.images[index]);
+                      },
+                      child: Hero(
+                        tag: widget.images[index],
+                        child: Image.network(
+                          widget.images[index],
+                          width: widget.imageWidth,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Skeletonizer(
+                              enabled: true,
+                              child: Bone(
+                                height: widget.height,
+                                width: widget.imageWidth,
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                    child: Hero(
-                      tag: widget.images[index],
-                      child: Image.network(
-                        widget.images[index],
-                        width: widget.imageWidth,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Skeletonizer(
-                            enabled: true,
-                            child: Bone(
-                              height: widget.height,
-                              width: widget.imageWidth,
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ),

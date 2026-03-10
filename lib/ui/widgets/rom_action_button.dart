@@ -29,6 +29,7 @@ class FileExistCache {
   static final Map<String, bool> _cache = {};
 
   static bool? get(String path) => _cache[path];
+  static void invalidate(String path) => _cache.remove(path);
 
   static void set(String path, bool exists) {
     _cache[path] = exists;
@@ -47,57 +48,6 @@ class RomActionButton extends StatefulWidget {
 }
 
 class _RomActionButtonState extends State<RomActionButton> {
-  bool? _fileExists;
-  bool? isCheckingFile;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkFileExists();
-  }
-
-  Future<void> _checkFileExists() async {
-    if (isCheckingFile == true) return;
-    isCheckingFile = true;
-    final libraryProvider =
-        Provider.of<LibraryProvider>(context, listen: false);
-
-    final libraryItem = libraryProvider.getLibraryItem(widget.rom.slug);
-
-    if (libraryItem == null || libraryItem.filePath == null) {
-      _fileExists = false;
-      isCheckingFile = false;
-      if (mounted) setState(() {});
-      return;
-    }
-
-    final path = libraryItem.filePath!;
-
-    final cached = FileExistCache.get(path);
-    if (cached != null) {
-      isCheckingFile = false;
-      _fileExists = cached;
-      if (mounted) setState(() {});
-      return;
-    }
-
-    bool exists;
-    if (Platform.isMacOS && path.endsWith(".app")) {
-      exists = await Directory(path).exists();
-    } else {
-      exists = await File(path).exists();
-    }
-
-    FileExistCache.set(path, exists);
-
-    if (mounted) {
-      setState(() {
-        _fileExists = exists;
-      });
-    }
-    isCheckingFile = false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = DownloadProvider.of(context);
@@ -120,16 +70,6 @@ class _RomActionButtonState extends State<RomActionButton> {
     final downloadInfo = provider.getDownloadInfo(rom);
     final isPaused = downloadInfo?.isPaused == true;
     final isExtracting = downloadInfo?.isExtracting == true;
-
-    bool shouldCheckFileExists = libraryItem != null &&
-        libraryItem.filePath != null &&
-        FileExistCache.get(libraryItem.filePath!) == null &&
-        (_fileExists == null || _fileExists == false);
-
-    if (shouldCheckFileExists) {
-      _checkFileExists();
-    }
-
     bool getFileIsCompressed() {
       if (libraryItem?.filePath == null) return false;
       final filePath = libraryItem!.filePath!;
@@ -202,7 +142,7 @@ class _RomActionButtonState extends State<RomActionButton> {
         AlertsService.showSnackbar("Resuming Download...");
         return;
       }
-      if (isReadyToPlay && !_fileExists!) {
+      if (isReadyToPlay && libraryItem?.doesExists == false) {
         AlertsService.showAlert(navigatorContext!, "File not found",
             "Rom file not found. Please re-download the rom or locate the file.",
             acceptTitle: "Locate", callback: () async {
@@ -239,9 +179,9 @@ class _RomActionButtonState extends State<RomActionButton> {
       }
     }
 
-    var isVerifying = isReadyToPlay && _fileExists == null;
+    var isVerifying = isReadyToPlay && libraryItem?.doesExists == null;
 
-    final fileExists = _fileExists ?? false;
+    final fileExists = libraryItem?.doesExists ?? false;
 
     double horizontalPadding;
     double verticalPadding;

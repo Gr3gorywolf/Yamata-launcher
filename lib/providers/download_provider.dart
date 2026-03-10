@@ -267,28 +267,20 @@ class DownloadProvider extends ChangeNotifier {
           .removeWhere((element) => element.downloadId == info.downloadId);
       active.handle!.abort!(deleteFiles: !info.isExtraContent);
       _disposeActive(info.downloadId);
-      if (Platform.isAndroid) {
-        print("Cancelling notification for tag: ${info.romSlug}");
-        NotificationsService.cancelNotificationByTag(info.romSlug);
-      }
-      await DownloadTasksDao(db!).delete(info);
-      handleNotifyListeners();
-      _handleProgressChanged();
     }
     // For paused downloads
     else {
       _activeDownloadInfos
           .removeWhere((element) => element.downloadId == info.downloadId);
-
-      await DownloadService.deleteDownloadFolder(info);
-      await DownloadTasksDao(db!).delete(info);
-      if (Platform.isAndroid) {
-        print("Cancelling notification for tag: ${info.romSlug}");
-        NotificationsService.cancelNotificationByTag(info.romSlug);
-      }
-      handleNotifyListeners();
-      _handleProgressChanged();
+      DownloadService.deleteDownloadFolder(info);
     }
+    await DownloadTasksDao(db!).delete(info);
+    if (Platform.isAndroid) {
+      print("Cancelling notification for tag: ${info.romSlug}");
+      NotificationsService.cancelNotificationByTag(info.romSlug);
+    }
+    handleNotifyListeners();
+    _handleProgressChanged();
   }
 
   void _handleAria2Event(
@@ -451,11 +443,8 @@ class DownloadProvider extends ChangeNotifier {
     handleNotifyListeners();
     _handleProgressChanged();
     var fileExtension = SystemHelpers.getFileExtension(path).toLowerCase();
-    var extractionEnabled =
-        await SettingsService().get<bool>(SettingsKeys.ENABLE_EXTRACTION);
     await _setDownloadToHistory(download, path);
-    if ((extractionEnabled == true &&
-            VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) ||
+    if ((VALID_COMPRESSED_EXTENSIONS.contains(fileExtension)) &&
         download.shouldExtract == true) {
       _handleExtractRom(download, rom, path);
     } else {

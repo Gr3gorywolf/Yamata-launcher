@@ -51,9 +51,6 @@ class ExtractionService {
     baseName = baseName.replaceFirst(RegExp(r'\.part\d+$'), '');
     final fileExtension = path.extension(filePath).replaceFirst('.', '');
     final patterns = [
-      /// main file
-      RegExp('^${RegExp.escape(fileName)}\$'),
-
       /// zip split  game.z01 game.z02
       RegExp('^${RegExp.escape(baseName)}\\.z\\d+\$'),
 
@@ -97,6 +94,9 @@ class ExtractionService {
         } catch (_) {}
       }
     }
+    try {
+      await archiveFile.delete();
+    } catch (_) {}
   }
 
   /// Adds an extraction task to the queue.

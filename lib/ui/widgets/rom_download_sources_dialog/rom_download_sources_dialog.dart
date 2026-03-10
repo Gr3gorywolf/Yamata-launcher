@@ -156,6 +156,8 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                               item.rom.title!,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             subtitle: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -167,6 +169,9 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                                     ' ${item.sourceTitle} • ${item.rom.fileSize ?? "--"}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: 12),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -174,7 +179,10 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                                   spacing: 8,
                                   runSpacing: 4,
                                   children: hosterNames
-                                      .map((name) => StatusTag(text: name))
+                                      .map((name) => StatusTag(
+                                            text: name,
+                                            size: StatusTagSize.sm,
+                                          ))
                                       .toList(),
                                 ),
                               ],

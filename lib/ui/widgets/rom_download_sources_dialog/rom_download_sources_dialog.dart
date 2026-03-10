@@ -99,11 +99,12 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
     final filteredResults = getFilteredResults();
 
     return AlertDialog(
+      contentPadding: const EdgeInsets.all(10),
       title: const Text("Download Options"),
       content: Container(
         width: mediaQuery.size.width * 0.5,
         constraints: const BoxConstraints(
-            maxWidth: 500, maxHeight: 600, minWidth: 420, minHeight: 320),
+            maxWidth: 800, maxHeight: 600, minWidth: 700, minHeight: 320),
         child: results.isEmpty
             ? const Center(
                 child: Text(

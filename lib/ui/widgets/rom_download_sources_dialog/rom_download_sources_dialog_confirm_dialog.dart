@@ -316,8 +316,9 @@ class _DownloadSourcesDialogConfirmDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      contentPadding: const EdgeInsets.all(10),
       title: Row(children: [
-        Text("Select your preferred download hoster"),
+        Text("Hoster Selection"),
         IconButton(
           icon: Icon(Icons.close),
           onPressed: () {

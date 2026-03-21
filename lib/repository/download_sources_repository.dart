@@ -134,7 +134,7 @@ class DownloadSourcesRepository {
 
     try {
       var res =
-          await client.get(Uri.parse(sourceUrl)).timeout(Duration(minutes: 15));
+          await client.get(Uri.parse(sourceUrl)).timeout(Duration(seconds: 40));
       if (res.statusCode == 200) {
         var responseData = json.decode(res.body);
 
@@ -162,7 +162,21 @@ class DownloadSourcesRepository {
                 romsCount: downloads.length,
                 lastUpdated: lastDownloadDate.toIso8601String()),
             downloads: downloads);
-      } else {
+      } else
+      // If its not available on hydralink uses a backup from powerindex
+      if (type == DownloadSourceType.Hydra) {
+        const backupUrl =
+            "https://raw.githubusercontent.com/PowerIndex-x/yamata-launcher-links/refs/heads/main/public/data/hydra-links-mirror.json";
+        var res = await client
+            .get(Uri.parse(backupUrl))
+            .timeout(Duration(seconds: 15));
+        if (res.statusCode == 200) {
+          var responseData = json.decode(res.body);
+          var sourceBackupUrl = responseData[sourceUrl];
+          if (sourceBackupUrl != null) {
+            return await fetchDownloadSource(sourceBackupUrl, type);
+          }
+        }
         return null;
       }
     } catch (e) {

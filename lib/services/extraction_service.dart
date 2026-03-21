@@ -47,6 +47,9 @@ class ExtractionService {
   static isMultipartArchive(String filePath) {
     final fileName = path.basename(filePath).toLowerCase();
     String baseName = path.basenameWithoutExtension(fileName);
+    if (filePath.endsWith('.z64')) {
+      return false;
+    }
     // remove .part01, .z01, .r01, etc
     baseName = baseName.replaceFirst(RegExp(r'\.part\d+$'), '');
     final fileExtension = path.extension(filePath).replaceFirst('.', '');

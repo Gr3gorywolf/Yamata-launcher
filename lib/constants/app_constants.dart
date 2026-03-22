@@ -15,6 +15,9 @@ class AppConstants {
   static String guideLink =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki";
 
+  static String cookiesGuideEntry =
+      "https://github.com/Gr3gorywolf/Yamata-launcher/wiki/How-to-Extract-Cookies-from-Your-Browser";
+
   static String manualExtractionGuideEntry =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Manual-interaction-on-download-sources";
 

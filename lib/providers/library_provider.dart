@@ -26,7 +26,7 @@ class LibraryProvider extends ChangeNotifier {
 
   Future checkGamesExistence() async {
     final stopwatch = Stopwatch()..start();
-    print("Checking games existence...");
+    print("Checking installed games existence...");
     var batchSize = Platform.isAndroid ? 200 : 400;
     Iterable<RomLibraryItem> items =
         _libraryItems.values.where((e) => e.filePath?.isNotEmpty ?? false);
@@ -41,7 +41,7 @@ class LibraryProvider extends ChangeNotifier {
     }
     stopwatch.stop();
     print(
-        "Finished checking games existence in ${stopwatch.elapsedMilliseconds} ms");
+        "Finished checking installed games existence in ${stopwatch.elapsedMilliseconds} ms");
     notifyListeners();
   }
 

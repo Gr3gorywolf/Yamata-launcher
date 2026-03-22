@@ -209,19 +209,21 @@ class AlertsService {
               style: TextStyle(color: textColor ?? Colors.green),
             ),
             backgroundColor: Colors.grey[900],
-            content: Container(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(text,
-                        style: TextStyle(color: textColor ?? Colors.green)),
-                    if (extraContent != null) ...[
-                      SizedBox(height: 10),
-                      extraContent,
+            content: SingleChildScrollView(
+              child: Container(
+                  constraints: BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(text,
+                          style: TextStyle(color: textColor ?? Colors.green)),
+                      if (extraContent != null) ...[
+                        SizedBox(height: 10),
+                        extraContent,
+                      ],
                     ],
-                  ],
-                )),
+                  )),
+            ),
             actions: [
               if (cancelable || onClose != null)
                 TextButton(

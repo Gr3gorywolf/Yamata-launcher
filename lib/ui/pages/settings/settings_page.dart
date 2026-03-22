@@ -226,6 +226,15 @@ class _SettingsPageState extends State<SettingsPage> {
               onChanged: (v) =>
                   _setSetting(SettingsKeys.ENABLE_NOTIFICATIONS, v),
             ),
+            // Network section
+            const _SectionHeader(title: 'Network'),
+            _NavigationTile(
+              icon: Icons.cookie,
+              title: 'Site cookies',
+              subtitle:
+                  "Allows you to setup cookies for specific sites, this is specially useful for sites that require login to work.",
+              onTap: () => context.push("/settings/site-cookies"),
+            ),
             // Path section
             const _SectionHeader(title: 'Paths'),
             ListTile(

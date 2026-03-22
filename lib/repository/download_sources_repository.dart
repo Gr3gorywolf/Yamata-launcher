@@ -8,6 +8,7 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
+import 'package:yamata_launcher/services/cookies_service.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
@@ -23,6 +24,8 @@ import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/send_cm_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/vik1ngfile_hoster.dart';
+import 'package:yamata_launcher/utils/http_helper.dart';
+import 'package:yamata_launcher/utils/url_helper.dart';
 
 class DownloadSourcesRepository {
   var _allHosters = [
@@ -77,10 +80,16 @@ class DownloadSourcesRepository {
       return directDownloadUris[url]!;
     }
 
+    var siteCookies =
+        await CookiesService().getSiteCookies(UrlHelper.getSiteFromUrl(url));
+    var siteAditionalHeaders =
+        HttpHelper().parseHeaders(siteCookies?.headers ?? "");
     final headers = {
       "User-Agent": CommonHosterUtils().hosterUserAgent,
       "Accept": "*/*",
       "Connection": "close",
+      "Cookie": siteCookies?.cookie?.trim() ?? "",
+      ...siteAditionalHeaders
     };
 
     final client = http.Client();
@@ -97,14 +106,14 @@ class DownloadSourcesRepository {
     } catch (err) {}
     // try to get the actual content with a get request
     try {
-      final request = http.Request("GET", Uri.parse(url))
-        ..headers.addAll(headers);
-
-      final streamed =
-          await client.send(request).timeout(const Duration(seconds: 10));
+      final streamed = await HttpHelper()
+          .sendRequestWithRedirects(client, Uri.parse(url), headers,
+              maxRedirects: 20)
+          .timeout(const Duration(seconds: 10));
 
       final responseHeaders = streamed.headers;
       var isDownloadble = _isDownloadable(responseHeaders);
+      print(streamed.statusCode);
       print(responseHeaders);
       directDownloadUris[url] = isDownloadble;
       return isDownloadble;

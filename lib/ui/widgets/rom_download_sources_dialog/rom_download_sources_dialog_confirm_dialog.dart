@@ -21,6 +21,7 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/assets_service.dart';
+import 'package:yamata_launcher/services/cookies_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
@@ -29,7 +30,9 @@ import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog_hint_content.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
+import 'package:yamata_launcher/utils/http_helper.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
+import 'package:yamata_launcher/utils/url_helper.dart';
 
 class DownloadSourcesDialogConfirmDialog extends StatefulWidget {
   RomDownloadSourceItem item;
@@ -195,9 +198,16 @@ class _DownloadSourcesDialogConfirmDialogState
 
   void handleDownload() async {
     var link = null;
-    final sourceRomLink = selectedHoster!.uri;
+    var sourceRomLink = selectedHoster!.uri;
     var isDirectDownload = selectedHoster!.isDirect;
     if (isDirectDownload) {
+      var siteCookies = await CookiesService()
+          .getSiteCookies(UrlHelper.getSiteFromUrl(sourceRomLink));
+      var headers = HttpHelper().parseHeaders(siteCookies?.headers ?? "");
+      if (siteCookies?.cookie != null && siteCookies!.cookie!.isNotEmpty) {
+        sourceRomLink = UrlHelper.appendHeadersToUrl(
+            sourceRomLink, {"Cookie": siteCookies.cookie!, ...headers});
+      }
       handleSendResult(sourceRomLink);
       return;
     }

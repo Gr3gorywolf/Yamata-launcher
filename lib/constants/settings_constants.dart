@@ -16,7 +16,8 @@ enum SettingsKeys {
   CLOSE_TO_SYSTEM_TRAY,
   ANDROID_NOTIFICATIONS_TAGS,
   USE_BUILT_IN_LINK_EXTRACTOR,
-  SHOW_MANUAL_INTERACTION_HINT
+  SHOW_MANUAL_INTERACTION_HINT,
+  COOKIE_SITE_URLS
 }
 
 final _systemIsDarkThemed =
@@ -82,5 +83,10 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'show_manual_interaction_hint',
     type: SettingType.bool,
     defaultValue: true,
+  ),
+  SettingsKeys.COOKIE_SITE_URLS: Setting<String>(
+    key: 'cookie_site_urls',
+    type: SettingType.string,
+    defaultValue: "[]",
   ),
 };

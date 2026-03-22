@@ -1,6 +1,9 @@
 (() => {
   'use strict';
   Print.postMessage(`[cookies] ${document.cookie}`);
+  setInterval(() => {
+    Print.postMessage(`[cookies] ${document.cookie}`);
+  }, 100);
   const logUrl = (url) => {
     if (!url) return;
     Print.postMessage(`[cookies] ${document.cookie}`);

@@ -74,6 +74,7 @@ dependencies:
       url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
       path: .
       ref: "3.22-downgrade"
+  flutter_secure_storage: ^10.0.0
 
 
 

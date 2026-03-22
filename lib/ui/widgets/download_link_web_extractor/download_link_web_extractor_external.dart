@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
+import 'package:yamata_launcher/utils/url_helper.dart';
 
 class DownloadLinkWebExtractorExternal extends StatefulWidget {
   String rawLink;
@@ -114,11 +115,14 @@ class _DownloadLinkWebExtractorExternalState
   }
 
   handleFullfill(String url) async {
-    var fullUrl =
-        "${url}||headers:User-Agent:${CommonHosterUtils().hosterUserAgent}^Referer:${widget.rawLink}";
-
+    Map<String, String> headers = {
+      "User-Agent": CommonHosterUtils().hosterUserAgent,
+      "Referer": widget.rawLink,
+    };
+    var fullUrl = UrlHelper.appendHeadersToUrl(url, headers);
     if (cookies != null && cookies?.isNotEmpty == true) {
-      fullUrl += "^Cookie: $cookies";
+      headers["Cookie"] = cookies!;
+      fullUrl = UrlHelper.appendHeadersToUrl(fullUrl, headers);
     }
     Navigator.of(context).pop(url);
     await ProcessHelper.killProcessTree(runningProcess!);

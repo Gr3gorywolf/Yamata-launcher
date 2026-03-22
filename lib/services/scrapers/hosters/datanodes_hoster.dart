@@ -92,8 +92,6 @@ class DatanodesHoster implements Hoster {
               HttpHeaders.refererHeader: 'https://datanodes.to/download',
               HttpHeaders.userAgentHeader: CommonHosterUtils().hosterUserAgent,
               HttpHeaders.cookieHeader: _buildCookieHeader(),
-
-              // Simulación de navegador (como Axios)
               'sec-fetch-dest': 'empty',
               'sec-fetch-mode': 'cors',
               'sec-fetch-site': 'same-origin',

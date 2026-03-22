@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
 import 'package:yamata_launcher/models/emulator_intent.dart';
+import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
@@ -160,6 +162,22 @@ class EmulatorService {
     return Future.value();
   }
 
+  // Checks if the console is the native platform, meaning it doesn't require an emulator to run.
+  static bool isNativePlatform(String console) {
+    if (Platform.isWindows && console == CONSOLE_SLUGS.windows.name) {
+      return true;
+    }
+
+    if (Platform.isLinux && console == CONSOLE_SLUGS.linux.name) {
+      return true;
+    }
+
+    if (Platform.isMacOS && console == CONSOLE_SLUGS.macos.name) {
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Opens a ROM using the configured emulator.
    */
@@ -172,16 +190,22 @@ class EmulatorService {
     final consoleKey = rom.console;
     final slug = rom.slug;
 
-    final emulatorSetting = await EmulatorSettingsDao(db!).get(consoleKey);
-
+    var emulatorSetting = await EmulatorSettingsDao(db!).get(consoleKey);
+    var isNativePlatform = EmulatorService.isNativePlatform(consoleKey);
     if (emulatorSetting == null) {
-      final consoleName =
-          ConsoleService.getConsoleFromName(consoleKey)?.name ?? consoleKey;
+      if (isNativePlatform) {
+        print("Console $consoleKey is a native platform, launching directly");
+        emulatorSetting = EmulatorSetting(
+            console: consoleKey, emulatorBinary: "", launchParams: "");
+      } else {
+        final consoleName =
+            ConsoleService.getConsoleFromName(consoleKey)?.name ?? consoleKey;
 
-      AlertsService.showErrorSnackbar(
-        "No emulator configured for $consoleName. Please set it up in settings.",
-      );
-      return;
+        AlertsService.showErrorSnackbar(
+          "No emulator configured for $consoleName. Please set it up in settings.",
+        );
+        return;
+      }
     }
 
     final provider =

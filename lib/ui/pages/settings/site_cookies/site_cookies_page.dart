@@ -26,11 +26,7 @@ class _SiteCookiesPageState extends State<SiteCookiesPage> {
   List<String> _cookieSites = [];
 
   Future<void> _loadCookieSites() async {
-    String sitesArray =
-        await SettingsService().get<String>(SettingsKeys.COOKIE_SITE_URLS);
-
-    var sitesList = jsonDecode(sitesArray ?? "[]");
-    _cookieSites = List<String>.from(sitesList);
+    _cookieSites = await CookiesService().getAllCookieSiteUrls();
     setState(() {});
   }
 

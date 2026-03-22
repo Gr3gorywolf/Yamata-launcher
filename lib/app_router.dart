@@ -78,7 +78,7 @@ final router = GoRouter(
             ),
             GoRoute(
               path: 'web-sources-manager',
-              builder: (context, state) => WebSourcesManagerPage(),
+              builder: (context, state) => WebManagerPage(),
             ),
             GoRoute(
               path: 'platform-catalog-sources',

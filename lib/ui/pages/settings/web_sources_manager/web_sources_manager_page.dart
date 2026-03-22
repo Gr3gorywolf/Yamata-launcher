@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
-import 'package:yamata_launcher/services/web_sources_manager_service.dart';
+import 'package:yamata_launcher/services/web_manager_service.dart';
 
-class WebSourcesManagerPage extends StatefulWidget {
+class WebManagerPage extends StatefulWidget {
   @override
-  State<WebSourcesManagerPage> createState() => _WebSourcesManagerPageState();
+  State<WebManagerPage> createState() => _WebManagerPageState();
 }
 
-class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
-  final server = WebSourcesManagerService();
+class _WebManagerPageState extends State<WebManagerPage> {
+  final server = WebManagerService();
   String? url;
 
   @override
@@ -42,7 +42,7 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Remote Sources Manager')),
+      appBar: AppBar(title: const Text('Web Manager')),
       body: Center(
         child: SingleChildScrollView(
           child: url == null
@@ -52,7 +52,7 @@ class _WebSourcesManagerPageState extends State<WebSourcesManagerPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Scan this QR code with your external device to manage sources',
+                      'Scan this QR code with your external device to manage sources and cookies',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),

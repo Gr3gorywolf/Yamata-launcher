@@ -49,7 +49,7 @@
         h5 {
             color: var(--textPrimary);
         }
-        
+
 
         nav {
             background: var(--backgroundColor);
@@ -57,19 +57,19 @@
             border-bottom: 1px solid var(--grayBorderColor);
         }
 
-      .brand-logo img{
-           margin-top: 5px;
-           margin-left: 7px;
+        .brand-logo img {
+            margin-top: 5px;
+            margin-left: 7px;
         }
 
-       
+
 
         @media (max-width: 600px) {
-            .brand-logo  {
+            .brand-logo {
                 margin-left: 0px;
-        }
+            }
 
-       
+
 
         }
 
@@ -96,6 +96,7 @@
             color: rgba(234, 244, 237, 0.5);
             border-bottom: 2px solid var(--surfaceColor);
         }
+
         .tabs .tab a:hover {
             color: rgba(234, 244, 237, 0.5);
         }
@@ -201,7 +202,8 @@
             margin-left: 20px;
         }
 
-        .input-field input {
+        .input-field input,
+        .input-field textarea {
             background-color: var(--surfaceColor) !important;
             color: var(--textPrimary) !important;
             border-radius: 8px !important;
@@ -239,7 +241,7 @@
             border-top: 1px solid var(--grayBorderColor) !important;
         }
 
-        #modalLoad  {
+        #modalLoad {
             max-height: 85%;
             max-width: 300px !important;
             top: 50% !important;
@@ -263,7 +265,8 @@
         <nav>
             <div class="nav-wrapper w-100">
                 <a href="#" class="brand-logo">
-                    <img src="https://github.com/Gr3gorywolf/Yamata-launcher/blob/master/assets/images/logo.png?raw=true" alt="" height="45px" width="45px">
+                    <img src="https://github.com/Gr3gorywolf/Yamata-launcher/blob/master/assets/images/logo.png?raw=true"
+                        alt="" height="45px" width="45px">
                 </a>
             </div>
         </nav>
@@ -279,7 +282,12 @@
                 </li>
                 <li class="tab col s6">
                     <a href="#!" :class="{active: activeTab==='platforms'}" @click="switchTab('platforms')">
-                    Game Catalog Sources
+                        Game Catalog Sources
+                    </a>
+                </li>
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='cookies'}" @click="switchTab('cookies')">
+                        Site Cookies
                     </a>
                 </li>
             </ul>
@@ -332,15 +340,38 @@
                 </ul>
             </div>
 
+
+            <div v-if="activeTab==='cookies'">
+                <div v-if="siteCookies.length===0" class="empty">
+                    No site cookies
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="c in siteCookies" :key="c.site">
+                        <div class="item-main">
+                            <div class="item-title">{{ c.site }}</div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="openCookieForm(c)">
+                                <i class="material-icons">edit</i>
+                            </div>
+                            <div class="icon-btn" @click="deleteCookie(c.site)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- FAB -->
             <div class="fixed-action-btn">
                 <a class="btn-floating btn-large modal-trigger" style="position:fixed;right:20px;bottom:20px"
-                    href="#modalAdd">
+                    :href="activeTab==='cookies' ? '#modalEditCookie' : '#modalAdd'"
+                    @click="activeTab==='cookies' ? openCookieForm(null) : null">
                     <i class="material-icons">add</i>
                 </a>
             </div>
-
-            <!-- Modal -->
+            <!-- Modal for sources -->
             <div id="modalAdd" class="modal">
                 <div class="modal-content">
                     <h5>Add {{ activeTab==='download' ? 'Download Source' : 'Game Catalog Source' }}</h5>
@@ -362,6 +393,28 @@
                     <a class="btn modal-close" @click="addSource">Add</a>
                 </div>
             </div>
+            <!-- Modal for cookies -->
+            <div id="modalEditCookie" class="modal">
+                <div class="modal-content" v-if="!!cookieForm">
+                    <h5>{{cookieForm.editing ? 'Edit Cookie site' : 'Add Cookie' }}</h5>
+
+                    <div class="input-field">
+                        <input v-model="cookieForm.site" placeholder="https://example.com">
+                    </div>
+                    <div class="input-field">
+                        <textarea v-model="cookieForm.cookies" placeholder="Cookie string"></textarea>
+                    </div>
+                    <div class="input-field">
+                        <textarea v-model="cookieForm.headers" placeholder="Headers string"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <a class="modal-close btn-flat">Cancel</a>
+                    <a class="btn" @click="handleCookieFormConfirm">{{cookieForm?.editing ? 'Save' : 'Add' }}</a>
+                </div>
+            </div>
+
 
             <div id="modalLoad" class="modal">
                 <div class="modal-content">
@@ -391,6 +444,15 @@
 
         <script>
             window.serverData = JSON.parse(`{{data}}`);
+            function getSiteFromUrl(url) {
+                try {
+                    const uri = new URL(url);
+                    return uri.protocol + '//' + uri.host;
+                } catch (e) {
+                    console.error(e);
+                    return url;
+                }
+            }
             const {
                 createApp,
                 ref,
@@ -405,7 +467,8 @@
                     const downloadSources = ref([]);
                     const sourceTypes = ref(window.serverData.downloadSourceTypes || []);
                     const platformCatalogs = ref([]);
-
+                    const siteCookies = ref([]);
+                    const cookieForm = ref(null);
                     const newUrl = ref('');
                     const downloadType = ref('Yamata');
 
@@ -415,7 +478,10 @@
                         deleteDownload: id => `/api/download-sources?id=${btoa(id)}`,
                         platformCatalogs: '/api/platform-catalogs',
                         refreshPlatform: id => `/api/platform-catalogs?id=${btoa(id)}`,
-                        deletePlatform: id => `/api/platform-catalogs?id=${btoa(id)}`
+                        deletePlatform: id => `/api/platform-catalogs?id=${btoa(id)}`,
+                        siteCookies: '/api/cookies',
+                        setCookie: site => `/api/cookies`,
+                        deleteCookie: site => `/api/cookies?site=${btoa(site)}`
                     };
 
                     const setLoading = (loading) => {
@@ -446,11 +512,32 @@
                         platformCatalogs.value = await fetchJson(API.platformCatalogs);
                     };
 
+                    const loadSiteCookies = async () => {
+                        siteCookies.value = await fetchJson(API.siteCookies);
+                    };
+
                     const switchTab = (tab) => {
                         activeTab.value = tab;
                         if (tab === 'download') loadDownloadSources();
-                        else loadPlatformCatalogs();
+                        else if (tab === 'platforms') loadPlatformCatalogs();
+                        else if (tab === 'cookies') loadSiteCookies();
                     };
+
+                    const openCookieForm = (cookieSite) => {
+                        if (cookieSite) {
+                            cookieForm.value = { ...cookieSite, editing: true }
+                        } else {
+                            cookieForm.value = {
+                                site: '',
+                                cookies: '',
+                                headers: ''
+
+                            };
+                        }
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditCookie'));
+                        modal.open();
+                    }
+
 
                     const refreshDownload = async (id) => {
                         setLoading(true);
@@ -510,6 +597,72 @@
                             html: 'Platform catalog deleted',
                             classes: 'green'
                         });
+                    };
+
+                    const handleCookieFormConfirm = async () => {
+                        try {
+                            if (!cookieForm.value.site) {
+                                showError('Site URL cannot be empty');
+                                return;
+                            }
+                            if(!cookieForm.value.editing){
+                                const exists = siteCookies.value.some(c => c.site === getSiteFromUrl(cookieForm.value.site));
+                                if (exists) {
+                                    showError('A cookie for this site already exists. Please edit the existing one.');
+                                    return;
+                                }
+                            }
+                            setLoading(true);
+                            const method = 'PUT';
+                            const url = API.setCookie();
+                            const res = await fetch(url, {
+                                method,
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    site: cookieForm.value.site,
+                                    cookies: cookieForm.value.cookies,
+                                    headers: cookieForm.value.headers
+                                })
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error saving cookie: ' + error.error || 'Unknown error');
+                            }
+                            loadSiteCookies();
+                            M.toast({
+                                html: `Cookie ${cookieForm.value.editing ? 'updated' : 'added'}`,
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error saving cookie: ' + e.message);
+                        }
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditCookie'));
+                        modal.close();
+                        setLoading(false);
+                    }
+
+                    const deleteCookie = async (site) => {
+                        if (!confirm('Delete cookie for ' + site + '?')) return;
+                        try {
+                            const res = await fetch(API.deleteCookie(site), {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error deleting cookie: ' + error.error || 'Unknown error');
+                            }
+                            loadSiteCookies();
+                            M.toast({
+                                html: 'Cookie deleted',
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error deleting cookie: ' + e.message);
+                        }
                     };
 
                     const addSource = async () => {
@@ -575,9 +728,14 @@
                         refreshPlatform,
                         deletePlatform,
                         addSource,
+                        deleteCookie,
                         newUrl,
                         downloadType,
-                        sourceTypes
+                        sourceTypes,
+                        siteCookies,
+                        handleCookieFormConfirm,
+                        openCookieForm,
+                        cookieForm
                     };
                 }
             }).mount('#app');

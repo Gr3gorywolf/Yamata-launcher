@@ -6,14 +6,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/models/site_cookies.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/repository/platform_catalog_sources_repository.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/platform_catalog_source.dart';
+import 'package:yamata_launcher/services/cookies_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/utils/http_helper.dart';
+import 'package:yamata_launcher/utils/url_helper.dart';
 
-class WebSourcesManagerService {
+class WebManagerService {
   HttpServer? _server;
   int port = 8487;
 
@@ -22,7 +28,7 @@ class WebSourcesManagerService {
       "downloadSourceTypes":
           DownloadSourceType.values.map((e) => e.name).toList(),
     };
-    final html = await rootBundle.loadString('assets/web/sources_manager.html');
+    final html = await rootBundle.loadString('assets/web/web_manager.html');
     return html.replaceAll("{{data}}", jsonEncode(data));
   }
 
@@ -55,6 +61,11 @@ class WebSourcesManagerService {
 
     if (path == '/') {
       await _serveHtml(request);
+      return;
+    }
+
+    if (path.startsWith('/api/cookies')) {
+      await _handleCookies(request);
       return;
     }
 
@@ -125,6 +136,80 @@ class WebSourcesManagerService {
     }
   }
 
+  // ================= Cookie management =================
+  Future<void> _handleCookies(HttpRequest req) async {
+    if (req.method == 'GET') {
+      var cookieSites = await CookiesService().getAllCookieSiteUrls();
+      var sources = await Future.wait(cookieSites.map((site) async {
+        var cookies = await CookiesService().getSiteCookies(site);
+        return {
+          'site': site,
+          'cookies': cookies?.cookie,
+          'headers': cookies?.headers,
+        };
+      }));
+      final data = sources
+          .map((e) => {
+                'site': e['site'],
+                'cookies': e['cookies'],
+                'headers': e['headers'],
+              })
+          .toList();
+
+      _json(req, data);
+      return;
+    }
+
+    if (req.method == 'PUT') {
+      var cookieSites = await CookiesService().getAllCookieSiteUrls();
+      final body = await utf8.decoder.bind(req).join();
+      final jsonBody = jsonDecode(body);
+      final site = UrlHelper.getSiteFromUrl(jsonBody['site']);
+      final cookies = jsonBody['cookies'];
+      final headers = jsonBody['headers'];
+      if (site.trim().isEmpty) {
+        _json(req, {'ok': false, 'error': 'Site URL cannot be empty.'},
+            statusCode: HttpStatus.badRequest);
+        return;
+      }
+      var exists = cookieSites.contains(site);
+      await CookiesService().saveSiteCookies(
+        site,
+        SiteCookies(
+          cookie: cookies,
+          headers: headers,
+        ),
+      );
+
+      if (!exists) {
+        cookieSites.add(site);
+        await SettingsService().set(
+          SettingsKeys.COOKIE_SITE_URLS,
+          jsonEncode(cookieSites),
+        );
+      }
+      _json(req, {'ok': true});
+      return;
+    }
+
+    if (req.method == 'DELETE') {
+      var site = utf8.decode(base64Decode(req.uri.queryParameters['site']!));
+      site = UrlHelper.getSiteFromUrl(site);
+      var cookieSites = await CookiesService().getAllCookieSiteUrls();
+      if (site == null || site.trim().isEmpty) {
+        _json(req, {'ok': false, 'error': 'Site URL cannot be empty.'},
+            statusCode: HttpStatus.badRequest);
+        return;
+      }
+
+      cookieSites.remove(site.trim());
+      await SettingsService()
+          .set(SettingsKeys.COOKIE_SITE_URLS, jsonEncode(cookieSites));
+      await CookiesService().removeSiteCookies(site.trim());
+      _json(req, {'ok': true});
+      return;
+    }
+  }
   // ================= DOWNLOAD SOURCES =================
 
   Future<void> _handleDownloadSources(HttpRequest req) async {

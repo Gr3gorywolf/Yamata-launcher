@@ -198,14 +198,26 @@ class _SettingsPageState extends State<SettingsPage> {
                 onChanged: (v) => _toggleDarkMode(v),
               ),
             ),
-            const _SectionHeader(title: 'Sources'),
+            //Tools
+            const _SectionHeader(title: 'Tools'),
             _NavigationTile(
               icon: Icons.web,
-              title: 'Remote Sources Manager',
+              title: 'Web manager',
               subtitle:
-                  'Scan the QR code to manage your sources from any device using a local web interface. Ideal for arcade machines, consoles, and gaming systems with limited input.',
+                  'Scan the QR code to manage your sources, and cookies from any device using a local web interface. Ideal for arcade machines, consoles, and gaming systems with limited input.',
               onTap: () => context.push("/settings/web-sources-manager"),
             ),
+            _SwitchTile(
+              icon: Icons.link,
+              title: 'Use built-in download link extractor',
+              subtitle:
+                  'Some hosters have captchas and stuffs that needs user interaction, for those cases the app integrates a built-in ad-blocked browser to extract the final download link. if the option is disabled it will pop up a full browser to do the extraction, (This option is not available on linux for now) ',
+              value: _useBuiltInLinkExtractor,
+              disabled: !Platform.isWindows,
+              onChanged: (v) =>
+                  _setSetting(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR, v),
+            ),
+            const _SectionHeader(title: 'Sources'),
             Consumer<DownloadSourcesProvider>(
               builder: (context, provider, child) {
                 var hasUpdates = provider.sourceUrlsWithUpdates.isNotEmpty;
@@ -339,18 +351,6 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: Opacity(
                   opacity: 0.7, child: const Text('Delete all cached files')),
               onTap: _clearCache,
-            ),
-            // Tools section
-            const _SectionHeader(title: 'Tools'),
-            _SwitchTile(
-              icon: Icons.link,
-              title: 'Use built-in download link extractor',
-              subtitle:
-                  'Some hosters have captchas and stuffs that needs user interaction, for those cases the app integrates a built-in ad-blocked browser to extract the final download link. if the option is disabled it will pop up a full browser to do the extraction, (This option is not available on linux for now) ',
-              value: _useBuiltInLinkExtractor,
-              disabled: !Platform.isWindows,
-              onChanged: (v) =>
-                  _setSetting(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR, v),
             ),
             // About section
             const _SectionHeader(title: 'About'),

@@ -24,9 +24,19 @@ class AppProvider extends ChangeNotifier {
 
   setAppLoaded(bool val) {
     _isAppLoaded = val;
-    if (Platform.isAndroid) {
-      romListItemType = ViewModeToggleMode.list;
-    }
+    SettingsService()
+        .get<String>(SettingsKeys.ROM_LIST_ITEM_TYPE)
+        .then((value) {
+      if (value != null) {
+        romListItemType = ViewModeToggleMode.values.firstWhere(
+          (e) => e.name == value,
+          orElse: () => Platform.isAndroid
+              ? ViewModeToggleMode.list
+              : ViewModeToggleMode.grid,
+        );
+      }
+      notifyListeners();
+    });
     notifyListeners();
   }
 
@@ -37,6 +47,7 @@ class AppProvider extends ChangeNotifier {
 
   setConsoleRomsItemType(ViewModeToggleMode type) {
     romListItemType = type;
+    SettingsService().set<String>(SettingsKeys.ROM_LIST_ITEM_TYPE, type.name);
     notifyListeners();
   }
 

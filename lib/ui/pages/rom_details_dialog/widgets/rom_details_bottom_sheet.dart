@@ -8,6 +8,7 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/rom_details_repository.dart';
 import 'package:yamata_launcher/ui/widgets/Images_carousel.dart';
+import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 import 'package:yamata_launcher/ui/widgets/rom_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_library_actions.dart';
@@ -136,11 +137,13 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          widget.rom.name,
-          style: Theme.of(context).textTheme.headlineLarge,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        FocusableElement(
+          child: Text(
+            widget.rom.name,
+            style: Theme.of(context).textTheme.headlineLarge,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         const SizedBox(height: 10),
         Opacity(

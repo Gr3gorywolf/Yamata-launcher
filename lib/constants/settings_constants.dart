@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:yamata_launcher/models/setting.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
 
 enum SettingsKeys {
   DOWNLOAD_PATH,
@@ -17,7 +19,8 @@ enum SettingsKeys {
   ANDROID_NOTIFICATIONS_TAGS,
   USE_BUILT_IN_LINK_EXTRACTOR,
   SHOW_MANUAL_INTERACTION_HINT,
-  COOKIE_SITE_URLS
+  COOKIE_SITE_URLS,
+  ROM_LIST_ITEM_TYPE,
 }
 
 final _systemIsDarkThemed =
@@ -88,5 +91,12 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'cookie_site_urls',
     type: SettingType.string,
     defaultValue: "[]",
+  ),
+  SettingsKeys.ROM_LIST_ITEM_TYPE: Setting<String>(
+    key: 'rom_list_item_type',
+    type: SettingType.string,
+    defaultValue: Platform.isAndroid
+        ? RomListItemType.listItem.name
+        : RomListItemType.card.name,
   ),
 };

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:yamata_launcher/constants/console_constants.dart';
@@ -137,6 +138,43 @@ class DownloadSourcesRepository {
     }
   }
 
+  Future<List<String>> fetchDownloadSourcesUpdates(
+      List<DownloadSource> sources) async {
+    var sourcesWithUpdates = <String>[];
+    Future<void> _checkOne(DownloadSource source) async {
+      final client = HttpClient();
+
+      try {
+        if (source.downloadUrl == null) return;
+
+        final request = await client.headUrl(Uri.parse(source.downloadUrl!));
+        request.followRedirects = true;
+
+        final response = await request.close();
+
+        final contentLength = response.headers.contentLength;
+        final expectedSize = int.tryParse(source.sizeBytes ?? "");
+
+        if (contentLength == -1) {
+          return;
+        }
+
+        if (contentLength != expectedSize) {
+          sourcesWithUpdates.add(source.downloadUrl!);
+        }
+      } catch (e) {
+        print("Error checking source ${source.title}: $e");
+      } finally {
+        client.close();
+      }
+    }
+
+    await Future.wait(
+      sources.map((s) => _checkOne(s)),
+    );
+    return sourcesWithUpdates;
+  }
+
   Future<DownloadSourceWithDownloads?> fetchDownloadSource(
       String sourceUrl, DownloadSourceType type) async {
     var client = new http.Client();
@@ -146,7 +184,6 @@ class DownloadSourcesRepository {
           await client.get(Uri.parse(sourceUrl)).timeout(Duration(seconds: 40));
       if (res.statusCode == 200) {
         var responseData = json.decode(res.body);
-
         List<DownloadSourceRom> downloads = (responseData['downloads'] as List)
             .where((download) =>
                 download is Map<String, dynamic> &&
@@ -168,7 +205,9 @@ class DownloadSourcesRepository {
                 passwords: (responseData['passwords'] as List<dynamic>?)
                     ?.map((e) => e.toString())
                     .toList(),
+                sizeBytes: res.headers['content-length'],
                 donationUrl: responseData['donationUrl'],
+                requiresAuth: responseData['requiresAuth'] ?? false,
                 romsCount: downloads.length,
                 lastUpdated: lastDownloadDate.toIso8601String()),
             downloads: downloads);

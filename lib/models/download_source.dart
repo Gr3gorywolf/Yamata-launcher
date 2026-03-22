@@ -6,10 +6,12 @@ class DownloadSource {
   String title = "Unknown";
   List<String>? passwords = [];
   String? donationUrl;
+  bool? requiresAuth;
   String? downloadUrl;
   int? romsCount;
   DownloadSourceType? type;
   String? lastUpdated;
+  String? sizeBytes;
 
   DownloadSource(
       {required this.title,
@@ -17,7 +19,9 @@ class DownloadSource {
       this.donationUrl,
       this.romsCount,
       this.lastUpdated,
+      this.requiresAuth,
       this.downloadUrl,
+      this.sizeBytes,
       this.type});
   DownloadSource.fromJson(Map<String, dynamic> json) {
     title = json['title'] ?? "";
@@ -25,6 +29,8 @@ class DownloadSource {
     lastUpdated = json['last_updated'];
     downloadUrl = json['download_url'];
     donationUrl = json['donation_url'];
+    requiresAuth = json['requires_auth'];
+    sizeBytes = json['size_bytes'];
     type = json['type'] != null
         ? DownloadSourceType.values.firstWhere((e) => e.name == json['type'])
         : null;
@@ -40,6 +46,8 @@ class DownloadSource {
     data['last_updated'] = this.lastUpdated;
     data['download_url'] = this.downloadUrl;
     data['donation_url'] = this.donationUrl;
+    data['requires_auth'] = this.requiresAuth;
+    data['size_bytes'] = this.sizeBytes;
     data['type'] = this.type != null ? this.type?.name : null;
     if (this.passwords != null) {
       data['passwords'] = this.passwords;

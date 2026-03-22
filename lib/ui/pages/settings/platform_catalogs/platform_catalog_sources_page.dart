@@ -12,77 +12,157 @@ class ConsoleSourcesPage extends StatefulWidget {
 }
 
 class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
+  Future<void> _handleUpdateAllConsoleSources() async {
+    final sources = ConsoleService.externalPlatformCatalogs;
+
+    if (sources.isEmpty) return;
+
+    int completed = 0;
+    final total = sources.length;
+    ValueNotifier<double> progressNotifier = ValueNotifier<double>(0);
+    final loading = AlertsService.showLoadingAlert(
+      context,
+      "Updating Catalog Sources",
+      "Updating all catalog sources...",
+      progressNotifier: progressNotifier,
+    );
+
+    try {
+      final futures = sources.map((source) async {
+        try {
+          final existing = await ConsoleService.getConsoleSource(source);
+
+          if (existing != null) {
+            await _fetchValidateAndSaveConsoleSource(
+              url: existing.downloadUrl ?? "",
+              isUpdate: true,
+            );
+          }
+        } catch (e) {
+          debugPrint("Error updating catalog source: $e");
+        } finally {
+          completed++;
+          final percent = (completed / total * 100).toInt() / 100;
+          progressNotifier.value = percent.toDouble();
+        }
+      }).toList();
+
+      await Future.wait(futures);
+
+      setState(() {});
+
+      AlertsService.showSnackbar(
+        "All catalog sources updated successfully",
+        ctx: context,
+      );
+    } catch (e) {
+      AlertsService.showErrorSnackbar(
+        "Error updating catalog sources",
+        ctx: context,
+      );
+    } finally {
+      loading.close();
+    }
+  }
+
+  Future<bool> _fetchValidateAndSaveConsoleSource({
+    required String url,
+    bool isUpdate = false,
+  }) async {
+    final source = await ConsoleSourcesRepository().fetchSource(url);
+
+    if (source == null) return false;
+
+    source.downloadUrl = url;
+
+    final validationError =
+        ConsoleService.validatePlatformCatalogSource(source);
+
+    if (validationError != null) {
+      AlertsService.showErrorSnackbar(validationError, ctx: context);
+      return false;
+    }
+
+    if (isUpdate) {
+      return await ConsoleService.updateConsoleSource(source);
+    } else {
+      return await ConsoleService.addConsoleSource(source);
+    }
+  }
+
   handleSetConsoleSource() async {
     var result = await AlertsService.showPrompt(
-        context, 'Add Game Catalog Source',
-        inputPlaceholder: 'Enter game catalog source URL',
-        message:
-            "The game catalog source must be a valid URL pointing to a JSON file containing game catalog definitions.");
-    if (result != null && result.isNotEmpty) {
-      var loading = AlertsService.showLoadingAlert(
-          context,
-          "Downloading game catalog source...",
-          "Please wait while the game catalog source is being downloaded...");
-      final source = await ConsoleSourcesRepository().fetchSource(result);
-      loading.close();
-      if (source != null) {
-        source.downloadUrl = result;
-        var validationError =
-            ConsoleService.validatePlatformCatalogSource(source);
-        if (validationError != null) {
-          AlertsService.showErrorSnackbar(validationError, ctx: context);
-          return;
-        }
-        bool added = await ConsoleService.addConsoleSource(source);
-        if (added) {
-          setState(() {});
-          AlertsService.showSnackbar("Game catalog source added successfully.",
-              ctx: context);
-        } else {
-          AlertsService.showErrorSnackbar("Game catalog source already exists.",
-              ctx: context);
-        }
-      } else {
-        AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
-            ctx: context);
-      }
+      context,
+      'Add Game Catalog Source',
+      inputPlaceholder: 'Enter game catalog source URL',
+      message:
+          "The game catalog source must be a valid URL pointing to a JSON file containing game catalog definitions.",
+    );
+
+    if (result == null || result.isEmpty) return;
+
+    var loading = AlertsService.showLoadingAlert(
+      context,
+      "Downloading game catalog source...",
+      "Please wait while the game catalog source is being downloaded...",
+    );
+
+    final success = await _fetchValidateAndSaveConsoleSource(
+      url: result,
+      isUpdate: false,
+    );
+
+    loading.close();
+
+    if (success) {
+      setState(() {});
+      AlertsService.showSnackbar(
+        "Game catalog source added successfully.",
+        ctx: context,
+      );
+    } else {
+      AlertsService.showErrorSnackbar(
+        "Game catalog source already exists or failed.",
+        ctx: context,
+      );
     }
   }
 
   handleUpdateConsoleSource(PlatformCatalogSource sourceToUpdate) async {
     var source = await ConsoleService.getConsoleSource(sourceToUpdate);
+
     if (source == null) {
-      AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
-          ctx: context);
+      AlertsService.showErrorSnackbar(
+        "Failed to fetch game catalog source.",
+        ctx: context,
+      );
       return;
     }
+
     var loading = AlertsService.showLoadingAlert(
-        context,
-        "Updating game catalog source...",
-        "Please wait while the game catalog source is being updated...");
-    final updatedSource =
-        await ConsoleSourcesRepository().fetchSource(source.downloadUrl ?? "");
+      context,
+      "Updating game catalog source...",
+      "Please wait while the game catalog source is being updated...",
+    );
+
+    final success = await _fetchValidateAndSaveConsoleSource(
+      url: source.downloadUrl ?? "",
+      isUpdate: true,
+    );
+
     loading.close();
-    if (updatedSource != null) {
-      updatedSource.downloadUrl = source.downloadUrl;
-      var validationError =
-          ConsoleService.validatePlatformCatalogSource(source);
-      if (validationError != null) {
-        AlertsService.showErrorSnackbar(validationError, ctx: context);
-        return;
-      }
-      bool added = await ConsoleService.updateConsoleSource(updatedSource);
-      if (added) {
-        setState(() {});
-        AlertsService.showSnackbar("Game catalog source updated successfully.",
-            ctx: context);
-      } else {
-        AlertsService.showErrorSnackbar("Game catalog source doesn't exist.",
-            ctx: context);
-      }
+
+    if (success) {
+      setState(() {});
+      AlertsService.showSnackbar(
+        "Game catalog source updated successfully.",
+        ctx: context,
+      );
     } else {
-      AlertsService.showErrorSnackbar("Failed to fetch game catalog source.",
-          ctx: context);
+      AlertsService.showErrorSnackbar(
+        "Game catalog source doesn't exist or failed.",
+        ctx: context,
+      );
     }
   }
 
@@ -91,6 +171,14 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Game Catalog Sources'),
+        actions: [
+          if (ConsoleService.externalPlatformCatalogs.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _handleUpdateAllConsoleSources,
+              tooltip: "Update All Catalog Sources",
+            )
+        ],
       ),
       body: Builder(
         builder: (builder) {
@@ -109,6 +197,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
 
           return ListView.builder(
             itemCount: ConsoleService.externalPlatformCatalogs.length,
+            padding: const EdgeInsets.only(bottom: 80),
             itemBuilder: (_, index) {
               final source = ConsoleService.externalPlatformCatalogs[index];
               return Card(

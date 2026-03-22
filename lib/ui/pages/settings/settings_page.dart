@@ -8,6 +8,7 @@ import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
+import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
@@ -18,6 +19,7 @@ import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sour
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -204,12 +206,25 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Scan the QR code to manage your sources from any device using a local web interface. Ideal for arcade machines, consoles, and gaming systems with limited input.',
               onTap: () => context.push("/settings/web-sources-manager"),
             ),
-            _NavigationTile(
-              icon: Icons.cloud_download,
-              title: 'Download Sources',
-              subtitle: 'Manage your download sources',
-              onTap: () => context.push("/settings/download-sources"),
+            Consumer<DownloadSourcesProvider>(
+              builder: (context, provider, child) {
+                var hasUpdates = provider.sourceUrlsWithUpdates.isNotEmpty;
+                return _NavigationTile(
+                  icon: Icons.cloud_download,
+                  title: 'Download Sources',
+                  subtitle: 'Manage your download sources',
+                  extraContent: hasUpdates
+                      ? StatusTag(
+                          text: "Updates available",
+                          size: StatusTagSize.sm,
+                          type: StatusTagType.success,
+                        )
+                      : null,
+                  onTap: () => context.push("/settings/download-sources"),
+                );
+              },
             ),
+
             _NavigationTile(
               icon: Icons.gamepad,
               title: 'Game Catalog Sources',
@@ -437,6 +452,7 @@ class _NavigationTile extends StatelessWidget {
   final IconData? trailing;
   final String title;
   final String subtitle;
+  final Widget? extraContent;
   final VoidCallback onTap;
 
   const _NavigationTile({
@@ -445,6 +461,7 @@ class _NavigationTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.extraContent,
   });
 
   @override
@@ -453,7 +470,16 @@ class _NavigationTile extends StatelessWidget {
       leading: icon != null ? Icon(icon) : null,
       trailing: Icon(trailing),
       title: Text(title),
-      subtitle: Opacity(opacity: 0.7, child: Text(subtitle)),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Opacity(opacity: 0.7, child: Text(subtitle)),
+          if (extraContent != null) ...[
+            const SizedBox(height: 8),
+            extraContent!,
+          ],
+        ],
+      ),
       onTap: onTap,
     );
   }

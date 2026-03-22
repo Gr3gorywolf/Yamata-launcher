@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
+import 'package:yamata_launcher/repository/download_sources_repository.dart';
 
 import 'package:yamata_launcher/services/download_sources_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -157,16 +160,32 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
   List<DownloadSourceWithDownloads> _downloadSources = [];
   final Map<String, List<DownloadSource>> _romSources = {};
+  final List<String> _sourceUrlsWithUpdates = [];
   final Set<String> _compilingRoms = {};
   bool _initialized = false;
 
   List<DownloadSourceWithDownloads> get downloadSources => _downloadSources;
+  List<String> get sourceUrlsWithUpdates => _sourceUrlsWithUpdates;
   bool get initialized => _initialized;
 
   Future<void> initialize() async {
     if (_initialized) return;
     _downloadSources = await DownloadSourcesService.getDownloadSources();
+    checkForUpdates();
+    Timer.periodic(const Duration(hours: 1), (_) async {
+      await checkForUpdates();
+    });
     _initialized = true;
+    notifyListeners();
+  }
+
+  checkForUpdates() async {
+    print("Checking for download source updates...");
+    var updates = await DownloadSourcesRepository().fetchDownloadSourcesUpdates(
+        _downloadSources.map((s) => s.sourceInfo).toList());
+    _sourceUrlsWithUpdates.clear();
+    _sourceUrlsWithUpdates.addAll(updates);
+    print("Found ${updates.length} updates");
     notifyListeners();
   }
 

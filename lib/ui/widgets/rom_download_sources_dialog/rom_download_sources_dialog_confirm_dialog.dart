@@ -30,6 +30,7 @@ import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog_hint_content.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
+import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
 import 'package:yamata_launcher/utils/http_helper.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/url_helper.dart';
@@ -347,7 +348,14 @@ class _DownloadSourcesDialogConfirmDialogState
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.item.sourceDonationUrl != null)
+                    WrappedLinkText(
+                        text: "Support ${widget.item.sourceTitle} by",
+                        linkText: "sending a donation",
+                        link: widget.item.sourceDonationUrl!),
+                  SizedBox(height: 5),
                   if (hosters
                       .where((HosterInfo hoster) =>
                           hoster.metadata?.status == HosterStatus.Unknown)

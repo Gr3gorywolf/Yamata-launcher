@@ -168,6 +168,7 @@ class DownloadSourcesRepository {
                 passwords: (responseData['passwords'] as List<dynamic>?)
                     ?.map((e) => e.toString())
                     .toList(),
+                donationUrl: responseData['donationUrl'],
                 romsCount: downloads.length,
                 lastUpdated: lastDownloadDate.toIso8601String()),
             downloads: downloads);

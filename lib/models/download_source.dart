@@ -5,6 +5,7 @@ enum DownloadSourceType { Yamata, Hydra }
 class DownloadSource {
   String title = "Unknown";
   List<String>? passwords = [];
+  String? donationUrl;
   String? downloadUrl;
   int? romsCount;
   DownloadSourceType? type;
@@ -13,6 +14,7 @@ class DownloadSource {
   DownloadSource(
       {required this.title,
       this.passwords,
+      this.donationUrl,
       this.romsCount,
       this.lastUpdated,
       this.downloadUrl,
@@ -22,6 +24,7 @@ class DownloadSource {
     romsCount = json['roms_count'];
     lastUpdated = json['last_updated'];
     downloadUrl = json['download_url'];
+    donationUrl = json['donation_url'];
     type = json['type'] != null
         ? DownloadSourceType.values.firstWhere((e) => e.name == json['type'])
         : null;
@@ -36,6 +39,7 @@ class DownloadSource {
     data['roms_count'] = this.romsCount;
     data['last_updated'] = this.lastUpdated;
     data['download_url'] = this.downloadUrl;
+    data['donation_url'] = this.donationUrl;
     data['type'] = this.type != null ? this.type?.name : null;
     if (this.passwords != null) {
       data['passwords'] = this.passwords;

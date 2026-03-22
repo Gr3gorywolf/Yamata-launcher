@@ -57,6 +57,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
         filteredResults.add(RomDownloadSourceItem(
           rom: sourceDownload,
           sourceTitle: source.sourceInfo!.title,
+          sourceDonationUrl: source.sourceInfo?.donationUrl,
         ));
       }
     }
@@ -78,7 +79,9 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   handleOpenConfirmDialog(RomDownloadSourceItem item) async {
     var result = await showDialog<RomDownloadSourcesDialogResult?>(
       context: context,
-      builder: (_) => DownloadSourcesDialogConfirmDialog(item: item),
+      builder: (_) => DownloadSourcesDialogConfirmDialog(
+        item: item,
+      ),
     );
 
     if (result != null) {
@@ -228,9 +231,11 @@ class RomDownloadSourcesDialogResult {
 class RomDownloadSourceItem {
   final DownloadSourceRom rom;
   final String? sourceTitle;
+  final String? sourceDonationUrl;
 
   RomDownloadSourceItem({
     required this.rom,
     required this.sourceTitle,
+    this.sourceDonationUrl,
   });
 }

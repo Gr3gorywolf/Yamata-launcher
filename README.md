@@ -68,6 +68,8 @@
 - **Built-In Extraction System**: Automatically extracts downloaded content using the integrated 7z decompressor, with no external tools required.
 - **Smart Executable Detection**: Automatically detects game executables after extraction using a database of known executable names, minimizing manual setup.
 - **Rich Game and ROM Metadata**: Enhances your library with detailed metadata powered by [GamesDB](https://gamesdb.launchbox-app.com/) and estimated playtime data from [HowLongToBeat](https://howlongtobeat.com/).
+- **Cookies setup**: The app its not limited by private content, you can setup your account cookies on the app to access to that content on sites like internet archive, **Note: This uses a secure storage package that encrypts the cookies so your cookies are safe and won't be exposed**
+- **Captcha handling**: Some hosters like megaup requires the user to complete a challenge in order to expose the download link, for this case the app provides a built-in ad blocked web browser that captures the download url once the download its about the start on the browser and continue the download on the launcher 
 
 ## How to Install
 The application binaries are on the [Releases page](https://github.com/Gr3gorywolf/Yamata-launcher/releases)

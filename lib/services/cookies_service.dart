@@ -7,9 +7,13 @@ import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
 class CookiesService {
+  FlutterSecureStorage _storage = FlutterSecureStorage(
+    mOptions: MacOsOptions(
+        accessibility: KeychainAccessibility.unlocked,
+        useDataProtectionKeyChain: false),
+  );
   Future<void> saveSiteCookies(String site, SiteCookies cookies) async {
-    final storage = FlutterSecureStorage();
-    await storage.write(
+    await _storage.write(
         key: "cookies_${StringHelper.hash20(site)}",
         value: jsonEncode(cookies.toJson()));
   }
@@ -21,15 +25,13 @@ class CookiesService {
   }
 
   Future<SiteCookies?> getSiteCookies(String site) async {
-    final storage = FlutterSecureStorage();
     String? jsonString =
-        await storage.read(key: "cookies_${StringHelper.hash20(site)}");
+        await _storage.read(key: "cookies_${StringHelper.hash20(site)}");
     if (jsonString == null) return null;
     return SiteCookies.fromJson(jsonDecode(jsonString));
   }
 
   Future<void> removeSiteCookies(String site) async {
-    final storage = FlutterSecureStorage();
-    await storage.delete(key: "cookies_${StringHelper.hash20(site)}");
+    await _storage.delete(key: "cookies_${StringHelper.hash20(site)}");
   }
 }

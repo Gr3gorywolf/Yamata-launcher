@@ -55,6 +55,10 @@ AppDir:
       # browser
       - webkit2gtk-4.1
 
+      # secret storage
+      - libsecret-1-dev
+      - pkg-config
+
     exclude:
 
       - humanity-icon-theme

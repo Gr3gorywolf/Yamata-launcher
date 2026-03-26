@@ -104,6 +104,8 @@ const VALID_ROM_EXTENSIONS = [
   'wud', // Wii U
   'nsp', // Nintendo Switch
   'xci', // Nintendo Switch
+  'nsz', // Nintendo Switch
+  'xcz', // Nintendo Switch
   'vb', // Virtual Boy
 
   // Sony

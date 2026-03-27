@@ -17,6 +17,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 
 var isFullScreen = false;

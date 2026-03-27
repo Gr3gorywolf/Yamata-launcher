@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gamepads/gamepads.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
@@ -214,7 +216,10 @@ class _MainLayoutState extends State<MainLayout>
 
           return KeyEventResult.ignored;
         },
-        child: buildDesktopLayout(),
+        child: GamepadHandler(
+            child: buildDesktopLayout(),
+            navScropeNode: _navScopeNode,
+            contentScopeNode: _contentScopeNode),
       );
     }
 
@@ -232,7 +237,9 @@ class _MainLayoutState extends State<MainLayout>
 
           context.go(MainLayout._routes[nextIndex]);
         },
-        child: isSmallScreen ? widget.child : desktopWithGlobalKeys(),
+        child: isSmallScreen
+            ? GamepadHandler(child: widget.child)
+            : desktopWithGlobalKeys(),
       ),
       bottomNavigationBar: isSmallScreen
           ? Container(

@@ -25,6 +25,14 @@ class FocusableElement extends StatefulWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
   });
 
+  void activateChild() {
+    if (onPressed != null) onPressed!();
+    try {
+      if (child.onTap != null) child.onTap!();
+      if (child.onPressed != null) child.onTap!();
+    } catch (e) {}
+  }
+
   @override
   State<FocusableElement> createState() => _FocusableElementState();
 }
@@ -80,12 +88,7 @@ class _FocusableElementState extends State<FocusableElement> {
           event.logicalKey == LogicalKeyboardKey.select ||
           event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-        if (widget.onPressed != null) widget.onPressed!();
-        try {
-          if (widget.child.onTap != null) widget.child.onTap!();
-          if (widget.child.onPressed != null) widget.child.onTap!();
-        } catch (e) {}
-
+        widget.activateChild();
         return KeyEventResult.handled;
       }
     }

@@ -8,6 +8,7 @@
 
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <fullscreen_window/fullscreen_window_plugin_c_api.h>
+#include <gamepads_windows/gamepads_windows_plugin_c_api.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
 #include <tray_manager/tray_manager_plugin.h>
@@ -22,6 +23,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   FullscreenWindowPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FullscreenWindowPluginCApi"));
+  GamepadsWindowsPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("GamepadsWindowsPluginCApi"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("PermissionHandlerWindowsPlugin"));
   ScreenRetrieverWindowsPluginCApiRegisterWithRegistrar(

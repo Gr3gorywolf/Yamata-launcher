@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.29
 
 environment:
-  sdk: '>=3.0.0'
+  sdk: '>=3.4.0'
 
 dependencies:
   animate_do: ^3.0.2
@@ -73,8 +73,13 @@ dependencies:
     git:
       url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
       path: .
-      ref: "3.22-downgrade"
+      ref: "3.24-downgrade"
   flutter_secure_storage: 9.2.4
+  gamepads:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads"
+      ref: "main"
 
 
 
@@ -110,6 +115,42 @@ flutter:
 dependency_overrides:
   file: 6.1.4
   platform: 3.1.0
+  gamepads_android:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_android"
+      ref: "main"
+  gamepads_windows:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_windows"
+      ref: "main"
+
+  gamepads_linux:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_linux"
+      ref: "main"
+  gamepads_darwin:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_darwin"
+      ref: "main"
+  gamepads_ios:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_ios"
+      ref: "main"
+  gamepads_web:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_web"
+      ref: "main"
+  gamepads_platform_interface:
+    git:
+      url: https://github.com/Gr3gorywolf/gamepads.git
+      path: "packages/gamepads_platform_interface"
+      ref: "main"
   adblocker_core:
     git:
       url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git

@@ -41,6 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _extractRomsAfterDownload = false;
   bool _closeToSystemTray = false;
   bool _useBuiltInLinkExtractor = false;
+  bool _showGamepadGuide = false;
 
   @override
   void initState() {
@@ -68,6 +69,8 @@ class _SettingsPageState extends State<SettingsPage> {
         await SettingsService().get<bool>(SettingsKeys.CLOSE_TO_SYSTEM_TRAY);
     _moveRomToSubfolder = await SettingsService()
         .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER);
+    _showGamepadGuide =
+        await SettingsService().get<bool>(SettingsKeys.SHOW_CONTROLLER_GUIDE);
     if (Platform.isLinux) {
       _useBuiltInLinkExtractor = false;
     } else {
@@ -105,6 +108,9 @@ class _SettingsPageState extends State<SettingsPage> {
           break;
         case SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR:
           _useBuiltInLinkExtractor = value as bool;
+          break;
+        case SettingsKeys.SHOW_CONTROLLER_GUIDE:
+          _showGamepadGuide = value as bool;
           break;
         default:
           break;
@@ -172,6 +178,12 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _toggleGamepadGuide(bool value) async {
+    await _setSetting<bool>(SettingsKeys.SHOW_CONTROLLER_GUIDE, value);
+    var appProvider = Provider.of<AppProvider>(context, listen: false);
+    appProvider.setShowGamepadGuide(value);
+  }
+
   Future<void> _toggleDarkMode(bool value) async {
     await _setSetting<bool>(SettingsKeys.DARK_MODE_ENABLED, value);
     var appProvider = Provider.of<AppProvider>(context, listen: false);
@@ -196,6 +208,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: 'Switch between light and dark themes',
                 value: appProvider.themeMode == ThemeMode.dark,
                 onChanged: (v) => _toggleDarkMode(v),
+              ),
+            ),
+
+            Consumer<AppProvider>(
+              builder: (context, appProvider, child) => _SwitchTile(
+                icon: Icons.gamepad,
+                title: 'Enable Gamepad Guide',
+                subtitle:
+                    'Show or hide the gamepad guide that displays the controls layout for the navigation on the app',
+                value: _showGamepadGuide,
+                onChanged: (v) => _toggleGamepadGuide(v),
               ),
             ),
             //Tools

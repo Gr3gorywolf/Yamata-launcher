@@ -30,6 +30,7 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
   StreamSubscription<NormalizedGamepadEvent>? _subscription;
   final FocusNode _pageFocusNode = FocusNode();
   Timer? _directionRepeatTimer;
+  Timer? _scrollRepeatTimer;
   TraversalDirection? _activeDirection;
   String? _activeDirectionalInputKey;
 
@@ -73,6 +74,75 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
     }
 
     FocusManager.instance.primaryFocus?.focusInDirection(direction);
+  }
+
+  ScrollableState? findFirstScrollableDescendant(BuildContext context) {
+    ScrollableState? result;
+
+    bool isRenderable(Element element) {
+      final render = element.renderObject;
+      if (render == null || !render.attached) return false;
+
+      if (render.paintBounds.isEmpty) return false;
+
+      return true;
+    }
+
+    void visit(Element element) {
+      if (!isRenderable(element)) return;
+
+      // IMPORTANTE: visitar primero hijos (DFS profundo)
+      element.visitChildElements(visit);
+
+      // Luego evaluar (esto hace que el último sea el más profundo)
+      if (element is StatefulElement && element.state is ScrollableState) {
+        result = element.state as ScrollableState;
+      }
+    }
+
+    visit(context as Element);
+    return result;
+  }
+
+  void _scrollNearest({
+    double delta = 200,
+    Duration duration = const Duration(milliseconds: 180),
+  }) async {
+    final scrollable = findFirstScrollableDescendant(navigatorContext!);
+    if (scrollable == null) return;
+
+    final position = scrollable.position;
+    final target = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+
+    await position.animateTo(
+      target,
+      duration: duration,
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _stopScrollRepeat() {
+    _scrollRepeatTimer?.cancel();
+    _scrollRepeatTimer = null;
+  }
+
+  void _startScrollRepeat(double scrollDelta) {
+    _stopScrollRepeat();
+
+    _scrollNearest(
+      delta: scrollDelta,
+      duration: const Duration(milliseconds: 100),
+    );
+
+    _scrollRepeatTimer = Timer.periodic(_repeatInterval ~/ 2, (_) {
+      _scrollNearest(
+        delta: scrollDelta,
+        duration: const Duration(milliseconds: 100),
+      );
+    });
   }
 
   void _startDirectionalRepeat({
@@ -248,6 +318,14 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
             keyName: keyName,
             value: keyVal,
           );
+          break;
+
+        case 'rightStickY':
+          if (_isAxisNeutral(keyVal)) {
+            _stopScrollRepeat();
+            return;
+          }
+          _startScrollRepeat(keyVal * 400 * -1);
           break;
 
         case 'a':

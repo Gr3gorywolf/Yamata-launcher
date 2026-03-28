@@ -119,13 +119,18 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
           focusNode: _pageFocusNode,
           autofocus: true,
           onKeyEvent: (node, event) {
+            final isTyping = _isTextInputFocused();
+            final isUsingGamepad =
+                Provider.of<AppProvider>(context, listen: false).isUsingGamepad;
             if (event is KeyDownEvent) {
               if (Platform.isAndroid &&
                   AndroidGamepadKeys.contains(event.logicalKey)) {
                 _handleSetUsingGamepad('keyDown', event.logicalKey.keyLabel);
               } else {
-                _handleSetUsingKeyboardAndMouse(
-                    'keyDown', event.logicalKey.keyLabel);
+                if (!isTyping) {
+                  _handleSetUsingKeyboardAndMouse(
+                      'keyDown', event.logicalKey.keyLabel);
+                }
               }
             }
 
@@ -134,7 +139,6 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
             final keyboard = HardwareKeyboard.instance;
             final isCtrlPressed = keyboard.isControlPressed;
             final key = event.logicalKey;
-            final isTyping = _isTextInputFocused();
 
             if (BACK_KEYS.contains(key)) {
               _handleBack();

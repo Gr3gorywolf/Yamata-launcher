@@ -202,11 +202,15 @@ class _MainLayoutState extends State<MainLayout>
             buildDesktopLayout(),
             Consumer<AppProvider>(
               builder: (context, appProvider, child) {
-                if (!appProvider.isUsingGamepad) return const SizedBox.shrink();
+                if (!appProvider.isUsingGamepad ||
+                    !appProvider.showGamepadGuide)
+                  return const SizedBox.shrink();
                 return FadeInUp(
                   duration: const Duration(milliseconds: 300),
                   child: GamepadHintBar(hints: [
                     GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
+                    GamepadHint(
+                        glyph: GamepadGlyph.rightStick, label: "Scroll"),
                     GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
                     GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
                     GamepadHint(glyph: GamepadGlyph.lb, label: ""),

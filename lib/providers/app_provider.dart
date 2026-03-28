@@ -17,12 +17,14 @@ class AppProvider extends ChangeNotifier {
 
   bool _isUsingGamepad = false;
   bool _isAppLoaded = false;
+  bool _showGamepadGuide = true;
   bool get isAppLoaded => _isAppLoaded;
   UpdateInfo? _updateInfo;
   ThemeMode _theme = ThemeMode.system;
   ThemeMode get themeMode => _theme;
   UpdateInfo? get updateInfo => _updateInfo;
   bool get isUsingGamepad => _isUsingGamepad;
+  bool get showGamepadGuide => _showGamepadGuide;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
   StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
 
@@ -39,8 +41,22 @@ class AppProvider extends ChangeNotifier {
               : ViewModeToggleMode.grid,
         );
       }
+      SettingsService()
+          .get<bool>(SettingsKeys.SHOW_CONTROLLER_GUIDE)
+          .then((value) {
+        if (value != null) {
+          _showGamepadGuide = value;
+        }
+        notifyListeners();
+      });
+
       notifyListeners();
     });
+    notifyListeners();
+  }
+
+  setShowGamepadGuide(bool val) {
+    _showGamepadGuide = val;
     notifyListeners();
   }
 

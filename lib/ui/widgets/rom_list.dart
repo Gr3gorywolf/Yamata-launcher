@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/ui/pages/rom_details_dialog/rom_details_dialog.dart';
@@ -16,6 +17,8 @@ import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+
+import '../../providers/app_provider.dart';
 
 class RomList extends StatefulWidget {
   final bool isLoading;
@@ -79,7 +82,11 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
 
     final roms = widget.roms ?? const [];
     final screenWidth = MediaQuery.of(context).size.width;
-    final gridAxisCount = max(1, (screenWidth / 283).floor());
+    final appProvider = Provider.of<AppProvider>(context);
+    final cardWidth = appProvider.isUsingGamepad ? 230 : 283;
+    final cardHeight = appProvider.isUsingGamepad ? 180 : 410;
+    final gridSpacing = appProvider.isUsingGamepad ? 22 : 8;
+    final gridAxisCount = max(1, (screenWidth / cardWidth).floor());
 
     if (widget.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -145,9 +152,9 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
               ),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: gridAxisCount,
-                mainAxisExtent: 410,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
+                mainAxisExtent: cardHeight.toDouble(),
+                mainAxisSpacing: gridSpacing.toDouble(),
+                crossAxisSpacing: gridSpacing.toDouble(),
               ),
             ),
         ],

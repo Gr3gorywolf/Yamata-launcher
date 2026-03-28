@@ -8,6 +8,7 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
@@ -52,6 +53,7 @@ class _RomActionButtonState extends State<RomActionButton> {
   Widget build(BuildContext context) {
     final provider = DownloadProvider.of(context);
     final libraryProvider = Provider.of<LibraryProvider>(context);
+    final appProvider = Provider.of<AppProvider>(context);
     final downloadSourcesProvider =
         Provider.of<DownloadSourcesProvider>(context);
 
@@ -261,6 +263,7 @@ class _RomActionButtonState extends State<RomActionButton> {
           text,
           style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
         ),
+        autofocus: appProvider.isUsingGamepad,
         style: ElevatedButton.styleFrom(padding: padding),
         onPressed: (hasDownloadSources ||
                     isReadyToPlay ||

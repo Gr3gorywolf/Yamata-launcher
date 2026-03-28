@@ -1,22 +1,44 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
+import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
+
+const AndroidGamepadKeys = [
+  LogicalKeyboardKey.gameButtonA,
+  LogicalKeyboardKey.gameButtonB,
+  LogicalKeyboardKey.gameButtonX,
+  LogicalKeyboardKey.gameButtonY,
+  LogicalKeyboardKey.gameButtonThumbLeft,
+  LogicalKeyboardKey.gameButtonThumbRight,
+  LogicalKeyboardKey.gameButtonLeft1,
+  LogicalKeyboardKey.gameButtonRight1,
+  LogicalKeyboardKey.gameButtonSelect,
+  LogicalKeyboardKey.gameButtonStart,
+  LogicalKeyboardKey.arrowDown,
+  LogicalKeyboardKey.arrowUp,
+  LogicalKeyboardKey.arrowLeft,
+  LogicalKeyboardKey.arrowRight,
+];
 
 class GamepadHandler extends StatefulWidget {
   final Widget child;
   final FocusScopeNode? navScropeNode;
   final FocusScopeNode? contentScopeNode;
+  final Function(bool? next)? onChangeTab;
 
   const GamepadHandler({
     super.key,
     required this.child,
     this.navScropeNode,
     this.contentScopeNode,
+    this.onChangeTab,
   });
 
   @override
@@ -25,7 +47,7 @@ class GamepadHandler extends StatefulWidget {
 
 class _GamepadHandlerState extends State<GamepadHandler> {
   StreamSubscription<NormalizedGamepadEvent>? _subscription;
-
+  final FocusNode _pageFocusNode = FocusNode();
   Timer? _directionRepeatTimer;
   TraversalDirection? _activeDirection;
   String? _activeDirectionalInputKey;
@@ -190,13 +212,46 @@ class _GamepadHandlerState extends State<GamepadHandler> {
     }
   }
 
+  void _handleAndroidGamepadEvent(KeyEvent key) {
+    print(
+        "Android gamepad event: ${key.logicalKey.debugName} (${key.logicalKey.keyId})");
+    const androidKeys = [
+      LogicalKeyboardKey.gameButtonA,
+      LogicalKeyboardKey.gameButtonB,
+      LogicalKeyboardKey.gameButtonX,
+      LogicalKeyboardKey.gameButtonY,
+      LogicalKeyboardKey.gameButtonThumbLeft,
+      LogicalKeyboardKey.gameButtonThumbRight,
+      LogicalKeyboardKey.gameButtonLeft1,
+      LogicalKeyboardKey.gameButtonRight1,
+      LogicalKeyboardKey.gameButtonSelect,
+      LogicalKeyboardKey.gameButtonStart,
+      LogicalKeyboardKey.arrowDown,
+      LogicalKeyboardKey.arrowUp,
+      LogicalKeyboardKey.arrowLeft,
+      LogicalKeyboardKey.arrowRight,
+    ];
+
+    if ((androidKeys.contains(key.logicalKey) ||
+            key.logicalKey.debugName?.startsWith("game") == true) &&
+        key is KeyDownEvent) {
+      Provider.of<AppProvider>(context, listen: false).setUsingGamepad(true);
+      if (key.logicalKey == LogicalKeyboardKey.gameButtonLeft1) {
+        widget.onChangeTab?.call(false);
+      }
+      if (key.logicalKey == LogicalKeyboardKey.gameButtonRight1) {
+        widget.onChangeTab?.call(true);
+      }
+    }
+  }
+
   void _handleGamepadEvent(NormalizedGamepadEvent event) {
     try {
       final keyName = event.button?.name ?? event.axis?.name ?? 'unknown';
       final keyVal = event.value;
 
       print("Gamepad event: $keyName = $keyVal");
-
+      Provider.of<AppProvider>(context, listen: false).setUsingGamepad(true);
       switch (keyName) {
         case 'dpadUp':
         case 'dpadDown':
@@ -213,6 +268,18 @@ class _GamepadHandlerState extends State<GamepadHandler> {
         case 'a':
           if (keyVal > _buttonPressedThreshold) {
             _activateFocused();
+          }
+          break;
+
+        case 'rightBumper':
+          if (keyVal > _buttonPressedThreshold) {
+            widget.onChangeTab!(true);
+          }
+          break;
+
+        case 'leftBumper':
+          if (keyVal > _buttonPressedThreshold) {
+            widget.onChangeTab!(false);
           }
           break;
 
@@ -282,6 +349,14 @@ class _GamepadHandlerState extends State<GamepadHandler> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return KeyboardListener(
+      child: widget.child,
+      focusNode: _pageFocusNode,
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent && Platform.isAndroid) {
+          _handleAndroidGamepadEvent(event);
+        }
+      },
+    );
   }
 }

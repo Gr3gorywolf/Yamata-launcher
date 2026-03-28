@@ -14,12 +14,14 @@ class AppProvider extends ChangeNotifier {
     return Provider.of<AppProvider>(ctx);
   }
 
+  bool _isUsingGamepad = false;
   bool _isAppLoaded = false;
   bool get isAppLoaded => _isAppLoaded;
   UpdateInfo? _updateInfo;
   ThemeMode _theme = ThemeMode.system;
   ThemeMode get themeMode => _theme;
   UpdateInfo? get updateInfo => _updateInfo;
+  bool get isUsingGamepad => _isUsingGamepad;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
 
   setAppLoaded(bool val) {
@@ -42,6 +44,11 @@ class AppProvider extends ChangeNotifier {
 
   setUpdateInfo(UpdateInfo info) {
     _updateInfo = info;
+    notifyListeners();
+  }
+
+  setUsingGamepad(bool val) {
+    _isUsingGamepad = val;
     notifyListeners();
   }
 

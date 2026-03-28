@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
@@ -5,9 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:yamata_launcher/app_keyboard_listener.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_hint/gamepad_hint_bar.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
 import '../../utils/screen_helpers.dart';
@@ -63,6 +66,21 @@ class _MainLayoutState extends State<MainLayout>
       print("App paused, pausing active downloads...");
       NotificationsService.closeOngoingNotifications();
     }
+  }
+
+  void handleOnChangeTabs(bool? next) {
+    print("Changing tab, next: $next");
+    final location = GoRouterState.of(context).uri.toString();
+    final currentIndex = _locationToIndex(location);
+    if (currentIndex == -1) return;
+    final isForward = next == null || next == true;
+
+    final nextIndex = isForward
+        ? (currentIndex + 1) % MainLayout._routes.length
+        : (currentIndex - 1 + MainLayout._routes.length) %
+            MainLayout._routes.length;
+
+    context.go(MainLayout._routes[nextIndex]);
   }
 
   @override
@@ -217,7 +235,26 @@ class _MainLayoutState extends State<MainLayout>
           return KeyEventResult.ignored;
         },
         child: GamepadHandler(
-            child: buildDesktopLayout(),
+            onChangeTab: handleOnChangeTabs,
+            child: Stack(children: [
+              buildDesktopLayout(),
+              Consumer<AppProvider>(
+                builder: (context, appProvider, child) {
+                  if (!appProvider.isUsingGamepad)
+                    return const SizedBox.shrink();
+                  return FadeInUp(
+                    duration: const Duration(milliseconds: 300),
+                    child: GamepadHintBar(hints: [
+                      GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
+                      GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
+                      GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
+                      GamepadHint(glyph: GamepadGlyph.lb, label: ""),
+                      GamepadHint(glyph: GamepadGlyph.rb, label: "Change tabs"),
+                    ]),
+                  );
+                },
+              )
+            ]),
             navScropeNode: _navScopeNode,
             contentScopeNode: _contentScopeNode),
       );
@@ -226,17 +263,7 @@ class _MainLayoutState extends State<MainLayout>
     return Scaffold(
       key: mainLayoutKey,
       body: AppKeyboardListener(
-        onChangeTab: (next) {
-          if (currentIndex == -1) return;
-          final isForward = next == null || next == true;
-
-          final nextIndex = isForward
-              ? (currentIndex + 1) % MainLayout._routes.length
-              : (currentIndex - 1 + MainLayout._routes.length) %
-                  MainLayout._routes.length;
-
-          context.go(MainLayout._routes[nextIndex]);
-        },
+        onChangeTab: handleOnChangeTabs,
         child: isSmallScreen
             ? GamepadHandler(child: widget.child)
             : desktopWithGlobalKeys(),

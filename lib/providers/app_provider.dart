@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -23,6 +24,7 @@ class AppProvider extends ChangeNotifier {
   UpdateInfo? get updateInfo => _updateInfo;
   bool get isUsingGamepad => _isUsingGamepad;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
+  StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
 
   setAppLoaded(bool val) {
     _isAppLoaded = val;

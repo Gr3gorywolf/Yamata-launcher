@@ -10,42 +10,23 @@ import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
 
-const AndroidGamepadKeys = [
-  LogicalKeyboardKey.gameButtonA,
-  LogicalKeyboardKey.gameButtonB,
-  LogicalKeyboardKey.gameButtonX,
-  LogicalKeyboardKey.gameButtonY,
-  LogicalKeyboardKey.gameButtonThumbLeft,
-  LogicalKeyboardKey.gameButtonThumbRight,
-  LogicalKeyboardKey.gameButtonLeft1,
-  LogicalKeyboardKey.gameButtonRight1,
-  LogicalKeyboardKey.gameButtonSelect,
-  LogicalKeyboardKey.gameButtonStart,
-  LogicalKeyboardKey.arrowDown,
-  LogicalKeyboardKey.arrowUp,
-  LogicalKeyboardKey.arrowLeft,
-  LogicalKeyboardKey.arrowRight,
-];
-
-class GamepadHandler extends StatefulWidget {
+class AppGamepadListener extends StatefulWidget {
   final Widget child;
   final FocusScopeNode? navScropeNode;
   final FocusScopeNode? contentScopeNode;
-  final Function(bool? next)? onChangeTab;
 
-  const GamepadHandler({
+  const AppGamepadListener({
     super.key,
     required this.child,
     this.navScropeNode,
     this.contentScopeNode,
-    this.onChangeTab,
   });
 
   @override
-  State<GamepadHandler> createState() => _GamepadHandlerState();
+  State<AppGamepadListener> createState() => _AppGamepadListenerState();
 }
 
-class _GamepadHandlerState extends State<GamepadHandler> {
+class _AppGamepadListenerState extends State<AppGamepadListener> {
   StreamSubscription<NormalizedGamepadEvent>? _subscription;
   final FocusNode _pageFocusNode = FocusNode();
   Timer? _directionRepeatTimer;
@@ -133,6 +114,10 @@ class _GamepadHandlerState extends State<GamepadHandler> {
 
   bool _isAxisNeutral(double value) {
     return value > -_axisNeutralThreshold && value < _axisNeutralThreshold;
+  }
+
+  void _handleChangeTab(bool? next) {
+    Provider.of<AppProvider>(context, listen: false).onChangeTab.add(next);
   }
 
   void _handleDirectionalInput({
@@ -237,10 +222,10 @@ class _GamepadHandlerState extends State<GamepadHandler> {
         key is KeyDownEvent) {
       Provider.of<AppProvider>(context, listen: false).setUsingGamepad(true);
       if (key.logicalKey == LogicalKeyboardKey.gameButtonLeft1) {
-        widget.onChangeTab?.call(false);
+        _handleChangeTab(false);
       }
       if (key.logicalKey == LogicalKeyboardKey.gameButtonRight1) {
-        widget.onChangeTab?.call(true);
+        _handleChangeTab(true);
       }
     }
   }
@@ -273,13 +258,13 @@ class _GamepadHandlerState extends State<GamepadHandler> {
 
         case 'rightBumper':
           if (keyVal > _buttonPressedThreshold) {
-            widget.onChangeTab!(true);
+            _handleChangeTab(true);
           }
           break;
 
         case 'leftBumper':
           if (keyVal > _buttonPressedThreshold) {
-            widget.onChangeTab!(false);
+            _handleChangeTab(false);
           }
           break;
 

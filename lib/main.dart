@@ -17,7 +17,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/services/system_tray_service.dart';
-import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
+import 'package:yamata_launcher/app_gamepad_listener.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 
 var isFullScreen = false;
@@ -144,8 +144,7 @@ class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
                   themeMode: appProvider.themeMode,
                   theme: appThemeLight,
                   builder: (context, child) {
-                    return AppKeyboardListener(
-                        child: GlobalFocusHighlight(child: child!));
+                    return GlobalFocusHighlight(child: child!);
                   },
                   darkTheme: appThemeDark);
             }),

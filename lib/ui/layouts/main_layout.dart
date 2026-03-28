@@ -9,7 +9,8 @@ import 'package:yamata_launcher/app_keyboard_listener.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/services/notifications_service.dart';
-import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
+import 'package:yamata_launcher/app_gamepad_listener.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_hint/gamepad_button_glyph.dart';
 import 'package:yamata_launcher/ui/widgets/gamepad_hint/gamepad_hint_bar.dart';
 import 'package:yamata_launcher/ui/widgets/global_focus_highlight.dart';
 import '../../services/assets_service.dart';
@@ -37,6 +38,7 @@ class _MainLayoutState extends State<MainLayout>
     with TrayListener, WidgetsBindingObserver {
   late final FocusScopeNode _navScopeNode;
   late final FocusScopeNode _contentScopeNode;
+  Stream<bool?>? changeTabStream;
 
   int _locationToIndex(String location) {
     return MainLayout._routes.indexWhere((e) => location.startsWith(e));
@@ -47,6 +49,12 @@ class _MainLayoutState extends State<MainLayout>
     super.initState();
     _navScopeNode = FocusScopeNode(debugLabel: 'NavScope');
     _contentScopeNode = FocusScopeNode(debugLabel: 'ContentScope');
+    changeTabStream =
+        Provider.of<AppProvider>(context, listen: false).onChangeTab.stream;
+
+    changeTabStream?.listen((event) {
+      handleOnChangeTabs(event);
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -56,6 +64,7 @@ class _MainLayoutState extends State<MainLayout>
     _contentScopeNode.dispose();
     super.dispose();
     WidgetsBinding.instance.removeObserver(this);
+    changeTabStream = null;
   }
 
   @override
@@ -182,92 +191,40 @@ class _MainLayoutState extends State<MainLayout>
     }
 
     // Global keyboard handler (desktop only)
-    Widget desktopWithGlobalKeys() {
-      return Focus(
-        autofocus: true,
-        canRequestFocus: false,
-        onKeyEvent: (node, event) {
-          if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-          final key = event.logicalKey;
-
-          final isLeft = key == LogicalKeyboardKey.arrowLeft;
-          final isRight = key == LogicalKeyboardKey.arrowRight;
-
-          final isDown = key == LogicalKeyboardKey.arrowDown;
-
-          if (isLeft) {
-            final moved = FocusManager.instance.primaryFocus
-                    ?.focusInDirection(TraversalDirection.left) ??
-                false;
-
-            if (!moved) {
-              _navScopeNode.requestFocus();
-            }
-
-            return KeyEventResult.handled;
-          }
-
-          if (isRight) {
-            final moved = FocusManager.instance.primaryFocus
-                    ?.focusInDirection(TraversalDirection.right) ??
-                false;
-
-            if (!moved) {
-              _contentScopeNode.requestFocus();
-            }
-
-            return KeyEventResult.handled;
-          }
-
-          if (isDown) {
-            final moved = FocusManager.instance.primaryFocus
-                    ?.focusInDirection(TraversalDirection.down) ??
-                false;
-
-            if (!moved) {
-              _contentScopeNode.requestFocus();
-            }
-
-            return KeyEventResult.handled;
-          }
-
-          return KeyEventResult.ignored;
-        },
-        child: GamepadHandler(
-            onChangeTab: handleOnChangeTabs,
-            child: Stack(children: [
-              buildDesktopLayout(),
-              Consumer<AppProvider>(
-                builder: (context, appProvider, child) {
-                  if (!appProvider.isUsingGamepad)
-                    return const SizedBox.shrink();
-                  return FadeInUp(
-                    duration: const Duration(milliseconds: 300),
-                    child: GamepadHintBar(hints: [
-                      GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
-                      GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
-                      GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
-                      GamepadHint(glyph: GamepadGlyph.lb, label: ""),
-                      GamepadHint(glyph: GamepadGlyph.rb, label: "Change tabs"),
-                    ]),
-                  );
-                },
-              )
-            ]),
-            navScropeNode: _navScopeNode,
-            contentScopeNode: _contentScopeNode),
+    Widget DesktopLayoutWithScopes() {
+      return AppKeyboardListener(
+        navScropeNode: _navScopeNode,
+        contentScopeNode: _contentScopeNode,
+        child: AppGamepadListener(
+          navScropeNode: _navScopeNode,
+          contentScopeNode: _contentScopeNode,
+          child: Stack(children: [
+            buildDesktopLayout(),
+            Consumer<AppProvider>(
+              builder: (context, appProvider, child) {
+                if (!appProvider.isUsingGamepad) return const SizedBox.shrink();
+                return FadeInUp(
+                  duration: const Duration(milliseconds: 300),
+                  child: GamepadHintBar(hints: [
+                    GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
+                    GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
+                    GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
+                    GamepadHint(glyph: GamepadGlyph.lb, label: ""),
+                    GamepadHint(glyph: GamepadGlyph.rb, label: "Change tabs"),
+                  ]),
+                );
+              },
+            )
+          ]),
+        ),
       );
     }
 
     return Scaffold(
       key: mainLayoutKey,
-      body: AppKeyboardListener(
-        onChangeTab: handleOnChangeTabs,
-        child: isSmallScreen
-            ? GamepadHandler(child: widget.child)
-            : desktopWithGlobalKeys(),
-      ),
+      body: isSmallScreen
+          ? AppKeyboardListener(child: AppGamepadListener(child: widget.child))
+          : DesktopLayoutWithScopes(),
       bottomNavigationBar: isSmallScreen
           ? Container(
               padding: const EdgeInsets.only(top: 5),

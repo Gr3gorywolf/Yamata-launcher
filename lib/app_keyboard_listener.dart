@@ -9,16 +9,17 @@ import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/keyboard_keys_constants.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/services/os_service.dart';
-import 'package:yamata_launcher/ui/widgets/gamepad_handler.dart';
+import 'package:yamata_launcher/app_gamepad_listener.dart';
 
 class AppKeyboardListener extends StatefulWidget {
   final Widget child;
-  final Function(bool? next)? onChangeTab;
-
+  final FocusScopeNode? navScropeNode;
+  final FocusScopeNode? contentScopeNode;
   const AppKeyboardListener({
     super.key,
     required this.child,
-    this.onChangeTab,
+    this.navScropeNode,
+    this.contentScopeNode,
   });
 
   @override
@@ -47,6 +48,34 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
     return context.findAncestorWidgetOfExactType<EditableText>() != null;
   }
 
+  void _handleTraversal(TraversalDirection direction) {
+    if (TraversalDirection.left == direction) {
+      final moved = FocusManager.instance.primaryFocus
+              ?.focusInDirection(TraversalDirection.left) ??
+          false;
+
+      if (!moved) {
+        widget.navScropeNode?.requestFocus();
+      }
+
+      return;
+    }
+
+    if (TraversalDirection.right == direction) {
+      final moved = FocusManager.instance.primaryFocus
+              ?.focusInDirection(TraversalDirection.right) ??
+          false;
+
+      if (!moved) {
+        widget.contentScopeNode?.requestFocus();
+      }
+
+      return;
+    }
+
+    FocusManager.instance.primaryFocus?.focusInDirection(direction);
+  }
+
   @override
   void dispose() {
     _pageFocusNode.dispose();
@@ -57,7 +86,6 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
     Router.of(navigatorContext!).routerDelegate.popRoute();
   }
 
-  // 🔥 LOG GLOBAL
   void _handleSetUsingKeyboardAndMouse(String type, [dynamic data]) {
     Provider.of<AppProvider>(context, listen: false).setUsingGamepad(false);
   }
@@ -83,18 +111,14 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
       },
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
-
-        // 📱 TAP (touch / mouse click)
         onTap: () => _handleSetUsingKeyboardAndMouse('tap'),
-
         onPanStart: (_) => _handleSetUsingKeyboardAndMouse('panStart'),
         onPanUpdate: (_) => _handleSetUsingKeyboardAndMouse('panUpdate'),
         onPanEnd: (_) => _handleSetUsingKeyboardAndMouse('panEnd'),
-
-        child: KeyboardListener(
+        child: Focus(
           focusNode: _pageFocusNode,
           autofocus: true,
-          onKeyEvent: (event) {
+          onKeyEvent: (node, event) {
             if (event is KeyDownEvent) {
               if (Platform.isAndroid &&
                   AndroidGamepadKeys.contains(event.logicalKey)) {
@@ -105,7 +129,7 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
               }
             }
 
-            if (event is! KeyDownEvent) return;
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
             final keyboard = HardwareKeyboard.instance;
             final isCtrlPressed = keyboard.isControlPressed;
@@ -114,29 +138,41 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
 
             if (BACK_KEYS.contains(key)) {
               _handleBack();
-              return;
+              return KeyEventResult.handled;
             }
 
             if (key == LogicalKeyboardKey.tab) {
               if (Platform.isWindows ||
                   Platform.isAndroid ||
                   OsService.isGenericLinuxVariant) {
-                if (!isCtrlPressed) return;
+                if (!isCtrlPressed) return KeyEventResult.ignored;
               }
-              widget.onChangeTab?.call(null);
-              return;
+              Provider.of<AppProvider>(context, listen: false)
+                  .onChangeTab
+                  .add(null);
+              return KeyEventResult.handled;
             }
 
             if (isTyping) {
               if (key == LogicalKeyboardKey.arrowDown) {
                 FocusManager.instance.primaryFocus?.nextFocus();
-                return;
+                return KeyEventResult.handled;
               }
               if (key == LogicalKeyboardKey.arrowUp) {
                 FocusManager.instance.primaryFocus?.previousFocus();
-                return;
+                return KeyEventResult.handled;
+              }
+            } else {
+              if (key == LogicalKeyboardKey.arrowLeft) {
+                _handleTraversal(TraversalDirection.left);
+                return KeyEventResult.handled;
+              }
+              if (key == LogicalKeyboardKey.arrowRight) {
+                _handleTraversal(TraversalDirection.right);
+                return KeyEventResult.handled;
               }
             }
+            return KeyEventResult.ignored;
           },
           child: widget.child,
         ),

@@ -10,11 +10,14 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
 import 'package:yamata_launcher/utils/plain_text_search.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/filters/library_item_filters.dart';
+import 'package:yamata_launcher/utils/toolbar_settings/filters/rom_info_filters.dart';
 
 DateTime? _nextRevalidation = null;
 
@@ -156,6 +159,21 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   value: ToolBarSortByType.ascending),
             ],
             filters: [
+              if (_roms != null)
+                ToolBarFilterGroup(
+                  groupName: 'Consoles',
+                  filters: (_roms ?? [])
+                      .map((e) => e.console)
+                      .toSet()
+                      .map((console) {
+                    var consoleInfo =
+                        ConsoleService.getConsoleFromName(console);
+                    return ToolBarFilterElement<RomInfo>(
+                        label: consoleInfo?.name ?? "",
+                        field: 'console',
+                        value: consoleInfo?.slug ?? "");
+                  }).toList(),
+                ),
               ToolBarFilterGroup(
                 groupName: "Availability",
                 filters: [

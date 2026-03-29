@@ -44,10 +44,7 @@ class DialogSectionItem extends StatelessWidget {
                     Icon(icon),
                     SizedBox(width: 10),
                     Expanded(child: content),
-                    Row(
-                        children: actions
-                            .map((action) => FocusableElement(child: action))
-                            .toList())
+                    Row(children: actions.map((action) => action).toList())
                   ],
                 ),
               ),

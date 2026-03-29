@@ -184,161 +184,158 @@ class RomSettingsDialog extends StatelessWidget {
       content: SingleChildScrollView(
         child: Container(
           constraints: BoxConstraints(maxWidth: 400),
-          child: FocusTraversalGroup(
-            policy: OrderedTraversalPolicy(),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DialogSectionItem(
-                  padding: EdgeInsets.only(bottom: 0),
-                  title: "Rom path",
-                  content: Text(
-                      _downloadPath.isEmpty ? "Not downloaded" : _downloadPath),
-                  icon: Icons.description,
-                  actions: [
-                    ..._downloadPath.isEmpty
-                        ? []
-                        : [
-                            IconButton(
-                                icon: Icon(Icons.clear),
-                                onPressed: _removeRomPath),
-                          ],
-                    IconButton(
-                        icon: Icon(Icons.file_open), onPressed: _pickRomPath)
-                  ],
-                ),
-                ...!_downloadPath.isEmpty
-                    ? [
-                        !_getFileExist()
-                            ? Padding(
-                                padding: const EdgeInsets.only(left: 5),
-                                child: Text("The file cannot be found on disk",
-                                    style: TextStyle(
-                                        color: Colors.redAccent,
-                                        fontWeight: FontWeight.w500)),
-                              )
-                            : Row(
-                                children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DialogSectionItem(
+                padding: EdgeInsets.only(bottom: 0),
+                title: "Rom path",
+                content: Text(
+                    _downloadPath.isEmpty ? "Not downloaded" : _downloadPath),
+                icon: Icons.description,
+                actions: [
+                  ..._downloadPath.isEmpty
+                      ? []
+                      : [
+                          IconButton(
+                              icon: Icon(Icons.clear),
+                              onPressed: _removeRomPath),
+                        ],
+                  IconButton(
+                      icon: Icon(Icons.file_open), onPressed: _pickRomPath)
+                ],
+              ),
+              ...!_downloadPath.isEmpty
+                  ? [
+                      !_getFileExist()
+                          ? Padding(
+                              padding: const EdgeInsets.only(left: 5),
+                              child: Text("The file cannot be found on disk",
+                                  style: TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.w500)),
+                            )
+                          : Row(
+                              children: [
+                                TextButton.icon(
+                                    onPressed: _handleOpenFolder,
+                                    label: Text("Open Folder"),
+                                    icon: Icon(Icons.folder_open)),
+                                if (_getFileCanBeExtracted())
                                   TextButton.icon(
-                                      onPressed: _handleOpenFolder,
-                                      label: Text("Open Folder"),
-                                      icon: Icon(Icons.folder_open)),
-                                  if (_getFileCanBeExtracted())
-                                    TextButton.icon(
-                                        onPressed: _handleExtractRom,
-                                        label: Text("Extract Rom"),
-                                        icon: Icon(Icons.folder_zip)),
-                                ],
-                              ),
-                        SizedBox(height: 10),
-                      ]
-                    : [],
+                                      onPressed: _handleExtractRom,
+                                      label: Text("Extract Rom"),
+                                      icon: Icon(Icons.folder_zip)),
+                              ],
+                            ),
+                      SizedBox(height: 10),
+                    ]
+                  : [],
+              DialogSectionItem(
+                title: "Emulator override",
+                content: Text(overrideEmulator.isEmpty
+                    ? "Default Emulator"
+                    : overrideEmulator),
+                icon: Icons.videogame_asset,
+                actions: [
+                  ...overrideEmulator.isEmpty
+                      ? []
+                      : [
+                          IconButton(
+                              icon: Icon(Icons.clear),
+                              onPressed: _restoreEmulator),
+                        ],
+                  IconButton(
+                      icon: Icon(Icons.file_open),
+                      onPressed: () => _pickEmulatorBinary()),
+                ],
+              ),
+              if (FileSystemService.isDesktop)
                 DialogSectionItem(
-                  title: "Emulator override",
-                  content: Text(overrideEmulator.isEmpty
-                      ? "Default Emulator"
-                      : overrideEmulator),
-                  icon: Icons.videogame_asset,
-                  actions: [
-                    ...overrideEmulator.isEmpty
-                        ? []
-                        : [
-                            IconButton(
-                                icon: Icon(Icons.clear),
-                                onPressed: _restoreEmulator),
-                          ],
-                    IconButton(
-                        icon: Icon(Icons.file_open),
-                        onPressed: () => _pickEmulatorBinary()),
-                  ],
-                ),
-                if (FileSystemService.isDesktop)
-                  DialogSectionItem(
-                    title: "Launch parameters",
-                    helperText:
-                        "Parameters flags used when launching the ROM (if supported by the emulator)",
-                    content: TextField(
-                      controller: launchParameters,
-                      decoration: InputDecoration(
-                        hintText: "Custom launch parameters",
-                        helperMaxLines: 3,
-                        helperStyle: TextStyle(color: Colors.grey[500]),
-                        filled: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 7),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
+                  title: "Launch parameters",
+                  helperText:
+                      "Parameters flags used when launching the ROM (if supported by the emulator)",
+                  content: TextField(
+                    controller: launchParameters,
+                    decoration: InputDecoration(
+                      hintText: "Custom launch parameters",
+                      helperMaxLines: 3,
+                      helperStyle: TextStyle(color: Colors.grey[500]),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 7),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
                       ),
-                      onChanged: (text) {
-                        libraryItem?.openParams = text;
-                        if (libraryItem != null) {
-                          provider.updateLibraryItem(libraryItem);
-                        }
-                      },
                     ),
-                    icon: Icons.terminal,
-                    actions: [],
+                    onChanged: (text) {
+                      libraryItem?.openParams = text;
+                      if (libraryItem != null) {
+                        provider.updateLibraryItem(libraryItem);
+                      }
+                    },
                   ),
-                DialogSectionItem(
-                  title: "Time played",
-                  content: Text(TimeHelpers.formatMinutes(
-                      libraryItem?.playTimeMins.toInt() ?? 0)),
-                  icon: Icons.access_time,
+                  icon: Icons.terminal,
+                  actions: [],
+                ),
+              DialogSectionItem(
+                title: "Time played",
+                content: Text(TimeHelpers.formatMinutes(
+                    libraryItem?.playTimeMins.toInt() ?? 0)),
+                icon: Icons.access_time,
+                actions: [
+                  ...((libraryItem?.playTimeMins.toInt() ?? 0) == 0
+                      ? []
+                      : [
+                          IconButton(
+                              icon: Icon(Icons.settings_backup_restore),
+                              onPressed: _restoreTime),
+                        ]),
+                  IconButton(
+                      icon: Icon(Icons.edit), onPressed: () => _pickTime()),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text("Danger Zone",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.redAccent)),
+              ),
+              _DangerSettingItem(
+                  title: "Remove from library",
+                  enabled: true,
+                  content: Text(
+                      "This will delete configuration and metadata. The file will remain on disk"),
+                  icon: Icons.dangerous,
                   actions: [
-                    ...((libraryItem?.playTimeMins.toInt() ?? 0) == 0
-                        ? []
-                        : [
-                            IconButton(
-                                icon: Icon(Icons.settings_backup_restore),
-                                onPressed: _restoreTime),
-                          ]),
                     IconButton(
-                        icon: Icon(Icons.edit), onPressed: () => _pickTime()),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text("Danger Zone",
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.redAccent)),
-                ),
-                _DangerSettingItem(
-                    title: "Remove from library",
-                    enabled: true,
-                    content: Text(
-                        "This will delete configuration and metadata. The file will remain on disk"),
-                    icon: Icons.dangerous,
-                    actions: [
-                      IconButton(
-                          icon: Icon(
-                            Icons.delete,
-                            color: Colors.redAccent,
-                          ),
-                          onPressed: _removeFromLibrary)
-                    ]),
-                _DangerSettingItem(
-                    title: "Delete files",
-                    enabled: hasPath,
-                    content: Text(
-                        "Permanently delete the file from storage. The library entry will not be removed."),
-                    icon: Icons.dangerous,
-                    actions: hasPath
-                        ? [
-                            IconButton(
-                                icon: Icon(
-                                  Icons.delete,
-                                  color: Colors.redAccent,
-                                ),
-                                onPressed: _deleteRomFile)
-                          ]
-                        : []),
-              ],
-            ),
+                        icon: Icon(
+                          Icons.delete,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: _removeFromLibrary)
+                  ]),
+              _DangerSettingItem(
+                  title: "Delete files",
+                  enabled: hasPath,
+                  content: Text(
+                      "Permanently delete the file from storage. The library entry will not be removed."),
+                  icon: Icons.dangerous,
+                  actions: hasPath
+                      ? [
+                          IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: _deleteRomFile)
+                        ]
+                      : []),
+            ],
           ),
         ),
       ),

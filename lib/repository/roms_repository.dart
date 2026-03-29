@@ -18,7 +18,8 @@ import 'package:yamata_launcher/utils/plain_text_search.dart';
 import '../providers/library_provider.dart';
 
 class RomsRepository {
-  Future<List<RomInfo>> fetchRoms(Console console) async {
+  Future<List<RomInfo>> fetchRoms(Console console,
+      {bool forceCache = false}) async {
     Map<String, RomInfo> roms = {};
     final url = "${AppConstants.apiBasePath}/Data/Roms/${console.slug}.json";
     var externalConsoles = ConsoleService.externalPlatformCatalogs;
@@ -35,6 +36,7 @@ class RomsRepository {
         }
         return roms;
       },
+      forceCache: forceCache,
     );
 
     if (result != null) roms.addAll(result);

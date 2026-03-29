@@ -18,6 +18,7 @@ class CachedFetch {
     Duration? ttl,
     Client? client,
     Duration? timeout,
+    bool forceCache = false,
   }) async {
     client ??= Client();
 
@@ -25,6 +26,12 @@ class CachedFetch {
 
     try {
       final signature = await CacheService.getCacheSignature(fullKey);
+      if (forceCache && signature != null) {
+        final cached = await CacheService.retrieveCacheFile(fullKey);
+        if (cached != null) {
+          return parser(jsonDecode(cached));
+        }
+      }
 
       if (signature != null) {
         final head = await client.head(Uri.parse(url));

@@ -121,29 +121,35 @@ class RomService {
   }
 
   static String normalizeRomTitle(String input, {bool deleteRunes = false}) {
-    final buffer = StringBuffer();
+    var cleaned =
+        input.toLowerCase().replaceAll(RegExp(r'\(.*?\)|\[.*?\]'), '').trim();
 
-    final cleaned =
-        input.toLowerCase().replaceAll(RegExp(r'\(.*?\)|\[.*?\]'), '');
-    if (deleteRunes == true) {
-      return cleaned.replaceAll(RegExp(r'[^a-zA-Z0-9]+'), '').trim();
-    }
-    for (final character in StringHelper.diacriticsMap.entries) {
-      cleaned.replaceAll(character.key, character.value);
-    }
-    for (final rune in cleaned.runes) {
-      final mapped = StringHelper.unicodeMap[rune];
-      if (mapped != null) {
-        buffer.writeCharCode(mapped);
-        continue;
-      }
+    cleaned = cleaned
+        .replaceAll(RegExp(r'[áàäâãåāăą]'), 'a')
+        .replaceAll(RegExp(r'[éèëêēĕėęě]'), 'e')
+        .replaceAll(RegExp(r'[íìïîĩīĭįı]'), 'i')
+        .replaceAll(RegExp(r'[óòöôõōŏőø]'), 'o')
+        .replaceAll(RegExp(r'[úùüûũūŭůűų]'), 'u')
+        .replaceAll(RegExp(r'[çćĉċč]'), 'c')
+        .replaceAll(RegExp(r'[ñńņň]'), 'n')
+        .replaceAll(RegExp(r'[ýÿŷ]'), 'y')
+        .replaceAll(RegExp(r'[śŝşš]'), 's')
+        .replaceAll(RegExp(r'[łĺļľŀ]'), 'l')
+        .replaceAll(RegExp(r'[žźż]'), 'z')
+        .replaceAll(RegExp(r'[ğĝġģ]'), 'g')
+        .replaceAll(RegExp(r'[řŕŗ]'), 'r')
+        .replaceAll(RegExp(r'[ťţŧ]'), 't')
+        .replaceAll(RegExp(r'[ďđ]'), 'd')
+        .replaceAll(RegExp(r'[þ]'), 'th')
+        .replaceAll(RegExp(r'[ß]'), 'ss')
+        .replaceAll(RegExp(r'[æ]'), 'ae')
+        .replaceAll(RegExp(r'[œ]'), 'oe');
 
-      if ((rune >= 97 && rune <= 122) || (rune >= 48 && rune <= 57)) {
-        buffer.writeCharCode(rune);
-      }
+    if (deleteRunes) {
+      return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
     }
 
-    return buffer.toString();
+    return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
   }
 
   static String getRomSlug(String consoleSlug, String romName) {

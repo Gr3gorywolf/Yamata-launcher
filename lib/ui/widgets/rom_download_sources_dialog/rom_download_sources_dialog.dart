@@ -158,7 +158,7 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
                             hoverColor: Colors.transparent,
                             title: Text(
                               item.rom.title!,
-                              maxLines: 2,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 14),

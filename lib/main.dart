@@ -144,7 +144,8 @@ class _MyAppState extends State<MyApp> with WindowListener, TrayListener {
                   themeMode: appProvider.themeMode,
                   theme: appThemeLight,
                   builder: (context, child) {
-                    return GlobalFocusHighlight(child: child!);
+                    return AppKeyboardListener(
+                        child: GlobalFocusHighlight(child: child!));
                   },
                   darkTheme: appThemeDark);
             }),

@@ -1,7 +1,6 @@
 import 'dart:async';
-
-import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_device_apps/flutter_device_apps.dart';
 import 'package:yamata_launcher/models/emulator.dart';
 
 class EmulatorListItem extends StatefulWidget {
@@ -32,7 +31,8 @@ class _EmulatorListItemState extends State<EmulatorListItem> {
   }
 
   checkAvailability() async {
-    var result = await DeviceApps.isAppInstalled(widget.emulator.packageName!);
+    var result =
+        await FlutterDeviceApps.getApp(widget.emulator.packageName!) != null;
     setState(() {
       isEmulatorAvailable = result;
     });

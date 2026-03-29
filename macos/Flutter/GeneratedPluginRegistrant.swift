@@ -12,7 +12,7 @@ import gamepads_darwin
 import package_info_plus
 import path_provider_foundation
 import screen_retriever_macos
-import shared_preferences_macos
+import shared_preferences_foundation
 import tray_manager
 import url_launcher_macos
 import window_manager

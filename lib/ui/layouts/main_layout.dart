@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -190,6 +192,27 @@ class _MainLayoutState extends State<MainLayout>
       );
     }
 
+    Widget buildGamepadGuide() {
+      return Consumer<AppProvider>(
+        builder: (context, appProvider, child) {
+          if (!appProvider.isUsingGamepad || !appProvider.showGamepadGuide)
+            return const SizedBox.shrink();
+          return FadeInUp(
+            duration: const Duration(milliseconds: 300),
+            child: GamepadHintBar(hints: [
+              GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
+              if (!Platform.isAndroid)
+                GamepadHint(glyph: GamepadGlyph.rightStick, label: "Scroll"),
+              GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
+              GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
+              GamepadHint(glyph: GamepadGlyph.lb, label: ""),
+              GamepadHint(glyph: GamepadGlyph.rb, label: "Change tabs"),
+            ]),
+          );
+        },
+      );
+    }
+
     // Global keyboard handler (desktop only)
     Widget DesktopLayoutWithScopes() {
       return AppKeyboardListener(
@@ -198,28 +221,7 @@ class _MainLayoutState extends State<MainLayout>
         child: AppGamepadListener(
           navScropeNode: _navScopeNode,
           contentScopeNode: _contentScopeNode,
-          child: Stack(children: [
-            buildDesktopLayout(),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) {
-                if (!appProvider.isUsingGamepad ||
-                    !appProvider.showGamepadGuide)
-                  return const SizedBox.shrink();
-                return FadeInUp(
-                  duration: const Duration(milliseconds: 300),
-                  child: GamepadHintBar(hints: [
-                    GamepadHint(glyph: GamepadGlyph.leftStick, label: "Move"),
-                    GamepadHint(
-                        glyph: GamepadGlyph.rightStick, label: "Scroll"),
-                    GamepadHint(glyph: GamepadGlyph.b, label: "Back"),
-                    GamepadHint(glyph: GamepadGlyph.a, label: "Select"),
-                    GamepadHint(glyph: GamepadGlyph.lb, label: ""),
-                    GamepadHint(glyph: GamepadGlyph.rb, label: "Change tabs"),
-                  ]),
-                );
-              },
-            )
-          ]),
+          child: Stack(children: [buildDesktopLayout(), buildGamepadGuide()]),
         ),
       );
     }
@@ -227,7 +229,9 @@ class _MainLayoutState extends State<MainLayout>
     return Scaffold(
       key: mainLayoutKey,
       body: isSmallScreen
-          ? AppKeyboardListener(child: AppGamepadListener(child: widget.child))
+          ? AppKeyboardListener(
+              child: AppGamepadListener(
+                  child: Stack(children: [widget.child, buildGamepadGuide()])))
           : DesktopLayoutWithScopes(),
       bottomNavigationBar: isSmallScreen
           ? Container(

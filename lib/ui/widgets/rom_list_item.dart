@@ -70,6 +70,9 @@ class RomListItem extends StatelessWidget {
       (p) => p.getDownloadInfo(romItem)?.isExtracting,
     );
 
+    final loadingSource = context.select<DownloadSourcesProvider, bool?>(
+        (p) => p.isRomCompilingDownloadSources(romItem.slug));
+
     navigateToDetails() {
       showModalBottomSheet(
           context: context,
@@ -179,6 +182,10 @@ class RomListItem extends StatelessWidget {
           .isNotEmpty) {
         icon = Icons.cloud_download;
         text = "Download available";
+        color = theme.colorScheme.onSurface.withOpacity(0.7);
+      } else if (loadingSource == true) {
+        icon = Icons.hourglass_top;
+        text = "Checking sources...";
         color = theme.colorScheme.onSurface.withOpacity(0.7);
       } else {
         icon = Icons.file_download_off;

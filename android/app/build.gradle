@@ -24,13 +24,12 @@ def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "
 
 android {
     namespace = "com.gr3gorywolf.yamata_launcher"
-
-    compileSdkVersion flutter.compileSdkVersion
-
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
     defaultConfig {
         applicationId "com.gr3gorywolf.yamata_launcher"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 24
+        targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
@@ -74,6 +73,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
     } 
 }
 
@@ -90,4 +90,6 @@ dependencies {
     implementation "commons-io:commons-io:2.8.0"
     implementation "org.apache.commons:commons-compress:1.21"
     implementation 'com.github.omicronapps:7-Zip-JBinding-4Android:Release-16.02-2.02'
+    implementation 'com.google.errorprone:error_prone_annotations:2.23.0'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 }

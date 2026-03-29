@@ -16,7 +16,6 @@ import 'package:yamata_launcher/ui/widgets/rom_rating.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:provider/provider.dart';
-import 'package:share/share.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/ui/widgets/download_spinner.dart';

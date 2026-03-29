@@ -120,8 +120,6 @@ class _AppKeyboardListenerState extends State<AppKeyboardListener> {
           autofocus: true,
           onKeyEvent: (node, event) {
             final isTyping = _isTextInputFocused();
-            final isUsingGamepad =
-                Provider.of<AppProvider>(context, listen: false).isUsingGamepad;
             if (event is KeyDownEvent) {
               if (Platform.isAndroid &&
                   AndroidGamepadKeys.contains(event.logicalKey)) {

@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:device_apps/device_apps.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -60,7 +58,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
           filteredApps: consoleEmulators);
       if (result != null) {
         setState(() {
-          selectedBinaryController.text = result.packageName;
+          selectedBinaryController.text = result?.packageName ?? "";
         });
       }
       return;

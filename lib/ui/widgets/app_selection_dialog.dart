@@ -1,4 +1,4 @@
-import 'package:device_apps/device_apps.dart';
+import 'package:flutter_device_apps/flutter_device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,9 +6,9 @@ class AppSelectionDialog extends StatefulWidget {
   final List<String> filteredApps;
   AppSelectionDialog({super.key, this.filteredApps = const []});
 
-  static Future<ApplicationWithIcon?> show(BuildContext context,
+  static Future<AppInfo?> show(BuildContext context,
       {List<String> filteredApps = const []}) {
-    return showDialog<ApplicationWithIcon>(
+    return showDialog<AppInfo>(
         context: context,
         builder: (_) {
           return AppSelectionDialog(filteredApps: filteredApps);
@@ -30,10 +30,10 @@ class _AppSelectionDialogState extends State<AppSelectionDialog> {
     setState(() {
       isLoading = true;
     });
-    var apps = await DeviceApps.getInstalledApplications(
-      includeAppIcons: true,
-      includeSystemApps: false,
-      onlyAppsWithLaunchIntent: true,
+    var apps = await FlutterDeviceApps.listApps(
+      includeIcons: true,
+      onlyLaunchable: true,
+      includeSystem: false,
     );
     setState(() {
       installedApps = apps;
@@ -41,19 +41,18 @@ class _AppSelectionDialogState extends State<AppSelectionDialog> {
     });
   }
 
-  List<ApplicationWithIcon> get filteredApps {
+  List<AppInfo> get filteredApps {
     var apps = showAllApps
         ? installedApps
         : installedApps.where((app) {
-            return widget.filteredApps
-                .contains((app as ApplicationWithIcon).packageName);
+            return widget.filteredApps.contains((app as AppInfo).packageName);
           }).toList();
     return apps
         .where((app) {
-          final appName = (app as ApplicationWithIcon).appName;
-          return appName.toLowerCase().contains(query.toLowerCase());
+          final appName = (app as AppInfo).appName;
+          return appName?.toLowerCase().contains(query.toLowerCase()) ?? false;
         })
-        .cast<ApplicationWithIcon>()
+        .cast<AppInfo>()
         .toList();
   }
 
@@ -108,13 +107,15 @@ class _AppSelectionDialogState extends State<AppSelectionDialog> {
                       child: ListView.builder(
                         itemCount: filteredApps.length,
                         itemBuilder: (context, i) {
-                          final app = filteredApps[i] as ApplicationWithIcon;
+                          final app = filteredApps[i] as AppInfo;
 
                           return ListTile(
-                            leading:
-                                Image.memory(app.icon, width: 32, height: 32),
-                            title: Text(app.appName),
-                            subtitle: Text(app.packageName),
+                            leading: app.iconBytes != null
+                                ? Image.memory(app.iconBytes!,
+                                    width: 32, height: 32)
+                                : null,
+                            title: Text(app.appName ?? ""),
+                            subtitle: Text(app.packageName ?? ""),
                             onTap: () => Navigator.pop(context, app),
                           );
                         },

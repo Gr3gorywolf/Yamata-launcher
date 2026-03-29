@@ -9,6 +9,38 @@ class SearchResult {
 
 class PlainTextSearch {
   /// Performs a plain-text search over [items] using [query].
+  ///
+
+  static bool matches(String query, String text) {
+    final queryTokens = query.tokensForSearch();
+    if (queryTokens.isEmpty) return false;
+
+    return _matchElement(queryTokens, text).$1;
+  }
+
+  static (bool, int) _matchElement(
+    List<String> queryTokens,
+    String element, {
+    int minConsecutiveLength = 6,
+    bool requireAllTokens = true,
+  }) {
+    final normalizedItem = element.normalizeForSearch();
+    if (normalizedItem.isEmpty) return (false, 0);
+
+    final itemTokens =
+        normalizedItem.split(' ').where((t) => t.isNotEmpty).toList();
+
+    final matchData = _matchTokens(
+      queryTokens: queryTokens,
+      itemNormalized: normalizedItem,
+      itemTokens: itemTokens,
+      minConsecutiveLength: minConsecutiveLength,
+      requireAllTokens: requireAllTokens,
+    );
+
+    return matchData;
+  }
+
   static List<SearchResult> search(
     String query,
     List<String> items, {
@@ -21,20 +53,9 @@ class PlainTextSearch {
     final results = <SearchResult>[];
 
     for (final item in items) {
-      final normalizedItem = item.normalizeForSearch();
-      if (normalizedItem.isEmpty) continue;
-
-      final itemTokens =
-          normalizedItem.split(' ').where((t) => t.isNotEmpty).toList();
-
-      final matchData = _matchTokens(
-        queryTokens: queryTokens,
-        itemNormalized: normalizedItem,
-        itemTokens: itemTokens,
-        minConsecutiveLength: minConsecutiveLength,
-        requireAllTokens: requireAllTokens,
-      );
-
+      final matchData = _matchElement(queryTokens, item,
+          minConsecutiveLength: minConsecutiveLength,
+          requireAllTokens: requireAllTokens);
       if (matchData.$1) {
         results.add(SearchResult(item, matchData.$2));
       }

@@ -45,27 +45,44 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     }
   }
 
-  Future<List<RomInfo>> downloadAllRomDefinitions() async {
-    var allDefaultRoms = <RomInfo>[];
-    setState(() {
-      loadingProgress = 0;
-    });
+  Future<List<RomInfo>> downloadAndFilterRoms(String query) async {
+    final result = <RomInfo>[];
+
     var useCache = _nextRevalidation != null &&
         DateTime.now().isBefore(_nextRevalidation!);
-    var futures = ConsoleConstants.defaultConsoles.map((console) async {
-      var roms =
-          await new RomsRepository().fetchRoms(console, forceCache: useCache);
-      setState(() {
-        loadingProgress += 1 / ConsoleConstants.defaultConsoles.length * 100;
-      });
-      return roms;
-    });
-    var results = await Future.wait(futures);
-    for (var romList in results) {
-      allDefaultRoms.addAll(romList);
+
+    final consoles = ConsoleConstants.defaultConsoles;
+    final concurrency = 20;
+    int index = 0;
+    Future<void> worker() async {
+      while (index < consoles.length) {
+        final current = index++;
+        final console = consoles[current];
+
+        var roms =
+            await RomsRepository().fetchRoms(console, forceCache: useCache);
+
+        for (var rom in roms) {
+          if (PlainTextSearch.matches(query, rom.name)) {
+            result.add(rom);
+          }
+        }
+
+        roms.clear();
+
+        if (mounted) {
+          setState(() {
+            loadingProgress += 1 / consoles.length * 100;
+          });
+        }
+      }
     }
+
+    await Future.wait(List.generate(concurrency, (_) => worker()));
+
     _nextRevalidation = DateTime.now().add(Duration(hours: 1));
-    return allDefaultRoms;
+
+    return result;
   }
 
   void fetchRoms() async {
@@ -73,41 +90,33 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       _isLoading = true;
     });
 
-    var localRoms = await downloadAllRomDefinitions();
-    var externalRoms = await new RomsRepository()
-        .searchFromExternalSources(widget.searchQuery);
-    var localRomIndex = <String, RomInfo>{};
-    for (var rom in localRoms) {
-      localRomIndex[rom.name] = rom;
-    }
-    var filteredRomResults = PlainTextSearch.search(
-      widget.searchQuery,
-      localRomIndex.keys.toList(),
-    );
+    var filteredLocal = await downloadAndFilterRoms(widget.searchQuery);
 
-    var filteredRoms = filteredRomResults
-        .map((result) => localRomIndex[result.item])
-        .whereType<RomInfo>()
-        .toList();
+    var externalRoms =
+        await RomsRepository().searchFromExternalSources(widget.searchQuery);
 
     var importedRoms =
-        await new RomsRepository().getImportedRoms(widget.searchQuery);
+        await RomsRepository().getImportedRoms(widget.searchQuery);
 
-    print(
-        "Found ${_roms!.length} local roms, ${externalRoms.length} external roms, ${importedRoms.length} imported roms for query '${widget.searchQuery}'");
-    _roms!.addAll(filteredRoms);
-    _roms!.addAll(externalRoms);
-    _roms!.addAll(importedRoms);
     final map = <String, RomInfo>{};
 
-    for (final e in _roms!) {
+    for (final e in filteredLocal) {
+      map[e.slug] = e;
+    }
+    for (final e in externalRoms) {
+      map[e.slug] = e;
+    }
+    for (final e in importedRoms) {
       map[e.slug] = e;
     }
 
-    final uniqueList = map.values.toList();
+    var uniqueList = map.values.toList();
+
     var downloadSourcesProvider =
         Provider.of<DownloadSourcesProvider>(context, listen: false);
+
     downloadSourcesProvider.compileRomDownloadSources(uniqueList);
+
     setState(() {
       _roms = uniqueList;
       _isLoading = false;

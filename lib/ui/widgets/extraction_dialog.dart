@@ -70,7 +70,8 @@ class _ExtractionDialogState extends State<ExtractionDialog> {
         output: tempFolder,
         onError: (data) {
           print("Extraction error: $data");
-          Future.microtask(() {
+          Future.delayed(Duration(seconds: 1), () {
+            _cleanupTempDir();
             widget?.onError?.call(data as String);
           }).then((_) {});
           _cancelWakeLock();

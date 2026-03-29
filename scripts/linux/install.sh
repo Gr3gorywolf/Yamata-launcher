@@ -142,6 +142,9 @@ download_file "$ICON_URL" "$ICON_TARGET"
 
 echo "Icon installed at $ICON_TARGET"
 
+## remove old batocera keys file if it exists
+rm -f "/userdata/roms/ports/yamata_launcher.sh.keys"
+
 # -------------------------------------------------
 # Desktop file
 # -------------------------------------------------

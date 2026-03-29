@@ -34,10 +34,7 @@ download_file "$ICON_URL" "$ICON_TARGET"
 
 #download launch script
 download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/master/scripts/linux/yamata_launcher.sh" "/userdata/roms/ports/yamata_launcher.sh"
-
-#download pad2key script
-download_file "https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/master/scripts/linux/pad2key.json" "/userdata/roms/ports/yamata_launcher.sh.keys"
-
+ 
 # inserts the batocera wine shortcut to the corresponding path
 if [ ! -f "$xml_file" ]; then
     echo '<?xml version="1.0"?>

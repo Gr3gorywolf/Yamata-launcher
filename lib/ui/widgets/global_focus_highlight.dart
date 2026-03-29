@@ -9,21 +9,59 @@ class GlobalFocusHighlight extends StatefulWidget {
   State<GlobalFocusHighlight> createState() => _GlobalFocusHighlightState();
 }
 
-class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
+class _GlobalFocusHighlightState extends State<GlobalFocusHighlight>
+    with TickerProviderStateMixin {
   Rect? _rect;
   FocusNode? _currentFocus;
+  FocusNode? _lastFocus;
 
   bool _pointerMode = false;
+
+  late AnimationController _pulseController;
+  late AnimationController _scaleController;
+
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+
     FocusManager.instance.addListener(_onFocusChange);
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+
+    _scaleAnimation = TweenSequence([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.08)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.08, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 50,
+      ),
+    ]).animate(_scaleController);
   }
 
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChange);
+    _pulseController.dispose();
+    _scaleController.dispose();
     super.dispose();
   }
 
@@ -36,6 +74,11 @@ class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
 
     if (_currentFocus != null) {
       _pointerMode = false;
+    }
+
+    if (_currentFocus != _lastFocus) {
+      _lastFocus = _currentFocus;
+      _scaleController.forward(from: 0);
     }
 
     _scheduleUpdate();
@@ -79,7 +122,7 @@ class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
   }
 
   // ======================
-  // Pointer handling (mouse)
+  // Pointer handling
   // ======================
 
   void _enterPointerMode() {
@@ -97,6 +140,8 @@ class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => _enterPointerMode(),
@@ -105,8 +150,6 @@ class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
       child: Stack(
         children: [
           widget.child,
-
-          // Highlight global
           if (_rect != null && !_pointerMode)
             Positioned(
               left: _rect!.left - 4,
@@ -114,14 +157,28 @@ class _GlobalFocusHighlightState extends State<GlobalFocusHighlight> {
               width: _rect!.width + 8,
               height: _rect!.height + 8,
               child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 3,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([
+                    _pulseController,
+                    _scaleController,
+                  ]),
+                  builder: (_, __) {
+                    return Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: Opacity(
+                        opacity: _pulseAnimation.value,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: color,
+                              width: 3,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

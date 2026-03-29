@@ -126,13 +126,18 @@ class _SiteCookiesPageState extends State<SiteCookiesPage> {
           AlertsService.showErrorSnackbar("Site already exists.");
           return;
         }
-        await CookiesService().saveSiteCookies(
+        var success = await CookiesService().saveSiteCookies(
           normalizedSite,
           SiteCookies(
             cookie: cookies,
             headers: headers,
           ),
         );
+        if (!success) {
+          AlertsService.showErrorSnackbar(
+              "Failed to save site cookies. Check the logs for more details.");
+          return;
+        }
 
         if (!exists) {
           setState(() {

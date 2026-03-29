@@ -173,13 +173,25 @@ class WebManagerService {
         return;
       }
       var exists = cookieSites.contains(site);
-      await CookiesService().saveSiteCookies(
+      var success = await CookiesService().saveSiteCookies(
         site,
         SiteCookies(
           cookie: cookies,
           headers: headers,
         ),
       );
+
+      if (!success) {
+        _json(
+            req,
+            {
+              'ok': false,
+              'error':
+                  'Failed to save site cookies. Check the logs for more details.'
+            },
+            statusCode: HttpStatus.internalServerError);
+        return;
+      }
 
       if (!exists) {
         cookieSites.add(site);

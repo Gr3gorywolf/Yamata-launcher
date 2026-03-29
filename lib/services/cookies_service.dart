@@ -12,10 +12,16 @@ class CookiesService {
         accessibility: KeychainAccessibility.unlocked,
         useDataProtectionKeyChain: false),
   );
-  Future<void> saveSiteCookies(String site, SiteCookies cookies) async {
-    await _storage.write(
-        key: "cookies_${StringHelper.hash20(site)}",
-        value: jsonEncode(cookies.toJson()));
+  Future<bool> saveSiteCookies(String site, SiteCookies cookies) async {
+    try {
+      await _storage.write(
+          key: "cookies_${StringHelper.hash20(site)}",
+          value: jsonEncode(cookies.toJson()));
+      return true;
+    } catch (e) {
+      print("Error saving cookies for site $site: $e");
+      return false;
+    }
   }
 
   Future<List<String>> getAllCookieSiteUrls() async {
@@ -25,13 +31,23 @@ class CookiesService {
   }
 
   Future<SiteCookies?> getSiteCookies(String site) async {
-    String? jsonString =
-        await _storage.read(key: "cookies_${StringHelper.hash20(site)}");
-    if (jsonString == null) return null;
-    return SiteCookies.fromJson(jsonDecode(jsonString));
+    try {
+      String? jsonString =
+          await _storage.read(key: "cookies_${StringHelper.hash20(site)}");
+      if (jsonString == null) return null;
+      return SiteCookies.fromJson(jsonDecode(jsonString));
+    } catch (e) {
+      print("Error retrieving cookies for site $site: $e");
+      return null;
+    }
   }
 
   Future<void> removeSiteCookies(String site) async {
-    await _storage.delete(key: "cookies_${StringHelper.hash20(site)}");
+    try {
+      await _storage.delete(key: "cookies_${StringHelper.hash20(site)}");
+    } catch (e) {
+      print("Error deleting cookies for site $site: $e");
+      return;
+    }
   }
 }

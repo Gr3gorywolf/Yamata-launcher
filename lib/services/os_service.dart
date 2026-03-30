@@ -1,11 +1,21 @@
 import 'dart:io';
 
+enum OsType { windows, linux, macos, android, unknown }
+
 enum LinuxVariant { steamOs, generic, batocera }
 
 class OsService {
   static LinuxVariant? _linuxVariant;
 
   static LinuxVariant? get linuxVariant => _linuxVariant;
+  static OsType get osType {
+    if (Platform.isWindows) return OsType.windows;
+    if (Platform.isLinux) return OsType.linux;
+    if (Platform.isMacOS) return OsType.macos;
+    if (Platform.isAndroid) return OsType.android;
+    return OsType.unknown;
+  }
+
   static bool get isGenericLinuxVariant =>
       Platform.isLinux &&
       (linuxVariant == LinuxVariant.generic || linuxVariant == null);

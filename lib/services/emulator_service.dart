@@ -9,6 +9,7 @@ import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
+import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_intent.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
@@ -17,6 +18,7 @@ import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/game-runners/heroic_game_runner.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -28,6 +30,9 @@ class EmulatorService {
   static Map<String, Timer> _activeGames = {};
   static Map<String, Process> _activeGamesProcesses = {};
   static Map<String, Map<String, String>> _emulatorIntents = {};
+  static List<GameRunner> runners = [
+    HeroicGameRunner(),
+  ];
 
   /**
    * Since the emulator intents have interpolated values, we need to parse them each time we use them.
@@ -179,6 +184,20 @@ class EmulatorService {
   }
 
   /**
+   * Checks if there's an available game runner for the given game, and returns it.
+   */
+  static Future<List<GameRunner>> getAvailableRunners(
+      RomLibraryItem rom) async {
+    final availableRunners = <GameRunner>[];
+    for (final runner in runners) {
+      if (await runner.canRunOnRunner(rom)) {
+        availableRunners.add(runner);
+      }
+    }
+    return availableRunners;
+  }
+
+  /**
    * Opens a ROM using the configured emulator.
    */
   static Future openRom(RomLibraryItem download) async {
@@ -264,16 +283,31 @@ class EmulatorService {
           filePath,
         );
       } else {
-        final Process process;
-
-        if (Platform.isMacOS) {
-          final execPath = await _resolveMacAppExecutable(emulatorBinary);
-          print("resolved emulator binary to ${execPath}");
-          process = await Process.start(execPath, launchParams);
-        } else {
-          process = await Process.start(emulatorBinary, launchParams,
-              mode: ProcessStartMode.inheritStdio,
-              workingDirectory: p.dirname(filePath));
+        Process? process;
+        var availableRunners = await getAvailableRunners(download);
+        print(availableRunners);
+        if (availableRunners.isNotEmpty) {
+          for (var runner in availableRunners) {
+            if (runner.executablePath.contains(emulatorBinary)) {
+              var runnerProcess = await runner.launchOnRunner(download);
+              if (runnerProcess != null) {
+                process = runnerProcess;
+              }
+              break;
+            }
+          }
+        }
+        print(process);
+        if (process == null) {
+          if (Platform.isMacOS) {
+            final execPath = await _resolveMacAppExecutable(emulatorBinary);
+            print("resolved emulator binary to ${execPath}");
+            process = await Process.start(execPath, launchParams);
+          } else {
+            process = await Process.start(emulatorBinary, launchParams,
+                mode: ProcessStartMode.inheritStdio,
+                workingDirectory: p.dirname(filePath));
+          }
         }
         _activeGamesProcesses[slug] = process;
 

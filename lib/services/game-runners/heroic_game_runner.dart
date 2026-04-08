@@ -55,6 +55,73 @@ class HeroicGameRunner implements GameRunner {
     await file.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
   }
 
+  Map<String, String> _buildLaunchEnvironment() {
+    final environment = {...Platform.environment};
+    final removedKeys = <String>[];
+
+    // Inherited Electron/Node flags can make Heroic boot in Node mode,
+    // which causes Electron CLI switches like --no-gui to fail.
+    if (environment.remove('ELECTRON_RUN_AS_NODE') != null) {
+      removedKeys.add('ELECTRON_RUN_AS_NODE');
+    }
+    if (environment.remove('NODE_OPTIONS') != null) {
+      removedKeys.add('NODE_OPTIONS');
+    }
+
+    if (removedKeys.isNotEmpty) {
+      print(
+          'Sanitized Heroic launch environment by removing: ${removedKeys.join(', ')}');
+    }
+
+    return environment;
+  }
+
+  String _buildLaunchUrl(String gameId) {
+    return 'heroic://launch?appName=$gameId&runner=sideload';
+  }
+
+  String _macOsAppBundlePath() {
+    return p.dirname(p.dirname(p.dirname(executablePath)));
+  }
+
+  Future<ProcessResult> _runLauncherCommand(
+    String command,
+    List<String> args,
+  ) async {
+    return Process.run(command, args,
+        environment: _buildLaunchEnvironment(),
+        includeParentEnvironment: false);
+  }
+
+  Future<void> closeLauncher() async {
+    if (Platform.isMacOS) {
+      print('Closing Heroic launcher before launching the game');
+
+      await _runLauncherCommand('osascript', [
+        '-e',
+        'tell application "Heroic" to quit',
+      ]);
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      final killResult = await _runLauncherCommand('killall', ['Heroic']);
+      if (killResult.exitCode == 0) {
+        print('Forced Heroic launcher shutdown before relaunch');
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      return;
+    }
+
+    if (Platform.isLinux) {
+      final killResult =
+          await _runLauncherCommand('pkill', ['-f', executablePath]);
+      if (killResult.exitCode == 0) {
+        print('Closed Heroic launcher before relaunch');
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+  }
+
   @override
   Future<Process?> launchOnRunner(RomLibraryItem rom) async {
     final dataFolder = dataFolderByPlatform[OsService.osType];
@@ -158,13 +225,27 @@ class HeroicGameRunner implements GameRunner {
       await _writeJson(gameConfigFile, gameConfig);
     }
 
-    // 🔥 Lanzar Heroic
-    print(
-        "launching heroic with executable ${this.executablePath} --no-gui --no-sandbox heroic://launch/sideload/$gameId");
+    await closeLauncher();
 
-    final process = await Process.start(this.executablePath,
-        ['--no-gui', '--no-sandbox', 'heroic://launch/sideload/$gameId'],
-        environment: {...Platform.environment});
+    final launchUrl = _buildLaunchUrl(gameId);
+    final command = Platform.isMacOS ? 'open' : this.executablePath;
+    final launchArgs = Platform.isMacOS
+        ? [
+            '-W',
+            '-a',
+            _macOsAppBundlePath(),
+            '--args',
+            '--no-gui',
+            '--no-sandbox',
+            launchUrl
+          ]
+        : ['--no-gui', '--no-sandbox', launchUrl];
+
+    print("launching heroic with command $command ${launchArgs.join(' ')}");
+
+    final process = await Process.start(command, launchArgs,
+        environment: _buildLaunchEnvironment(),
+        includeParentEnvironment: false);
 
     ProcessHelper.pipeProcessOutput(process: process, onLog: print);
     return process;

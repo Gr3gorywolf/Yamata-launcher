@@ -13,3 +13,28 @@
     native <methods>;
 }
 
+-keepattributes *Annotation*
+
+-keep class com.google.crypto.** { *; }
+-keep class com.google.** { *; }
+
+-dontwarn com.google.errorprone.**
+-keep class com.google.errorprone.** { *; }
+
+-keepclassmembers class * {
+    public <init>(...);
+}
+
+-keep class io.flutter.** { *; }
+
+
+-keep class * {
+    *;
+}
+
+-dontwarn org.apache.commons.compress.**
+-dontwarn org.tukaani.xz.**
+-dontwarn org.brotli.**
+-dontwarn com.github.luben.zstd.**
+-dontwarn org.objectweb.asm.**
+-dontwarn com.google.android.play.core.**

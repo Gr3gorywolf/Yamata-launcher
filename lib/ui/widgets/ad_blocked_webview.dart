@@ -144,9 +144,9 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
 
   @override
   void dispose() {
-    super.dispose();
     _controller?.removeJavaScriptHandler(handlerName: "Print");
     _controller?.dispose();
+    super.dispose();
   }
 
   @override

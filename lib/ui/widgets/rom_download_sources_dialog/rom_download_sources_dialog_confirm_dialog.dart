@@ -160,19 +160,20 @@ class _DownloadSourcesDialogConfirmDialogState
     ].any((ext) => link.toLowerCase().endsWith(".$ext"));
     var isLinkFileName =
         link.split('/').last.contains('.') && isValidFileExtensions;
-
-    Navigator.pop(
-        context,
-        RomDownloadSourcesDialogResult(
-          rom: widget.item.rom.copyWith(
-            fileName: isLinkFileName
-                ? Uri.decodeComponent(link.split('/').last)
-                : selectedHoster?.metadata?.fileName,
-            uris: [link],
-            extractableUrl: selectedHoster?.uri,
-          ),
-          extractAfterDownload: extractAfterDownload,
-        ));
+    Future.microtask(() {
+      Navigator.pop(
+          context,
+          RomDownloadSourcesDialogResult(
+            rom: widget.item.rom.copyWith(
+              fileName: isLinkFileName
+                  ? Uri.decodeComponent(link.split('/').last)
+                  : selectedHoster?.metadata?.fileName,
+              uris: [link],
+              extractableUrl: selectedHoster?.uri,
+            ),
+            extractAfterDownload: extractAfterDownload,
+          ));
+    });
   }
 
   void handleManualLinkExtraction(String rawLink) async {

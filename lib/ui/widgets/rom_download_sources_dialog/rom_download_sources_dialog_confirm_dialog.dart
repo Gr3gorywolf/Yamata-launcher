@@ -181,7 +181,7 @@ class _DownloadSourcesDialogConfirmDialogState
         await SettingsService().get(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR);
     var link = await Navigator.of(context).push<String?>(
       MaterialPageRoute(
-        builder: (_) => useBuiltIn
+        builder: (_) => useBuiltIn && !Platform.isLinux
             ? DownloadLinkWebExtractor(rawLink: rawLink)
             : DownloadLinkWebExtractorExternal(rawLink: rawLink),
         fullscreenDialog: true,

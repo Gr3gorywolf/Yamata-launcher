@@ -1,14 +1,45 @@
 (() => {
   'use strict';
-  Print.postMessage(`[cookies] ${document.cookie}`);
+
+  const pendingMessages = [];
+  let inAppWebViewReady =
+    typeof window.flutter_inappwebview?.callHandler === 'function';
+
+  const flushMessages = () => {
+    while (pendingMessages.length > 0) {
+      const message = pendingMessages.shift();
+      if (window.Print?.postMessage) {
+        window.Print.postMessage(message);
+        continue;
+      }
+      if (inAppWebViewReady && window.flutter_inappwebview?.callHandler) {
+        window.flutter_inappwebview.callHandler('Print', message);
+        continue;
+      }
+      pendingMessages.unshift(message);
+      break;
+    }
+  };
+
+  const postMessage = (message) => {
+    if (!message) return;
+    pendingMessages.push(message);
+    flushMessages();
+  };
+
+  window.addEventListener('flutterInAppWebViewPlatformReady', () => {
+    inAppWebViewReady = true;
+    flushMessages();
+  });
+
+  postMessage(`[cookies] ${document.cookie}`);
   setInterval(() => {
-    Print.postMessage(`[cookies] ${document.cookie}`);
+    postMessage(`[cookies] ${document.cookie}`);
   }, 100);
   const logUrl = (url) => {
     if (!url) return;
-    Print.postMessage(`[cookies] ${document.cookie}`);
-    Print.postMessage(`[captured-url] ${url}`);
-    
+    postMessage(`[cookies] ${document.cookie}`);
+    postMessage(`[captured-url] ${url}`);
   };
 
   const safe = (fn) => { try { return fn(); } catch { return undefined; } };

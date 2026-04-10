@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
@@ -22,11 +23,12 @@ class GofileHoster implements Hoster {
 
   @override
   bool isValidDirectDownloadUrl(String url) {
-    return true;
+    return url.contains("gofile.io/download/web");
   }
 
   @override
   Future<HosterMetadata?> extractMetadata(String url) async {
+    return HosterMetadata(status: HosterStatus.NeedsManual);
     var extractedUrl =
         await extractDownloadUrl(url).timeout(Duration(seconds: 2));
     if (extractedUrl == null)
@@ -44,6 +46,8 @@ class GofileHoster implements Hoster {
       print('[GoFile] Using cached direct link');
       return CommonHosterUtils.directDownloadUris[url];
     }
+    throw DownloadRequireManualException(
+        'GoFile requires manual download due to potential anti-bot measures. Please visit the link and download the file manually.');
     if (!canHandleUrl(url)) return null;
     try {
       final id = Uri.parse(url).pathSegments.last;

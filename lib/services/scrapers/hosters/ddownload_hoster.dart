@@ -7,11 +7,11 @@ import 'package:yamata_launcher/models/exceptions/download_require_manual_except
 import 'package:yamata_launcher/models/hoster_metadata.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 
-class Vik1ngfileHoster implements Hoster {
+class DdownloadHoster implements Hoster {
   @override
-  String get name => 'Vik1ngfile';
+  String get name => 'Ddownload';
 
-  static const _domains = ['vik1ngfile.site', 'vikingf1le.us.to'];
+  static const _domains = ['ddownload.com'];
 
   @override
   bool canHandleUrl(String url) {
@@ -21,27 +21,27 @@ class Vik1ngfileHoster implements Hoster {
 
   @override
   bool isValidDirectDownloadUrl(String url) {
-    var matches = [
-      "dl.vikingfile.com",
-      "iw.vikingfile.com/download",
-      "vikingfile.com/d/",
-    ];
-    return matches.any(url.contains);
+    return url.contains(".dstorage.to:183/d");
   }
 
   @override
   Future<HosterMetadata?> extractMetadata(String url) async {
     var document = await CommonHosterUtils().fetchHtml(url);
     if (document == null) return HosterMetadata(status: HosterStatus.Invalid);
-    var fileName = document.querySelector('#filename')?.text.trim();
+    var fileName = document
+        .querySelector(
+            '#container > div.dl-free-wrapper > form > div > div.dl-file-name')
+        ?.text
+        .trim();
     var status = HosterStatus.NeedsManual;
+    if (fileName == null || fileName.isEmpty) {
+      status = HosterStatus.Invalid;
+    }
     return HosterMetadata(fileName: fileName, status: status);
   }
 
   @override
   Future<String?> extractDownloadUrl(String url) async {
-    if (!canHandleUrl(url)) return null;
-    throw DownloadRequireManualException(
-        'Vik1ngfile requires manual interaction');
+    throw DownloadRequireManualException('Needs manual download for Ddownload');
   }
 }

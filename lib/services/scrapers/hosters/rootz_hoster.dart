@@ -10,18 +10,20 @@ class RootzHoster implements Hoster {
   @override
   String get name => 'Rootz';
 
-  static const _domains = [
-    'rootz.so',
-  ];
+  static const _primaryDomain = 'rootz.so';
 
   @override
   bool canHandleUrl(String url) {
-    return _domains.any((d) => url.toLowerCase().contains(d));
+    try {
+      return Uri.parse(url).host.contains(_primaryDomain);
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
   bool isValidDirectDownloadUrl(String url) {
-    return true;
+    return url.isNotEmpty && !canHandleUrl(url);
   }
 
   @override
@@ -41,10 +43,6 @@ class RootzHoster implements Hoster {
 
     try {
       final id = _extractId(url);
-      if (id == null) {
-        throw Exception('Invalid Rootz URL');
-      }
-
       final apiUrl = 'https://www.rootz.so/api/files/download-by-short/$id';
 
       final response = await http.get(
@@ -56,7 +54,11 @@ class RootzHoster implements Hoster {
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 404) {
-        throw Exception('File not found');
+        final body = jsonDecode(response.body);
+        final errorMessage = body is Map<String, dynamic>
+            ? (body['error']?.toString() ?? 'File not found')
+            : 'File not found';
+        throw Exception(errorMessage);
       }
 
       final body = jsonDecode(response.body);
@@ -81,18 +83,19 @@ class RootzHoster implements Hoster {
   // INTERNAL
   // =========================
 
-  String? _extractId(String url) {
+  String _extractId(String url) {
     try {
       final uri = Uri.parse(url);
-      final segments = uri.pathSegments;
+      final pathSegments =
+          uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
 
-      if (segments.length >= 2 && segments[0] == 'd') {
-        return segments[1];
+      if (pathSegments.length < 2 || pathSegments[0] != 'd') {
+        throw Exception('Invalid rootz URL format');
       }
 
-      return null;
+      return pathSegments[1];
     } catch (_) {
-      return null;
+      throw Exception('Invalid rootz URL format');
     }
   }
 }

@@ -37,6 +37,10 @@ class HttpHelper {
     throw Exception("Too many redirects");
   }
 
+  String encodeCookies(Map<String, String> cookies) {
+    return cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+  }
+
   Map<String, String> parseHeaders(String raw) {
     final Map<String, String> headers = {};
 

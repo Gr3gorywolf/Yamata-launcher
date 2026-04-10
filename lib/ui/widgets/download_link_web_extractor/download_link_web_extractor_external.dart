@@ -115,6 +115,7 @@ class _DownloadLinkWebExtractorExternalState
   }
 
   handleFullfill(String url) async {
+    if (!mounted) return;
     Map<String, String> headers = {
       "User-Agent": CommonHosterUtils().hosterUserAgent,
       "Referer": widget.rawLink,
@@ -175,10 +176,12 @@ class _DownloadLinkWebExtractorExternalState
       },
       progressPrefix: '--',
     );
-    await ProcessHelper.ensureExitOk(
-        runningProcess!, () => false, 'Extraction failed');
-    runningProcess = null;
-    if (mounted) Navigator.of(context).pop();
+    try {
+      await ProcessHelper.ensureExitOk(
+          runningProcess!, () => false, 'Extraction failed');
+      runningProcess = null;
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {}
   }
 
   initState() {

@@ -9,7 +9,8 @@ import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 class AdBlockedWebView extends StatefulWidget {
   String rawLink;
   String title;
-  bool Function(String url, String siteCookies)? onUrlChanged;
+  bool Function(String url, String siteCookies, Map<String, String>? headers)?
+      onUrlChanged;
   Function(String url, String siteCookies)? onDone;
   bool? preventOutsideRedirects;
 
@@ -74,13 +75,6 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
       _cookies = message.replaceFirst("[cookies]", "").trim();
       return;
     }
-
-    if (message.startsWith("[captured-url]")) {
-      final url = message.replaceFirst("[captured-url]", "").trim();
-      if (url.isNotEmpty) {
-        widget.onUrlChanged?.call(url, _cookies);
-      }
-    }
   }
 
   void _registerJavascriptHandlers(InAppWebViewController controller) {
@@ -113,7 +107,7 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
   void _notifyUrlChanged(WebUri? url) {
     final value = url?.toString();
     if (value != null && value.isNotEmpty) {
-      widget.onUrlChanged?.call(value, _cookies);
+      widget.onUrlChanged?.call(value, _cookies, null);
     }
   }
 
@@ -121,15 +115,18 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
     NavigationAction navigationAction,
   ) async {
     final requestUrl = navigationAction.request.url?.toString() ?? "";
-    final shouldContinue =
-        widget.onUrlChanged?.call(requestUrl, _cookies) ?? true;
+
+    final shouldContinue = widget.onUrlChanged
+            ?.call(requestUrl, _cookies, navigationAction.request.headers) ??
+        true;
 
     if (!shouldContinue) {
       return NavigationActionPolicy.CANCEL;
     }
 
     if (widget.preventOutsideRedirects == true &&
-        navigationAction.isRedirect == true &&
+        (navigationAction.isRedirect == true ||
+            navigationAction.isForMainFrame == true) &&
         _isOutsideRedirect(requestUrl)) {
       return NavigationActionPolicy.CANCEL;
     }

@@ -27,7 +27,8 @@ dependencies:
   toast: ^0.3.0
   flutter_device_apps: ^0.6.0
   material_segmented_control: ^3.1.2
-  shared_preferences: 2.2.0
+  shared_preferences: 2.5.3
+  shared_preferences_linux: ^2.4.1
   http: ^1.2.0
   html: ^0.15.4
   package_info_plus: ^8.0.0

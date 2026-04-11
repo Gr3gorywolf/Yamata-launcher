@@ -29,6 +29,7 @@ class _DownloadLinkWebExtractorExternalState
   Function? cancelExtraction;
   Process? runningProcess;
   String? cookies;
+  var isFulfilled = false;
 
   var markPath =
       p.join(FileSystemService.linkExtractorPath, DOWNLOAD_MARK_FILENAME);
@@ -116,6 +117,8 @@ class _DownloadLinkWebExtractorExternalState
 
   handleFullfill(String url) async {
     if (!mounted) return;
+    if (isFulfilled) return;
+    isFulfilled = true;
     Map<String, String> headers = {
       "User-Agent": CommonHosterUtils().hosterUserAgent,
       "Referer": widget.rawLink,

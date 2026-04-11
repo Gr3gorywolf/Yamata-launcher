@@ -29,15 +29,6 @@ class GofileHoster implements Hoster {
   @override
   Future<HosterMetadata?> extractMetadata(String url) async {
     return HosterMetadata(status: HosterStatus.NeedsManual);
-    var extractedUrl =
-        await extractDownloadUrl(url).timeout(Duration(seconds: 2));
-    if (extractedUrl == null)
-      return HosterMetadata(status: HosterStatus.Invalid);
-    CommonHosterUtils.directDownloadUris[url] = extractedUrl;
-    return HosterMetadata(
-        fileName: await CommonHosterUtils()
-            .extractHosterFilename(url, directUrl: extractedUrl),
-        status: HosterStatus.Valid);
   }
 
   @override
@@ -48,22 +39,6 @@ class GofileHoster implements Hoster {
     }
     throw DownloadRequireManualException(
         'GoFile requires manual download due to potential anti-bot measures. Please visit the link and download the file manually.');
-    if (!canHandleUrl(url)) return null;
-    try {
-      final id = Uri.parse(url).pathSegments.last;
-
-      final token = await _authorize();
-
-      final link = await _getDownloadLink(id, token);
-
-      await _checkDownloadUrl(link, token);
-
-      return '$link||headers:Cookie: accountToken=$token^User-Agent: ${CommonHosterUtils().hosterUserAgent}';
-    } catch (e) {
-      print('[GoFile] $e');
-      CommonHosterUtils().handleHosterError(e);
-      return null;
-    }
   }
 
   // =========================

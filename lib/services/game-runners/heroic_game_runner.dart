@@ -22,6 +22,14 @@ class HeroicGameRunner implements GameRunner {
   };
 
   @override
+  // TODO: implement autoSyncWithLibrary
+  bool get autoSyncWithLibrary => false;
+
+  @override
+  // TODO: implement canSyncLibrary
+  bool get canSyncLibrary => true;
+
+  @override
   String get name => 'Heroic Games Launcher';
 
   @override
@@ -258,5 +266,15 @@ class HeroicGameRunner implements GameRunner {
 
     ProcessHelper.pipeProcessOutput(process: process, onLog: print);
     return process;
+  }
+
+  @override
+  Future<void> setAutosync(bool value) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> syncLibrary(List<RomLibraryItem> items) {
+    throw UnimplementedError();
   }
 }

@@ -320,6 +320,33 @@ class _SettingsPageState extends State<SettingsPage> {
                   "Override the default download path for specific consoles.",
               onTap: () => context.push("/settings/custom-download-paths"),
             ),
+            // Roms & Emulators section
+            const _SectionHeader(title: 'Roms & Emulators'),
+            _NavigationTile(
+              icon: Icons.videogame_asset,
+              title: 'Emulator settings',
+              subtitle: 'Manage your emulators for each console',
+              onTap: () => context.push("/settings/emulator-settings"),
+            ),
+            if (Platform.isAndroid)
+              ListTile(
+                leading: const Icon(Icons.system_update_alt),
+                title: const Text('Update Emulator Intents'),
+                subtitle: Opacity(
+                    opacity: 0.7,
+                    child: const Text(
+                        'The emulator intents are used to launch emulators on Android devices. Updating them may fix issues with launching emulators.')),
+                onTap: _updateEmulatorIntents,
+              ),
+            // integrations section
+            const _SectionHeader(title: 'Integrations'),
+            // _NavigationTile(
+            //   icon: Icons.rocket_launch,
+            //   title: 'Game runners',
+            //   subtitle:
+            //       'Customize the behavior of the game runners, like heroic games launcher, retroarch, etc...',
+            //   onTap: () => context.push("/settings/game-runners-settings"),
+            // ),
             // Behavior section
             const _SectionHeader(title: 'Behavior'),
             if (FileSystemService.isDesktop)
@@ -340,24 +367,6 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _extractRomsAfterDownload,
               onChanged: (v) => _setSetting(SettingsKeys.ENABLE_EXTRACTION, v),
             ),
-            // Roms & Emulators section
-            const _SectionHeader(title: 'Roms & Emulators'),
-            _NavigationTile(
-              icon: Icons.videogame_asset,
-              title: 'Emulator settings',
-              subtitle: 'Manage your emulators for each console',
-              onTap: () => context.push("/settings/emulator-settings"),
-            ),
-            if (Platform.isAndroid)
-              ListTile(
-                leading: const Icon(Icons.system_update_alt),
-                title: const Text('Update Emulator Intents'),
-                subtitle: Opacity(
-                    opacity: 0.7,
-                    child: const Text(
-                        'The emulator intents are used to launch emulators on Android devices. Updating them may fix issues with launching emulators.')),
-                onTap: _updateEmulatorIntents,
-              ),
             const _SectionHeader(title: 'Cache Management'),
             _SwitchTile(
               icon: Icons.image,

@@ -1,132 +1,149 @@
-import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:yamata_launcher/models/contracts/hoster.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
-import 'package:yamata_launcher/repository/download_sources_repository.dart';
-import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
-import 'package:yamata_launcher/services/webview_service.dart';
-import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor_scripts.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
-export 'package:adblocker_webview/adblocker_webview.dart';
-export 'package:adblocker_webview/src/elem_hide.dart';
-export 'package:adblocker_webview/src/block_resource_loading.dart';
 
 class AdBlockedWebView extends StatefulWidget {
   String rawLink;
   String title;
-  // Callback that gets called when a URL changes. Provides the new URL and the current cookies. Should return true if the URL change should be processed, or false to ignore it.
-  bool Function(String url, String siteCookies)? onUrlChanged;
-  // Shows a checkmark in the app bar that allows the user to confirm the current URL as the final one. Calls onDone with the current URL and cookies when pressed.
+  bool Function(String url, String siteCookies, Map<String, String>? headers)?
+      onUrlChanged;
   Function(String url, String siteCookies)? onDone;
   bool? preventOutsideRedirects;
 
-  AdBlockedWebView(
-      {super.key,
-      required this.rawLink,
-      required this.title,
-      this.onUrlChanged,
-      this.onDone,
-      this.preventOutsideRedirects = true});
+  AdBlockedWebView({
+    super.key,
+    required this.rawLink,
+    required this.title,
+    this.onUrlChanged,
+    this.onDone,
+    this.preventOutsideRedirects = true,
+  });
 
   @override
   State<AdBlockedWebView> createState() => _AdBlockedWebViewState();
 }
 
 class _AdBlockedWebViewState extends State<AdBlockedWebView> {
-  get rawLink => widget.rawLink;
-  Hoster? getHoster() {
-    return DownloadSourcesRepository().getHosterForUrl(rawLink);
-  }
+  InAppWebViewController? _controller;
+  final List<UserScript> _initialUserScripts = [];
+  bool _isLoadingScripts = true;
+  String _cookies = "";
 
-  var scriptsToRun = [];
-  var cookies = "";
-
-  String getDomain(String url) {
-    try {
-      return Uri.parse(url).host;
-    } catch (e) {
-      return "";
-    }
-  }
-
-  late final WebViewController controller = WebViewController()
-    ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    ..setNavigationDelegate(
-      NavigationDelegate(
-        onProgress: (int progress) {},
-        onUrlChange: (UrlChange url) {
-          widget.onUrlChanged?.call(url.url ?? "", cookies);
-        },
-        onPageStarted: (String url) async {
-          await clearAds();
-          await controller.runJavaScript(
-            getResourceLoadingBlockerScript(WebviewService.blockingRules),
-          );
-          print("Page started loading: $url");
-        },
-        onPageFinished: (String url) async {
-          print("Page finished loading: $url");
-          await clearAds();
-        },
-        onHttpError: (HttpResponseError error) {},
-        onWebResourceError: (WebResourceError error) {},
-        onNavigationRequest: (NavigationRequest request) {
-          var host = Uri.parse(rawLink).host;
-          var shouldContinue =
-              widget.onUrlChanged?.call(request.url, cookies) ?? true;
-          if (!shouldContinue) {
-            ;
-            return NavigationDecision.prevent;
-          }
-
-          if (!Uri.parse(request.url).host.contains(host) &&
-              widget.preventOutsideRedirects == true) {
-            return NavigationDecision.prevent;
-          }
-
-          if (WebviewService.adBlockManager.isBlockedDomain(request.url)) {
-            return NavigationDecision.prevent;
-          }
-          return NavigationDecision.navigate;
-        },
-      ),
-    );
-
-  Future<void> clearAds() async {
-    for (var script in scriptsToRun) {
-      await controller.runJavaScript(script);
-    }
-  }
-
-  Future initialize() async {
-    scriptsToRun = [
-      await rootBundle.loadString("assets/web/block_foreign_iframes.js"),
-      await rootBundle.loadString("assets/web/block_href_swap.js"),
-      await rootBundle.loadString("assets/web/web_interceptor.js"),
-    ];
-    controller.loadRequest(Uri.parse(rawLink));
-    controller.addJavaScriptChannel("Print",
-        onMessageReceived: (JavaScriptMessage message) {
-      //print("JS Message: ${message.message}");
-      if (message.message.contains("[cookies]")) {
-        cookies = message.message.replaceFirst("[cookies]", "");
-        //print("Extracted cookies: $cookies");
-      }
-      if (message.message.contains("[captured-url]")) {
-        var url = message.message.replaceFirst("[captured-url]", "");
-        widget.onUrlChanged?.call(url, cookies);
-      }
-    });
-  }
+  String get rawLink => widget.rawLink;
 
   @override
   void initState() {
     super.initState();
-    initialize();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final scripts = [
+      await rootBundle.loadString("assets/web/block_foreign_iframes.js"),
+      await rootBundle.loadString("assets/web/block_href_swap.js"),
+      await rootBundle.loadString("assets/web/web_interceptor.js"),
+    ];
+
+    _initialUserScripts
+      ..clear()
+      ..addAll(
+        scripts.map(
+          (script) => UserScript(
+            source: script,
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            forMainFrameOnly: false,
+          ),
+        ),
+      );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingScripts = false;
+    });
+  }
+
+  Future<void> _handleJavascriptMessage(dynamic payload) async {
+    final message = payload?.toString() ?? "";
+    if (message.startsWith("[cookies]")) {
+      _cookies = message.replaceFirst("[cookies]", "").trim();
+      return;
+    }
+  }
+
+  void _registerJavascriptHandlers(InAppWebViewController controller) {
+    controller.addJavaScriptHandler(
+      handlerName: "Print",
+      callback: (args) {
+        for (final arg in args) {
+          _handleJavascriptMessage(arg);
+        }
+        return null;
+      },
+    );
+  }
+
+  bool _isOutsideRedirect(String url) {
+    try {
+      final requestedHost = Uri.parse(url).host;
+      final originalHost = Uri.parse(rawLink).host;
+
+      if (requestedHost.isEmpty || originalHost.isEmpty) {
+        return false;
+      }
+
+      return !requestedHost.contains(originalHost);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _notifyUrlChanged(WebUri? url) {
+    final value = url?.toString();
+    if (value != null && value.isNotEmpty) {
+      widget.onUrlChanged?.call(value, _cookies, null);
+    }
+  }
+
+  Future<NavigationActionPolicy> _handleNavigation(
+    NavigationAction navigationAction,
+  ) async {
+    final requestUrl = navigationAction.request.url?.toString() ?? "";
+
+    final shouldContinue = widget.onUrlChanged
+            ?.call(requestUrl, _cookies, navigationAction.request.headers) ??
+        true;
+
+    if (!shouldContinue) {
+      return NavigationActionPolicy.CANCEL;
+    }
+
+    if (widget.preventOutsideRedirects == true &&
+        (navigationAction.isRedirect == true ||
+            navigationAction.isForMainFrame == true) &&
+        _isOutsideRedirect(requestUrl)) {
+      return NavigationActionPolicy.CANCEL;
+    }
+
+    return NavigationActionPolicy.ALLOW;
+  }
+
+  Future<void> _handleDone() async {
+    final currentUrl = await _controller?.getUrl();
+    widget.onDone?.call(currentUrl?.toString() ?? "", _cookies);
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeJavaScriptHandler(handlerName: "Print");
+    _controller?.dispose();
+    super.dispose();
   }
 
   @override
@@ -137,17 +154,44 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
         actions: widget.onDone != null
             ? [
                 IconButton(
-                  icon: Icon(Icons.check),
-                  onPressed: () {
-                    controller.currentUrl().then((onValue) {
-                      widget.onDone?.call(onValue ?? "", cookies);
-                    });
-                  },
-                )
+                  icon: const Icon(Icons.check),
+                  onPressed: _handleDone,
+                ),
               ]
             : null,
       ),
-      body: WebViewWidget(controller: controller),
+      body: _isLoadingScripts
+          ? const Center(child: CircularProgressIndicator())
+          : InAppWebView(
+              initialSettings: InAppWebViewSettings(
+                javaScriptEnabled: true,
+                useShouldOverrideUrlLoading: true,
+              ),
+              initialUserScripts: UnmodifiableListView(_initialUserScripts),
+              initialUrlRequest: URLRequest(url: WebUri(widget.rawLink)),
+              onWebViewCreated: (controller) {
+                _controller = controller;
+                _registerJavascriptHandlers(controller);
+              },
+              onLoadStart: (controller, url) {
+                _notifyUrlChanged(url);
+              },
+              onUpdateVisitedHistory: (controller, url, isReload) {
+                _notifyUrlChanged(url);
+              },
+              onLoadStop: (controller, url) {
+                _notifyUrlChanged(url);
+              },
+              onPermissionRequest: (controller, request) async {
+                return PermissionResponse(
+                  resources: request.resources,
+                  action: PermissionResponseAction.DENY,
+                );
+              },
+              shouldOverrideUrlLoading: (controller, navigationAction) {
+                return _handleNavigation(navigationAction);
+              },
+            ),
     );
   }
 }

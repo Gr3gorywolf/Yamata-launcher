@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/models/contracts/hoster.dart';
@@ -9,9 +10,11 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
+import 'package:yamata_launcher/services/aria2c/aria2c_utils.dart';
 import 'package:yamata_launcher/services/cookies_service.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/buzzheavier_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/datanodes_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/ddownload_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/fuckingfast_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/gofile_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/google_drive_hoster.dart';
@@ -19,6 +22,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/krakenfiles_hoster.dar
 import 'package:yamata_launcher/services/scrapers/hosters/mediafire_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/mega_nz_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/megaup_hoster.dart';
+import 'package:yamata_launcher/services/scrapers/hosters/onefichier_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/pixeldrain_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/qiwi_hoster.dart';
 import 'package:yamata_launcher/services/scrapers/hosters/rootz_hoster.dart';
@@ -33,13 +37,15 @@ class DownloadSourcesRepository {
     BuzzHeavierHoster(),
     DatanodesHoster(),
     FuckingFastHoster(),
-    //TODO: correct this GofileHoster(),
+    GofileHoster(),
     MediafireHoster(),
     PixelDrainHoster(),
     RootzHoster(),
     //TODO: correct this hoster MegaHoster(),
     // TODO: correct the manual flow for this QiwiHoster(),
-    //TODO: correct the manual flow for this  SendCmHoster(),
+    OneFichierHoster(),
+    DdownloadHoster(),
+    SendCmHoster(),
     MegaupHoster(),
     KrakenfilesHoster(),
     GoogleDriveHoster(),
@@ -90,13 +96,16 @@ class DownloadSourcesRepository {
       "Accept": "*/*",
       "Connection": "close",
       "Cookie": siteCookies?.cookie?.trim() ?? "",
-      ...siteAditionalHeaders
+      ...siteAditionalHeaders,
+      ...UrlHelper.extractHeadersFromUrl(url),
     };
 
     final client = http.Client();
     // Try with head request
     try {
-      final res = await http.head(Uri.parse(url)).timeout(Duration(seconds: 3))
+      final res = await http
+          .head(Uri.parse(UrlHelper.getUrlWithoutHeaders(url)))
+          .timeout(Duration(seconds: 3))
         ..headers.addAll(headers);
 
       var isDownloadable = _isDownloadable(res.headers);
@@ -108,7 +117,8 @@ class DownloadSourcesRepository {
     // try to get the actual content with a get request
     try {
       final streamed = await HttpHelper()
-          .sendRequestWithRedirects(client, Uri.parse(url), headers,
+          .sendRequestWithRedirects(
+              client, Uri.parse(UrlHelper.getUrlWithoutHeaders(url)), headers,
               maxRedirects: 20)
           .timeout(const Duration(seconds: 10));
 
@@ -262,7 +272,7 @@ class DownloadSourcesRepository {
    * Extracts metadata (like file name, validity) for a given download source URL by checking against known hosters.
    */
   Future<HosterMetadata> extractHosterMetadata(String url) async {
-    if (metadataCache.containsKey(url)) {
+    if (metadataCache.containsKey(url) && kReleaseMode) {
       print('[Metadata] Using cached metadata for $url');
       return metadataCache[url]!;
     }

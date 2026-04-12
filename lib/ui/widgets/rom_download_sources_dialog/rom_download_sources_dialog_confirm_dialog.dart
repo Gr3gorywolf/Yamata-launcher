@@ -160,8 +160,7 @@ class _DownloadSourcesDialogConfirmDialogState
     ].any((ext) => link.toLowerCase().endsWith(".$ext"));
     var isLinkFileName =
         link.split('/').last.contains('.') && isValidFileExtensions;
-
-    Navigator.pop(
+    Navigator.pop<RomDownloadSourcesDialogResult>(
         context,
         RomDownloadSourcesDialogResult(
           rom: widget.item.rom.copyWith(

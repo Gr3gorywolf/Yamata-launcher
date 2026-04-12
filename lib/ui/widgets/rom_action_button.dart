@@ -98,7 +98,9 @@ class _RomActionButtonState extends State<RomActionButton> {
       await libraryProvider.addRomToLibrary(widget.rom);
       DownloadService.downloadRom(widget.rom, result.rom,
           shouldExtract: result.extractAfterDownload);
-      AlertsService.showSnackbar("Download started", duration: 3);
+      Future.delayed(Duration(milliseconds: 200), () {
+        AlertsService.showSnackbar("Download started", duration: 3);
+      });
     }
 
     Future<void> handleCancelDownload() async {

@@ -77,10 +77,16 @@ class CommonHosterUtils {
   Future<Document?> fetchHtml(String url) async {
     try {
       final headers = {
-        "User-Agent": "curl/8.0.1",
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
         HttpHeaders.acceptHeader: '*/*',
         "Referer": url,
         "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Accept-Language": "en-US,en;q=0.9",
+        "sec-ch-ua":
+            '"Google Chrome";v="146", "Not:A-Brand";v="8", "Chromium";v="146"',
+        "sec-ch-ua-mobile": "?0",
       };
 
       final dio = Dio(

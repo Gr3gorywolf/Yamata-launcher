@@ -125,7 +125,9 @@ class RomLibraryActions extends StatelessWidget {
       if (result == null) return;
       DownloadService.downloadRom(rom, result.rom,
           isExtraContent: true, shouldExtract: result.extractAfterDownload);
-      AlertsService.showSnackbar("Download started", duration: 3);
+      Future.delayed(Duration(milliseconds: 200), () {
+        AlertsService.showSnackbar("Download started", duration: 3);
+      });
     }
 
     iconButtonStyle() {

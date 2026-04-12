@@ -3,14 +3,13 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_inappwebview_windows
   flutter_secure_storage_windows
-  fullscreen_window
   gamepads_windows
   permission_handler_windows
   screen_retriever_windows
   tray_manager
   url_launcher_windows
-  webview_win_floating
   window_manager
   windows_notification
   windows_taskbar

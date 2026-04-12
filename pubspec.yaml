@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.30
 
 environment:
-  sdk: '>=3.4.0'
+  sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   animate_do: ^3.0.2
@@ -27,7 +27,8 @@ dependencies:
   toast: ^0.3.0
   flutter_device_apps: ^0.6.0
   material_segmented_control: ^3.1.2
-  shared_preferences: 2.2.0
+  shared_preferences: 2.5.3
+  shared_preferences_linux: ^2.4.1
   http: ^1.2.0
   html: ^0.15.4
   package_info_plus: ^8.0.0
@@ -65,14 +66,8 @@ dependencies:
   flutter_app_installer: ^1.0.2
   qr_flutter: ^4.1.0
   pointycastle: ^3.7.0
-  webview_win_floating: ^3.0.0
-  webview_flutter: ^4.8.0
+  flutter_inappwebview: ^6.1.5
   dio: ^5.9.2
-  adblocker_webview:
-    git:
-      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
-      path: .
-      ref: "3.24-downgrade"
   flutter_secure_storage: 9.2.4
   gamepads:
     git:
@@ -150,18 +145,6 @@ dependency_overrides:
       url: https://github.com/Gr3gorywolf/gamepads.git
       path: "packages/gamepads_platform_interface"
       ref: "main"
-  adblocker_core:
-    git:
-      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
-      path: packages/adblocker_core
-      ref: "3.22-downgrade"
-  adblocker_manager:
-    git:
-      url: https://github.com/Gr3gorywolf/flutter_adblocker_webview.git
-      path: packages/adblocker_manager
-      ref: "3.22-downgrade"
-
-
 inno_bundle:
   id: e5a55a91-bdd4-4536-99be-05a564ae1882
   publisher: gr3gorywolf

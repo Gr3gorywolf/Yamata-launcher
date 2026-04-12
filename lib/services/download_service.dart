@@ -46,12 +46,17 @@ class DownloadService {
       }
     }
 
-    if (directLink == null) {
-      downloadUrl = await DownloadSourcesRepository()
-          .extractDirectDownloadUrl(download.sourceExtractableUrl!);
-    } else {
-      downloadUrl = directLink;
+    try {
+      if (directLink == null) {
+        downloadUrl = await DownloadSourcesRepository()
+            .extractDirectDownloadUrl(download.sourceExtractableUrl!);
+      } else {
+        downloadUrl = directLink;
+      }
+    } catch (e) {
+      print("Error extracting direct download URL: $e");
     }
+
     loading.close();
     if (downloadUrl == null) {
       AlertsService.showErrorSnackbar(

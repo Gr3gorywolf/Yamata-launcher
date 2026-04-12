@@ -24,24 +24,19 @@ class SendCmHoster implements Hoster {
 
   @override
   bool isValidDirectDownloadUrl(String url) {
-    return true;
+    return url.contains("usercdn.com/d");
   }
 
   @override
   Future<HosterMetadata?> extractMetadata(String url) async {
-    var extractedUrl = await extractDownloadUrl(url);
-    if (extractedUrl == null)
-      return HosterMetadata(status: HosterStatus.Invalid);
-    return HosterMetadata(
-        fileName: await CommonHosterUtils()
-            .extractHosterFilename(url, directUrl: extractedUrl),
-        status: HosterStatus.Valid);
+    return HosterMetadata(status: HosterStatus.NeedsManual);
   }
 
   @override
   Future<String?> extractDownloadUrl(String url) async {
     if (!canHandleUrl(url)) return null;
-
+    throw DownloadRequireManualException(
+        'Download requires manual verification. Please download the file manually.');
     try {
       if (url.contains('/d/')) {
         final id = _extractId(url);

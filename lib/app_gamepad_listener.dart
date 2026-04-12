@@ -416,8 +416,6 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
       child: widget.child,
       focusNode: _pageFocusNode,
       onKeyEvent: (event) {
-        print(
-            "Key event: ${event.logicalKey.debugName} (${event.logicalKey.keyId})");
         if (event is KeyDownEvent && Platform.isAndroid) {
           _handleAndroidGamepadEvent(event);
         }

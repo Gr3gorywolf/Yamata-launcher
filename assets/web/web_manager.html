@@ -290,6 +290,11 @@
                         Site Cookies
                     </a>
                 </li>
+                <li class="tab col s6">
+                    <a href="#!" :class="{active: activeTab==='integrations'}" @click="switchTab('integrations')">
+                        Integrations
+                    </a>
+                </li>
             </ul>
 
             <!-- Download Sources -->
@@ -363,11 +368,38 @@
                 </ul>
             </div>
 
+            <div v-if="activeTab==='integrations'">
+                <h5>Debrid Providers</h5>
+
+                <div v-if="debridProviders.length===0" class="empty">
+                    No debrid providers
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="provider in debridProviders" :key="provider.settingKey">
+                        <div class="item-main">
+                            <div class="item-title">{{ provider.name }}</div>
+                            <div class="item-sub">
+                                {{ provider.authenticated ? 'API key configured' : 'No API key configured' }}
+                            </div>
+                        </div>
+                        <div style="display:flex">
+                            <div class="icon-btn" @click="openDebriderForm(provider)">
+                                <i class="material-icons">{{ provider.authenticated ? 'edit' : 'settings' }}</i>
+                            </div>
+                            <div class="icon-btn" v-if="provider.authenticated" @click="deleteDebrider(provider.settingKey)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- FAB -->
             <div class="fixed-action-btn">
                 <a class="btn-floating btn-large modal-trigger" style="position:fixed;right:20px;bottom:20px"
-                    :href="activeTab==='cookies' ? '#modalEditCookie' : '#modalAdd'"
-                    @click="activeTab==='cookies' ? openCookieForm(null) : null">
+                    :href="activeTab==='cookies' ? '#modalEditCookie' : activeTab==='integrations' ? '#modalEditDebrider' : '#modalAdd'"
+                    @click="activeTab==='cookies' ? openCookieForm(null) : activeTab==='integrations' ? openDebriderForm(null) : null">
                     <i class="material-icons">add</i>
                 </a>
             </div>
@@ -412,6 +444,29 @@
                 <div class="modal-footer">
                     <a class="modal-close btn-flat">Cancel</a>
                     <a class="btn" @click="handleCookieFormConfirm">{{cookieForm?.editing ? 'Save' : 'Add' }}</a>
+                </div>
+            </div>
+            <!-- Modal for debriders -->
+            <div id="modalEditDebrider" class="modal">
+                <div class="modal-content" v-if="!!debriderForm">
+                    <h5>{{debriderForm.editing ? 'Edit Debrid Provider' : 'Configure Debrid Provider' }}</h5>
+
+                    <div class="input-field">
+                        <h6 style="margin-bottom: 10px;">Provider</h6>
+                        <select v-model="debriderForm.settingKey" :disabled="debriderForm.editing">
+                            <option v-for="provider in debridProviders" :key="provider.settingKey" :value="provider.settingKey">
+                                {{ provider.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="input-field">
+                        <textarea v-model="debriderForm.apiKey" placeholder="API key"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <a class="modal-close btn-flat">Cancel</a>
+                    <a class="btn" @click="handleDebriderFormConfirm">{{debriderForm?.editing ? 'Save' : 'Add' }}</a>
                 </div>
             </div>
 
@@ -468,7 +523,9 @@
                     const sourceTypes = ref(window.serverData.downloadSourceTypes || []);
                     const platformCatalogs = ref([]);
                     const siteCookies = ref([]);
+                    const debridProviders = ref([]);
                     const cookieForm = ref(null);
+                    const debriderForm = ref(null);
                     const newUrl = ref('');
                     const downloadType = ref('Yamata');
 
@@ -481,7 +538,10 @@
                         deletePlatform: id => `/api/platform-catalogs?id=${btoa(id)}`,
                         siteCookies: '/api/cookies',
                         setCookie: site => `/api/cookies`,
-                        deleteCookie: site => `/api/cookies?site=${btoa(site)}`
+                        deleteCookie: site => `/api/cookies?site=${btoa(site)}`,
+                        debriders: '/api/debriders',
+                        setDebrider: () => '/api/debriders',
+                        deleteDebrider: settingKey => `/api/debriders?settingKey=${btoa(settingKey)}`
                     };
 
                     const setLoading = (loading) => {
@@ -516,11 +576,16 @@
                         siteCookies.value = await fetchJson(API.siteCookies);
                     };
 
+                    const loadDebridProviders = async () => {
+                        debridProviders.value = await fetchJson(API.debriders);
+                    };
+
                     const switchTab = (tab) => {
                         activeTab.value = tab;
                         if (tab === 'download') loadDownloadSources();
                         else if (tab === 'platforms') loadPlatformCatalogs();
                         else if (tab === 'cookies') loadSiteCookies();
+                        else if (tab === 'integrations') loadDebridProviders();
                     };
 
                     const openCookieForm = (cookieSite) => {
@@ -535,6 +600,29 @@
                             };
                         }
                         const modal = M.Modal.getInstance(document.getElementById('modalEditCookie'));
+                        modal.open();
+                    }
+
+                    const openDebriderForm = async (provider) => {
+                        if (provider) {
+                            debriderForm.value = {
+                                settingKey: provider.settingKey,
+                                apiKey: provider.apiKey || '',
+                                editing: true
+                            };
+                        } else {
+                            if (debridProviders.value.length === 0) {
+                                await loadDebridProviders();
+                            }
+                            debriderForm.value = {
+                                settingKey: debridProviders.value[0]?.settingKey || '',
+                                apiKey: '',
+                                editing: false
+                            };
+                        }
+                        await nextTick();
+                        M.FormSelect.init(document.querySelectorAll('select'));
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditDebrider'));
                         modal.open();
                     }
 
@@ -665,6 +753,69 @@
                         }
                     };
 
+                    const handleDebriderFormConfirm = async () => {
+                        try {
+                            if (!debriderForm.value?.settingKey) {
+                                showError('Debrid provider is required');
+                                return;
+                            }
+                            if (!debriderForm.value.apiKey?.trim()) {
+                                showError('API key cannot be empty');
+                                return;
+                            }
+                            setLoading(true);
+                            const res = await fetch(API.setDebrider(), {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    settingKey: debriderForm.value.settingKey,
+                                    apiKey: debriderForm.value.apiKey
+                                })
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error saving debrid provider: ' + (error.error || 'Unknown error'));
+                                return;
+                            }
+                            await loadDebridProviders();
+                            M.toast({
+                                html: `Debrid provider ${debriderForm.value.editing ? 'updated' : 'configured'}`,
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error saving debrid provider: ' + e.message);
+                        }
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditDebrider'));
+                        modal.close();
+                        setLoading(false);
+                    };
+
+                    const deleteDebrider = async (settingKey) => {
+                        const provider = debridProviders.value.find(item => item.settingKey === settingKey);
+                        if (!confirm('Delete credentials for ' + (provider?.name || settingKey) + '?')) return;
+                        try {
+                            const res = await fetch(API.deleteDebrider(settingKey), {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error deleting debrid provider: ' + (error.error || 'Unknown error'));
+                                return;
+                            }
+                            await loadDebridProviders();
+                            M.toast({
+                                html: 'Debrid provider credentials deleted',
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error deleting debrid provider: ' + e.message);
+                        }
+                    };
+
                     const addSource = async () => {
                         try {
                             if (!newUrl.value) return;
@@ -722,6 +873,7 @@
                         activeTab,
                         downloadSources,
                         platformCatalogs,
+                        debridProviders,
                         switchTab,
                         refreshDownload,
                         deleteDownload,
@@ -734,8 +886,12 @@
                         sourceTypes,
                         siteCookies,
                         handleCookieFormConfirm,
+                        handleDebriderFormConfirm,
                         openCookieForm,
-                        cookieForm
+                        openDebriderForm,
+                        deleteDebrider,
+                        cookieForm,
+                        debriderForm
                     };
                 }
             }).mount('#app');

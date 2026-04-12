@@ -7,10 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/models/debrider_credentials.dart';
 import 'package:yamata_launcher/models/site_cookies.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/console_service.dart';
+import 'package:yamata_launcher/services/debrider_service.dart';
 import 'package:yamata_launcher/repository/platform_catalog_sources_repository.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/platform_catalog_source.dart';
@@ -66,6 +68,11 @@ class WebManagerService {
 
     if (path.startsWith('/api/cookies')) {
       await _handleCookies(request);
+      return;
+    }
+
+    if (path.startsWith('/api/debriders')) {
+      await _handleDebriders(request);
       return;
     }
 
@@ -218,6 +225,104 @@ class WebManagerService {
       await SettingsService()
           .set(SettingsKeys.COOKIE_SITE_URLS, jsonEncode(cookieSites));
       await CookiesService().removeSiteCookies(site.trim());
+      _json(req, {'ok': true});
+      return;
+    }
+  }
+
+  // ================= Debrider management =================
+  Future<void> _handleDebriders(HttpRequest req) async {
+    if (req.method == 'GET') {
+      final providers = await Future.wait(
+        DebriderService.debriders.map((debrider) async {
+          final credentials =
+              await DebriderService.getDebriderCredentials(debrider);
+          final apiKey = credentials?.apiKey ?? "";
+
+          return {
+            'name': debrider.name,
+            'settingKey': debrider.settingKey,
+            'apiKey': apiKey,
+            'configured': apiKey.trim().isNotEmpty,
+            'authenticated': await debrider.isAuthenticated(),
+          };
+        }),
+      );
+
+      _json(req, providers);
+      return;
+    }
+
+    if (req.method == 'PUT') {
+      final body = await utf8.decoder.bind(req).join();
+      final jsonBody = jsonDecode(body);
+      final settingKey = jsonBody['settingKey']?.toString().trim() ?? "";
+      final apiKey = jsonBody['apiKey']?.toString().trim() ?? "";
+
+      if (settingKey.isEmpty) {
+        _json(req, {'ok': false, 'error': 'Debrid provider is required.'},
+            statusCode: HttpStatus.badRequest);
+        return;
+      }
+
+      if (apiKey.isEmpty) {
+        _json(req, {'ok': false, 'error': 'API key cannot be empty.'},
+            statusCode: HttpStatus.badRequest);
+        return;
+      }
+
+      final debrider = DebriderService.debriders
+          .firstWhereOrNull((item) => item.settingKey == settingKey);
+
+      if (debrider == null) {
+        _json(req, {'ok': false, 'error': 'Debrid provider not found.'},
+            statusCode: HttpStatus.notFound);
+        return;
+      }
+
+      final success = await DebriderService.saveDebriderCredentials(
+        debrider,
+        DebriderCredentials(apiKey: apiKey),
+      );
+
+      if (!success) {
+        _json(
+            req,
+            {
+              'ok': false,
+              'error':
+                  'Failed to save debrid credentials. Check the logs for more details.'
+            },
+            statusCode: HttpStatus.internalServerError);
+        return;
+      }
+
+      _json(req, {'ok': true});
+      return;
+    }
+
+    if (req.method == 'DELETE') {
+      final encodedSettingKey = req.uri.queryParameters['settingKey'];
+      final settingKey = encodedSettingKey == null
+          ? ""
+          : utf8.decode(base64Decode(encodedSettingKey)).trim();
+
+      if (settingKey.isEmpty) {
+        _json(req, {'ok': false, 'error': 'Debrid provider is required.'},
+            statusCode: HttpStatus.badRequest);
+        return;
+      }
+
+      final debrider = DebriderService.debriders
+          .firstWhereOrNull((item) => item.settingKey == settingKey);
+
+      if (debrider == null) {
+        _json(req, {'ok': false, 'error': 'Debrid provider not found.'},
+            statusCode: HttpStatus.notFound);
+        return;
+      }
+
+      await DebriderService.removeDebriderCredentials(debrider);
       _json(req, {'ok': true});
       return;
     }

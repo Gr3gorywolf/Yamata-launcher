@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:yamata_launcher/models/contracts/credential_storage.dart';
 import 'package:yamata_launcher/models/contracts/debrider.dart';
 import 'package:yamata_launcher/models/debrider_credentials.dart';
+import 'package:yamata_launcher/services/debriders/alldebrid_debrider.dart';
 import 'package:yamata_launcher/services/debriders/realdebrid_debrider.dart';
 import 'package:yamata_launcher/services/debriders/torbox_debrider.dart';
 import 'package:yamata_launcher/utils/credentials_storage/hybrid_credentials_storage.dart';
@@ -19,6 +20,7 @@ class DebriderService {
   static final List<Debrider> debriders = [
     RealdebridDebrider(),
     TorboxDebrider(),
+    AllDebridDebrider(),
   ];
 
   static Debrider? getDebriderForUrl(String url) {

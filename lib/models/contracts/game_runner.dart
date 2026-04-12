@@ -6,7 +6,7 @@ import 'package:yamata_launcher/models/rom_library_item.dart';
 abstract class GameRunner {
   String get name;
   String get executablePath;
-  bool get isExecutableAvailable;
-  Future<bool> canRunOnRunner(RomLibraryItem rom);
+  bool get isRunnerAvailable;
+  Future<bool> canRunOnRunner(String console);
   Future<Process?> launchOnRunner(RomLibraryItem rom);
 }

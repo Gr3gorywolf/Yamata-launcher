@@ -23,6 +23,7 @@ import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:path/path.dart' as p;
+import 'package:yamata_launcher/utils/flatpak_utils.dart';
 
 enum EmulatorLaunchResult { success, failedToLaunch, needsExtraction }
 
@@ -186,11 +187,10 @@ class EmulatorService {
   /**
    * Checks if there's an available game runner for the given game, and returns it.
    */
-  static Future<List<GameRunner>> getAvailableRunners(
-      RomLibraryItem rom) async {
+  static Future<List<GameRunner>> getAvailableRunners(String console) async {
     final availableRunners = <GameRunner>[];
     for (final runner in runners) {
-      if (await runner.canRunOnRunner(rom)) {
+      if (await runner.canRunOnRunner(console)) {
         availableRunners.add(runner);
       }
     }
@@ -284,7 +284,7 @@ class EmulatorService {
         );
       } else {
         Process? process;
-        var availableRunners = await getAvailableRunners(download);
+        var availableRunners = await getAvailableRunners(consoleKey);
         print(availableRunners);
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {
@@ -304,9 +304,15 @@ class EmulatorService {
             print("resolved emulator binary to ${execPath}");
             process = await Process.start(execPath, launchParams);
           } else {
-            process = await Process.start(emulatorBinary, launchParams,
-                mode: ProcessStartMode.inheritStdio,
-                workingDirectory: p.dirname(filePath));
+            if (Platform.isLinux &&
+                await FlatpakUtils.isFlatpakExecutable(emulatorBinary)) {
+              process = await FlatpakUtils.launchFlatpak(
+                  emulatorBinary, launchParams);
+            } else {
+              process = await Process.start(emulatorBinary, launchParams,
+                  mode: ProcessStartMode.inheritStdio,
+                  workingDirectory: p.dirname(filePath));
+            }
           }
         }
         _activeGamesProcesses[slug] = process;

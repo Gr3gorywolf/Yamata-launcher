@@ -27,16 +27,19 @@ class HeroicGameRunner implements GameRunner {
   String get executablePath => executablesByPlatform[OsService.osType] ?? '';
 
   @override
-  bool get isExecutableAvailable {
+  bool get isRunnerAvailable {
     final executablePath = executablesByPlatform[OsService.osType];
     if (executablePath == null) return false;
+    if (Platform.isLinux) {
+      return Directory(this.dataFolderByPlatform[OsType.linux]!).existsSync();
+    }
     return File(executablePath).existsSync();
   }
 
   @override
-  Future<bool> canRunOnRunner(RomLibraryItem libItem) async {
+  Future<bool> canRunOnRunner(String console) async {
     if (Platform.isLinux || Platform.isMacOS) {
-      return isExecutableAvailable && libItem.rom.console == 'windows';
+      return isRunnerAvailable && console == 'windows';
     }
     return false;
   }

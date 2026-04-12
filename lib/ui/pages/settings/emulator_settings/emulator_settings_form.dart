@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
+import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
@@ -13,6 +14,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/ui/widgets/app_selection_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
+import 'package:yamata_launcher/utils/flatpak_utils.dart';
 
 class EmulatorSettingsForm extends StatefulWidget {
   final List<String> existingConsoles;
@@ -30,8 +32,10 @@ class EmulatorSettingsForm extends StatefulWidget {
 
 class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   List<Console> availableConsoles = [];
+  List<String> flatpaks = [];
   var launchParametersController = TextEditingController();
   var selectedBinaryController = TextEditingController();
+  List<GameRunner> availableRunners = [];
   String selectedConsole = "";
   String selectedBinary = "";
   @override
@@ -46,8 +50,19 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
     } else if (availableConsoles.isNotEmpty) {
       selectedConsole = availableConsoles.first.slug ?? "";
     }
-
+    if (Platform.isLinux) {
+      fetchFlatpaks();
+    }
     super.initState();
+  }
+
+  Future fetchFlatpaks() async {
+    if (Platform.isLinux) {
+      var flatpakSet = await FlatpakUtils.getInstalledFlatpakAppIds();
+      setState(() {
+        flatpaks = flatpakSet.toList();
+      });
+    }
   }
 
   void handleSelectEmulatorBinary() async {
@@ -88,6 +103,14 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
         selectedBinaryController.text = selectedFilePath!;
       });
     }
+  }
+
+  void handleChangeSelectedConsole(String? value) async {
+    setState(() {
+      selectedConsole = value ?? "";
+    });
+    availableRunners =
+        await EmulatorService.getAvailableRunners(selectedConsole);
   }
 
   void handleSave() {
@@ -140,11 +163,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                             child: Text(console.name ?? ""),
                           ))
                       .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedConsole = value ?? "";
-                    });
-                  },
+                  onChanged: handleChangeSelectedConsole,
                 ),
               ),
               DialogSectionItem(
@@ -185,6 +204,53 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                   },
                 ),
               ),
+              if (Platform.isLinux && flatpaks.isNotEmpty)
+                DialogSectionItem(
+                  title: "Available Flatpaks",
+                  icon: Icons.apps,
+                  actions: [],
+                  content: SearchableDropdownFormField<String>(
+                    value: flatpaks.contains(selectedBinaryController.text)
+                        ? selectedBinaryController.text
+                        : "Custom executable",
+                    items: flatpaks
+                        .map((flatpak) => DropdownMenuItem<String>(
+                              value: flatpak,
+                              child: Text(flatpak),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedBinaryController.text = value ?? "";
+                      });
+                    },
+                  ),
+                ),
+              if (availableRunners.isNotEmpty)
+                DialogSectionItem(
+                  title: "Available Runners",
+                  icon: Icons.launch,
+                  actions: [],
+                  content: SearchableDropdownFormField<String>(
+                    value: availableRunners.any((runner) =>
+                            runner.name == selectedBinaryController.text)
+                        ? selectedBinaryController.text
+                        : "Custom executable",
+                    items: availableRunners
+                        .map((runner) => DropdownMenuItem<String>(
+                              value: runner.name,
+                              child: Text(runner.name),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      var runner = availableRunners
+                          .firstWhere((runner) => runner.name == value);
+                      setState(() {
+                        selectedBinaryController.text = runner.executablePath;
+                      });
+                    },
+                  ),
+                ),
               if (FileSystemService.isDesktop)
                 DialogSectionItem(
                   title: "Launch parameters",

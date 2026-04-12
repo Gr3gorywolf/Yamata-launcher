@@ -1,6 +1,10 @@
 import 'dart:io';
 
 class FlatpakUtils {
+  static Set<String>? cachedFlatpakApps;
+  static DateTime? _lastCacheTime;
+  static const _cacheTTL = Duration(seconds: 10);
+
   static Future<Process> launchFlatpak(
     String executable,
     List<String> args,
@@ -10,12 +14,14 @@ class FlatpakUtils {
     if (appId == null) {
       throw Exception('Not a valid Flatpak executable: $executable');
     }
-
-    return Process.start(
+    print('Launching Flatpak app: $appId with args: $args');
+    var process = Process.start(
       'flatpak',
       ['run', appId, ...args],
       mode: ProcessStartMode.normal,
     );
+
+    return process;
   }
 
   static Future<bool> isFlatpakExecutable(String executable) async {
@@ -50,18 +56,10 @@ class FlatpakUtils {
     // CASE 2: App ID
     // -------------------------
     if (!_looksLikeFlatpakId(exec)) return false;
+    final installedApps = await getInstalledFlatpakAppIds();
 
-    final home = Platform.environment['HOME'];
-
-    final possiblePaths = [
-      '/var/lib/flatpak/app/$exec',
-      if (home != null) '$home/.local/share/flatpak/app/$exec',
-    ];
-
-    for (final path in possiblePaths) {
-      if (await Directory(path).exists()) {
-        return true;
-      }
+    if (installedApps.contains(exec)) {
+      return true;
     }
 
     return false;
@@ -103,6 +101,41 @@ class FlatpakUtils {
     } catch (_) {}
 
     return null;
+  }
+
+  static Future<Set<String>> getInstalledFlatpakAppIds() async {
+    // Use cache if still valid
+    if (cachedFlatpakApps != null &&
+        _lastCacheTime != null &&
+        DateTime.now().difference(_lastCacheTime!) < _cacheTTL) {
+      return cachedFlatpakApps!;
+    }
+
+    try {
+      final result = await Process.run(
+        'flatpak',
+        ['list', '--app', '--columns=application'],
+      );
+
+      if (result.exitCode != 0) {
+        return {};
+      }
+
+      final output = (result.stdout as String);
+
+      final apps = output
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toSet();
+
+      cachedFlatpakApps = apps;
+      _lastCacheTime = DateTime.now();
+
+      return apps;
+    } catch (_) {
+      return {};
+    }
   }
 
   // --------------------------------------------------

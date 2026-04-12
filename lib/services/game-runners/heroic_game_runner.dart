@@ -5,6 +5,7 @@ import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:path/path.dart' as p;
+import 'package:yamata_launcher/utils/flatpak_utils.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
 
 class HeroicGameRunner implements GameRunner {
@@ -31,7 +32,10 @@ class HeroicGameRunner implements GameRunner {
     final executablePath = executablesByPlatform[OsService.osType];
     if (executablePath == null) return false;
     if (Platform.isLinux) {
-      return Directory(this.dataFolderByPlatform[OsType.linux]!).existsSync();
+      return Directory(this.dataFolderByPlatform[OsType.linux]!).existsSync() ||
+          FlatpakUtils.cachedFlatpakApps
+                  ?.contains('com.heroicgameslauncher.hgl') ==
+              true;
     }
     return File(executablePath).existsSync();
   }
@@ -246,9 +250,11 @@ class HeroicGameRunner implements GameRunner {
 
     print("launching heroic with command $command ${launchArgs.join(' ')}");
 
-    final process = await Process.start(command, launchArgs,
-        environment: _buildLaunchEnvironment(),
-        includeParentEnvironment: false);
+    final process = Platform.isLinux
+        ? await FlatpakUtils.launchFlatpak(command, launchArgs)
+        : await Process.start(command, launchArgs,
+            environment: _buildLaunchEnvironment(),
+            includeParentEnvironment: false);
 
     ProcessHelper.pipeProcessOutput(process: process, onLog: print);
     return process;

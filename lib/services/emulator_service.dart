@@ -24,6 +24,7 @@ import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
+import 'package:yamata_launcher/utils/process_helper.dart';
 
 enum EmulatorLaunchResult { success, failedToLaunch, needsExtraction }
 
@@ -285,6 +286,9 @@ class EmulatorService {
       } else {
         Process? process;
         var availableRunners = await getAvailableRunners(consoleKey);
+        if (Platform.isLinux) {
+          await FlatpakUtils.getInstalledFlatpakAppIds();
+        }
         print(availableRunners);
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {
@@ -308,6 +312,10 @@ class EmulatorService {
                 await FlatpakUtils.isFlatpakExecutable(emulatorBinary)) {
               process = await FlatpakUtils.launchFlatpak(
                   emulatorBinary, launchParams);
+              ProcessHelper.pipeProcessOutput(
+                  process: process,
+                  progressPrefix: "",
+                  onLog: (output) => print("[Flatpak] $output"));
             } else {
               process = await Process.start(emulatorBinary, launchParams,
                   mode: ProcessStartMode.inheritStdio,

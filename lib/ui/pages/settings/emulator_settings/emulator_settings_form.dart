@@ -47,6 +47,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       selectedConsole = widget.editingSetting!.console;
       selectedBinaryController.text = widget.editingSetting!.emulatorBinary;
       launchParametersController.text = widget.editingSetting!.launchParams;
+      loadRunners();
     } else if (availableConsoles.isNotEmpty) {
       selectedConsole = availableConsoles.first.slug ?? "";
     }
@@ -105,12 +106,18 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
     }
   }
 
+  void loadRunners() async {
+    var runners = await EmulatorService.getAvailableRunners(selectedConsole);
+    setState(() {
+      availableRunners = runners;
+    });
+  }
+
   void handleChangeSelectedConsole(String? value) async {
     setState(() {
       selectedConsole = value ?? "";
     });
-    availableRunners =
-        await EmulatorService.getAvailableRunners(selectedConsole);
+    loadRunners();
   }
 
   void handlePickFlatpak() async {
@@ -128,7 +135,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
 
   void handlePickGameRunner() async {
     var options = availableRunners
-        .map((app) => PickerOption(label: app.name, value: app))
+        .map((app) => PickerOption(label: app.name, value: app.executablePath))
         .toList();
     var selectedOption = await AlertsService.showPicker(
         context, "Select a Game Runner", options);
@@ -249,54 +256,6 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                       ]
                     : null,
               ),
-              if (Platform.isLinux && availableFlatpaks.isNotEmpty)
-                DialogSectionItem(
-                  title: "Available Flatpaks",
-                  icon: Icons.apps,
-                  actions: [],
-                  content: SearchableDropdownFormField<String>(
-                    value: availableFlatpaks
-                            .contains(selectedBinaryController.text)
-                        ? selectedBinaryController.text
-                        : "Custom executable",
-                    items: availableFlatpaks
-                        .map((flatpak) => DropdownMenuItem<String>(
-                              value: flatpak,
-                              child: Text(flatpak),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBinaryController.text = value ?? "";
-                      });
-                    },
-                  ),
-                ),
-              if (availableRunners.isNotEmpty)
-                DialogSectionItem(
-                  title: "Available Runners",
-                  icon: Icons.launch,
-                  actions: [],
-                  content: SearchableDropdownFormField<String>(
-                    value: availableRunners.any((runner) =>
-                            runner.name == selectedBinaryController.text)
-                        ? selectedBinaryController.text
-                        : "Custom executable",
-                    items: availableRunners
-                        .map((runner) => DropdownMenuItem<String>(
-                              value: runner.name,
-                              child: Text(runner.name),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      var runner = availableRunners
-                          .firstWhere((runner) => runner.name == value);
-                      setState(() {
-                        selectedBinaryController.text = runner.executablePath;
-                      });
-                    },
-                  ),
-                ),
               if (FileSystemService.isDesktop)
                 DialogSectionItem(
                   title: "Launch parameters",

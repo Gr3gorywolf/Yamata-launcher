@@ -1,4 +1,12 @@
-enum HosterStatus { Invalid, Valid, NeedsManual, Unsupported, Unknown }
+enum HosterStatus {
+  Invalid,
+  Valid,
+  NeedsManual,
+  Unsupported,
+  ValidWithDebridSupport,
+  UnverifiedWithDebridSupport,
+  Unknown
+}
 
 class HosterMetadata {
   final String? fileName;

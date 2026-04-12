@@ -42,6 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _closeToSystemTray = false;
   bool _useBuiltInLinkExtractor = false;
   bool _showGamepadGuide = false;
+  bool _selectFirstDebrider = false;
 
   @override
   void initState() {
@@ -71,6 +72,8 @@ class _SettingsPageState extends State<SettingsPage> {
         .get<bool>(SettingsKeys.MOVE_ROMS_TO_NAMED_SUBFOLDER);
     _showGamepadGuide =
         await SettingsService().get<bool>(SettingsKeys.SHOW_CONTROLLER_GUIDE);
+    _selectFirstDebrider =
+        await SettingsService().get<bool>(SettingsKeys.SELECT_FIRST_DEBRIDER);
     if (Platform.isLinux) {
       _useBuiltInLinkExtractor = false;
     } else {
@@ -112,6 +115,8 @@ class _SettingsPageState extends State<SettingsPage> {
         case SettingsKeys.SHOW_CONTROLLER_GUIDE:
           _showGamepadGuide = value as bool;
           break;
+        case SettingsKeys.SELECT_FIRST_DEBRIDER:
+          _selectFirstDebrider = value as bool;
         default:
           break;
       }
@@ -340,6 +345,13 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             // integrations section
             const _SectionHeader(title: 'Integrations'),
+            _NavigationTile(
+              icon: Icons.double_arrow,
+              title: 'Debrid services',
+              subtitle:
+                  'Debrid services are premium services that allow you to download files from file hosting services at high speed and without waiting times.',
+              onTap: () => context.push("/settings/debrider-settings"),
+            ),
             // _NavigationTile(
             //   icon: Icons.rocket_launch,
             //   title: 'Game runners',
@@ -359,6 +371,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 onChanged: (v) =>
                     _setSetting(SettingsKeys.CLOSE_TO_SYSTEM_TRAY, v),
               ),
+            _SwitchTile(
+              icon: Icons.download_done,
+              title: 'Select first debrid service automatically',
+              subtitle:
+                  "When have configured debrid services, and its compatible with the download option, the app will automatically select the first one on the download confirmation dialog",
+              value: _selectFirstDebrider,
+              onChanged: (v) =>
+                  _setSetting(SettingsKeys.SELECT_FIRST_DEBRIDER, v),
+            ),
             _SwitchTile(
               icon: Icons.folder_zip,
               title: 'Extract roms after download',

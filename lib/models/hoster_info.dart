@@ -1,3 +1,4 @@
+import 'package:yamata_launcher/models/contracts/debrider.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
 
 class HosterInfo {

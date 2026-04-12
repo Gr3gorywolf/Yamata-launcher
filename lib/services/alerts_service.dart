@@ -90,9 +90,10 @@ class AlertsService {
       TextInputType inputType = TextInputType.text,
       String? inputPlaceholder,
       Widget? extraContent,
+      String? initialValue,
       double? minWidth = 300}) {
     var completer = Completer<String?>();
-    var value = "";
+    var value = initialValue ?? "";
     showDialog(
         context: ctx,
         builder: (cont) {
@@ -104,6 +105,7 @@ class AlertsService {
               width: minWidth,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 TextField(
+                  controller: TextEditingController(text: initialValue),
                   keyboardType: inputType,
                   decoration: InputDecoration(
                     hintText: inputPlaceholder ?? "",

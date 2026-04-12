@@ -9,6 +9,8 @@ import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
+import 'package:yamata_launcher/models/contracts/debrider.dart';
+import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_info.dart';
@@ -29,11 +31,14 @@ import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_
 import 'package:yamata_launcher/ui/widgets/download_link_web_extractor/download_link_web_extractor_external.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog_hint_content.dart';
+import 'package:yamata_launcher/ui/widgets/selectable_chips.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
 import 'package:yamata_launcher/utils/http_helper.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/url_helper.dart';
+
+import '../../../services/debrider_service.dart';
 
 class DownloadSourcesDialogConfirmDialog extends StatefulWidget {
   RomDownloadSourceItem item;
@@ -52,10 +57,15 @@ class _DownloadSourcesDialogConfirmDialogState
     extends State<DownloadSourcesDialogConfirmDialog> {
   final validStatuses = [
     HosterStatus.Valid,
+    HosterStatus.ValidWithDebridSupport,
+    HosterStatus.UnverifiedWithDebridSupport,
     HosterStatus.NeedsManual,
   ];
+  List<Debrider> authDebriders = [];
   List<HosterInfo> hosters = [];
+  Debrider? selectedDebrider;
   HosterInfo? selectedHoster;
+  bool autoselectFirstDebrider = false;
   bool isLoadingDirectLink = false;
   var extractAfterDownload = false;
 
@@ -90,14 +100,29 @@ class _DownloadSourcesDialogConfirmDialogState
             : HosterStatus.Unsupported,
       );
     }
+    var foundDebrider = DebriderService.getDebriderForUrl(uri);
+    if (foundDebrider != null) {
+      var status = validStatuses.contains(hosterMetadata.status)
+          ? HosterStatus.ValidWithDebridSupport
+          : hosterMetadata.status;
+      if (hosterMetadata.status == HosterStatus.Unsupported) {
+        status = HosterStatus.UnverifiedWithDebridSupport;
+      }
+      hosterMetadata = HosterMetadata(
+        fileName: hosterMetadata.fileName,
+        status: status,
+      );
+    }
     var hosterInfo = HosterInfo(
       uri: uri,
       domain: domain,
       isDirect: isDirect,
       metadata: hosterMetadata,
       isTorrent: isTorrent,
-      canExtractLink: isDirect || hosterName != null,
+      canExtractLink:
+          isDirect || hosterName != null || isTorrent || foundDebrider != null,
     );
+
     var foundHosterIndex = hosters.indexWhere((h) => h.uri == uri);
     if (foundHosterIndex != -1) {
       hosters[foundHosterIndex] = hosterInfo;
@@ -126,6 +151,7 @@ class _DownloadSourcesDialogConfirmDialogState
   }
 
   Future<void> loadHosters() async {
+    await fetchAuthentifiedDebriders();
     setState(() {
       hosters = getHostersWithoutMetadata();
     });
@@ -200,6 +226,32 @@ class _DownloadSourcesDialogConfirmDialogState
     var link = null;
     var sourceRomLink = selectedHoster!.uri;
     var isDirectDownload = selectedHoster!.isDirect;
+    // If its a torrent or magnet
+    if (selectedDebrider != null &&
+        selectedDebrider!.canHandleUrl(sourceRomLink)) {
+      setState(() {
+        isLoadingDirectLink = true;
+      });
+      try {
+        link = await selectedDebrider!.getDirectDownloadLink(sourceRomLink);
+        if (link != null && link.isNotEmpty) {
+          handleSendResult(link);
+        }
+      } catch (e) {
+        setState(() {
+          isLoadingDirectLink = false;
+        });
+        Future.microtask(() {
+          AlertsService.showErrorSnackbar(
+              "Failed to get direct download link from debrid service: $e");
+        });
+      }
+      setState(() {
+        isLoadingDirectLink = false;
+      });
+      return;
+    }
+    // if its a direct download from a http server
     if (isDirectDownload) {
       var siteCookies = await CookiesService()
           .getSiteCookies(UrlHelper.getSiteFromUrl(sourceRomLink));
@@ -214,7 +266,7 @@ class _DownloadSourcesDialogConfirmDialogState
     setState(() {
       isLoadingDirectLink = true;
     });
-
+    // If its a hoster and needs extraction
     try {
       link = await DownloadSourcesRepository()
           .extractDirectDownloadUrl(sourceRomLink);
@@ -247,11 +299,37 @@ class _DownloadSourcesDialogConfirmDialogState
     handleSendResult(link);
   }
 
+  void handleSelectSource(HosterInfo hoster) {
+    setState(() {
+      selectedHoster = hoster;
+    });
+    if (selectedDebrider != null &&
+        !selectedDebrider!.canHandleUrl(hoster.uri)) {
+      setState(() {
+        selectedDebrider = null;
+      });
+    }
+    if (selectedDebrider == null && autoselectFirstDebrider) {
+      for (var debrider in authDebriders) {
+        if (debrider.canHandleUrl(hoster.uri)) {
+          setState(() {
+            selectedDebrider = debrider;
+          });
+          break;
+        }
+      }
+    }
+  }
+
   List<HosterInfo> getSortedHosters(List<HosterInfo> hostersToSort) {
     final sorted = List<HosterInfo>.from(hostersToSort);
     sorted.sort((a, b) {
       if (a.canExtractLink && !b.canExtractLink) return -1;
       if (!a.canExtractLink && b.canExtractLink) return 1;
+      if (validStatuses.contains(a.metadata?.status) &&
+          !validStatuses.contains(b.metadata?.status)) return -1;
+      if (!validStatuses.contains(a.metadata?.status) &&
+          validStatuses.contains(b.metadata?.status)) return 1;
       return a.domain.compareTo(b.domain) + a.uri.compareTo(b.uri);
     });
     return sorted;
@@ -263,10 +341,7 @@ class _DownloadSourcesDialogConfirmDialogState
       var validHoster = hosters
           .firstWhereOrNull((h) => validStatuses.contains(h.metadata?.status));
       if (validHoster != null) {
-        if (mounted)
-          setState(() {
-            selectedHoster = validHoster;
-          });
+        handleSelectSource(validHoster);
         return false;
       }
       await Future.delayed(Duration(milliseconds: 50));
@@ -274,9 +349,31 @@ class _DownloadSourcesDialogConfirmDialogState
     });
   }
 
+  Future fetchAuthentifiedDebriders() async {
+    var debriders = DebriderService.debriders;
+    var authDebriders = <Debrider>[];
+    for (var debrider in debriders) {
+      if (await debrider.isAuthenticated()) {
+        authDebriders.add(debrider);
+      }
+    }
+    if (mounted)
+      setState(() {
+        this.authDebriders = authDebriders;
+      });
+  }
+
   @override
   void initState() {
     super.initState();
+    SettingsService()
+        .get<bool>(SettingsKeys.SELECT_FIRST_DEBRIDER)
+        .then((value) {
+      if (mounted)
+        setState(() {
+          autoselectFirstDebrider = value ?? false;
+        });
+    });
     loadHosters();
     handleSelectFirstValidSource();
     SettingsService().get(SettingsKeys.ENABLE_EXTRACTION).then((value) {
@@ -301,6 +398,14 @@ class _DownloadSourcesDialogConfirmDialogState
         break;
       case HosterStatus.NeedsManual:
         text = "Needs Manual Interaction";
+        type = StatusTagType.warning;
+        break;
+      case HosterStatus.ValidWithDebridSupport:
+        text = "Valid and compatible with debrid services";
+        type = StatusTagType.success;
+        break;
+      case HosterStatus.UnverifiedWithDebridSupport:
+        text = "Unsupported but compatible with debrid services";
         type = StatusTagType.warning;
         break;
       case HosterStatus.Valid:
@@ -382,9 +487,7 @@ class _DownloadSourcesDialogConfirmDialogState
                               onChanged: isDisabled
                                   ? null
                                   : (changed) {
-                                      setState(() {
-                                        selectedHoster = item;
-                                      });
+                                      handleSelectSource(item);
                                     },
                             ),
                             title: Text(
@@ -415,15 +518,41 @@ class _DownloadSourcesDialogConfirmDialogState
                               ),
                             ),
                             onTap: () {
-                              setState(() {
-                                selectedHoster = item;
-                              });
+                              handleSelectSource(item);
                             },
                           ),
                         );
                       },
                     ),
                   ),
+                  if (authDebriders.isNotEmpty &&
+                      DebriderService.getDebriderForUrl(
+                              selectedHoster?.uri ?? '') !=
+                          null) ...[
+                    ListTile(
+                      title: Text(
+                        "Supported debrid services",
+                      ),
+                      subtitle: Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        child: SelectableChips<Debrider>(
+                          value: selectedDebrider,
+                          allowDeselect: true, // opcional (como "no selection")
+                          onChanged: (debrider) {
+                            setState(() {
+                              selectedDebrider = debrider;
+                            });
+                          },
+                          options: authDebriders.map((debrider) {
+                            return ChipOption<Debrider>(
+                              label: debrider.name,
+                              value: debrider,
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
                   CheckboxListTile(
                     value: extractAfterDownload,
                     onChanged: (checked) => {

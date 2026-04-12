@@ -21,7 +21,8 @@ enum SettingsKeys {
   SHOW_MANUAL_INTERACTION_HINT,
   COOKIE_SITE_URLS,
   ROM_LIST_ITEM_TYPE,
-  SHOW_CONTROLLER_GUIDE
+  SHOW_CONTROLLER_GUIDE,
+  SELECT_FIRST_DEBRIDER
 }
 
 final _systemIsDarkThemed =
@@ -102,6 +103,11 @@ Map<SettingsKeys, Setting> settingsRegistry = {
   ),
   SettingsKeys.SHOW_CONTROLLER_GUIDE: Setting<bool>(
     key: 'show_controller_guide',
+    type: SettingType.bool,
+    defaultValue: true,
+  ),
+  SettingsKeys.SELECT_FIRST_DEBRIDER: Setting<bool>(
+    key: 'select_first_debrider',
     type: SettingType.bool,
     defaultValue: true,
   ),

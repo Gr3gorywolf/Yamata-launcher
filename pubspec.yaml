@@ -74,6 +74,7 @@ dependencies:
       url: https://github.com/Gr3gorywolf/gamepads.git
       path: "packages/gamepads"
       ref: "main"
+  encrypt: ^5.0.3
 
 
 

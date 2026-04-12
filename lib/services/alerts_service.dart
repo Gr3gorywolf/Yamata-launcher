@@ -190,7 +190,7 @@ class AlertsService {
     });
   }
 
-  static showAlert(BuildContext ctx, String title, String text,
+  static Future<T?> showAlert<T>(BuildContext ctx, String title, String text,
       {Function? callback = null,
       Function? onClose = null,
       bool cancelable = true,
@@ -198,7 +198,7 @@ class AlertsService {
       String acceptTitle = "Ok",
       Color? textColor = null,
       TextButton? additionalAction = null}) {
-    showDialog(
+    return showDialog<T>(
         context: ctx,
         barrierDismissible: cancelable,
         builder: (cont) {
@@ -251,6 +251,24 @@ class AlertsService {
             ],
           );
         });
+  }
+
+  static Future<PickerOption?> showPicker(
+      BuildContext context, String title, List<PickerOption> options) {
+    return showAlert(context, title, "",
+        extraContent: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options
+                .map((option) => ListTile(
+                      title: Text(option.label),
+                      onTap: () {
+                        Navigator.of(context).pop(option);
+                      },
+                    ))
+                .toList(),
+          ),
+        ));
   }
 
   static void showUpdateChangelogAlert(
@@ -402,4 +420,11 @@ class _DialogHandle {
     _onClose();
     _closed = true;
   }
+}
+
+class PickerOption {
+  final String label;
+  final dynamic value;
+
+  PickerOption({required this.label, required this.value});
 }

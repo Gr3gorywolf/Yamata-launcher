@@ -9,6 +9,7 @@ class DialogSectionItem extends StatelessWidget {
   final bool? helperTextIsError;
   final EdgeInsetsGeometry? padding;
   final List<IconButton> actions;
+  final List<Widget>? additionalContent;
 
   const DialogSectionItem(
       {required this.title,
@@ -17,6 +18,7 @@ class DialogSectionItem extends StatelessWidget {
       required this.icon,
       required this.actions,
       this.helperTextIsError,
+      this.additionalContent,
       this.padding});
 
   @override
@@ -50,6 +52,11 @@ class DialogSectionItem extends StatelessWidget {
               ),
             ),
           ),
+          if (additionalContent != null) ...[
+            SizedBox(height: 5),
+            ...additionalContent!,
+            SizedBox(height: 5),
+          ],
           if (helperText?.isNotEmpty ?? false)
             Opacity(
                 opacity: helperTextIsError == true ? 1.0 : 0.7,

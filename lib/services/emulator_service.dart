@@ -189,6 +189,9 @@ class EmulatorService {
    * Checks if there's an available game runner for the given game, and returns it.
    */
   static Future<List<GameRunner>> getAvailableRunners(String console) async {
+    if (Platform.isLinux) {
+      await FlatpakUtils.getInstalledFlatpakAppIds();
+    }
     final availableRunners = <GameRunner>[];
     for (final runner in runners) {
       if (await runner.canRunOnRunner(console)) {
@@ -286,9 +289,6 @@ class EmulatorService {
       } else {
         Process? process;
         var availableRunners = await getAvailableRunners(consoleKey);
-        if (Platform.isLinux) {
-          await FlatpakUtils.getInstalledFlatpakAppIds();
-        }
         print(availableRunners);
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {

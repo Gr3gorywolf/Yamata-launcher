@@ -20,17 +20,19 @@ class _DebriderSettingsPageState extends State<DebriderSettingsPage> {
   @override
   void initState() {
     super.initState();
+    fetchDebriderCreds();
   }
 
-  void fetchDebriderCreds() {
+  void fetchDebriderCreds() async {
     for (var debrider in DebriderService.debriders) {
-      DebriderService.getDebriderCredentials(debrider).then((creds) {
-        if (creds != null) {
-          debriderCredentials[debrider.name] = creds;
-          setState(() {});
-        }
-      });
+      var creds = await DebriderService.getDebriderCredentials(debrider);
+      if (creds != null) {
+        debriderCredentials[debrider.name] = creds;
+      }
     }
+    setState(() {
+      debriderCredentials;
+    });
   }
 
   void fetchAvailableRunners() async {
@@ -44,12 +46,24 @@ class _DebriderSettingsPageState extends State<DebriderSettingsPage> {
     setState(() {});
   }
 
+  void handleDeleteCredentials(Debrider debrider) {
+    AlertsService.showAlert(context, "Delete credentials",
+        "Are you sure you want to delete the credentials for ${debrider.name}?",
+        callback: () {
+      DebriderService.removeDebriderCredentials(debrider);
+      debriderCredentials.remove(debrider.name);
+      setState(() {});
+    });
+  }
+
   void handleConfigureCredentials(Debrider debrider) {
     var initialValue = debriderCredentials.containsKey(debrider.name)
         ? debriderCredentials[debrider.name]!.apiKey
         : "";
-    AlertsService.showPrompt(context, "Configure ${debrider.name} API Key",
+    AlertsService.showPrompt(context, "${debrider.name} API Key",
             inputPlaceholder: "Enter your ${debrider.name} API key here",
+            inputType: TextInputType.multiline,
+            lines: 4,
             initialValue: initialValue)
         .then((value) {
       if (value != null) {
@@ -81,7 +95,7 @@ class _DebriderSettingsPageState extends State<DebriderSettingsPage> {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
-                  leading: const Icon(Icons.double_arrow),
+                  leading: const Icon(Icons.keyboard_double_arrow_down),
                   title: Text(debrider.name),
                   subtitle: Opacity(
                     opacity: 0.7,
@@ -89,11 +103,23 @@ class _DebriderSettingsPageState extends State<DebriderSettingsPage> {
                         ? "Credentials Configured"
                         : "No credentials Configured"),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {
-                      handleConfigureCredentials(debrider);
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (debriderCredentials.containsKey(debrider.name))
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            handleDeleteCredentials(debrider);
+                          },
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                          handleConfigureCredentials(debrider);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );

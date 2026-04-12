@@ -543,7 +543,10 @@ class _DownloadSourcesDialogConfirmDialogState
                               selectedDebrider = debrider;
                             });
                           },
-                          options: authDebriders.map((debrider) {
+                          options: authDebriders
+                              .where((debrider) => debrider
+                                  .canHandleUrl(selectedHoster?.uri ?? ''))
+                              .map((debrider) {
                             return ChipOption<Debrider>(
                               label: debrider.name,
                               value: debrider,

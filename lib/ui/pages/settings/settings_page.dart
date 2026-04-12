@@ -346,7 +346,7 @@ class _SettingsPageState extends State<SettingsPage> {
             // integrations section
             const _SectionHeader(title: 'Integrations'),
             _NavigationTile(
-              icon: Icons.double_arrow,
+              icon: Icons.keyboard_double_arrow_down,
               title: 'Debrid services',
               subtitle:
                   'Debrid services are premium services that allow you to download files from file hosting services at high speed and without waiting times.',

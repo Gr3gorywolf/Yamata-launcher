@@ -91,6 +91,7 @@ class AlertsService {
       String? inputPlaceholder,
       Widget? extraContent,
       String? initialValue,
+      int lines = 1,
       double? minWidth = 300}) {
     var completer = Completer<String?>();
     var value = initialValue ?? "";
@@ -112,6 +113,8 @@ class AlertsService {
                     helperText: message ?? "",
                     helperMaxLines: 3,
                   ),
+                  minLines: lines,
+                  maxLines: lines,
                   onChanged: (text) {
                     value = text;
                   },

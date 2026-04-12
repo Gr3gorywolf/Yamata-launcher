@@ -1,12 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:yamata_launcher/models/contracts/credential_storage.dart';
 import 'package:yamata_launcher/models/contracts/debrider.dart';
 import 'package:yamata_launcher/models/debrider_credentials.dart';
 import 'package:yamata_launcher/services/debriders/realdebrid_debrider.dart';
+import 'package:yamata_launcher/services/debriders/torbox_debrider.dart';
 import 'package:yamata_launcher/utils/credentials_storage/hybrid_credentials_storage.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
 
 class DebriderService {
   static CredentialStorage? _credentialStorage = HybridStorage();
@@ -19,6 +18,7 @@ class DebriderService {
 
   static final List<Debrider> debriders = [
     RealdebridDebrider(),
+    TorboxDebrider(),
   ];
 
   static Debrider? getDebriderForUrl(String url) {

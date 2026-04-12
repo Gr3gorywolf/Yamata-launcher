@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
-import 'package:yamata_launcher/services/web_manager_service.dart';
+import 'package:yamata_launcher/services/web-manager/web_manager_server.dart';
 
 class WebManagerPage extends StatefulWidget {
   @override
@@ -10,7 +10,7 @@ class WebManagerPage extends StatefulWidget {
 }
 
 class _WebManagerPageState extends State<WebManagerPage> {
-  final server = WebManagerService();
+  final server = WebManagerServer();
   String? url;
 
   @override
@@ -52,7 +52,7 @@ class _WebManagerPageState extends State<WebManagerPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Scan this QR code with your external device to manage sources and cookies',
+                      'Scan this QR code with your external device to manage sources, cookies and integrations',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
@@ -91,7 +91,7 @@ class _WebManagerPageState extends State<WebManagerPage> {
                       textAlign: TextAlign.center,
                     ),
                     const Text(
-                      'Dont close this page while managing sources or the connection will be lost',
+                      'Dont close this page while managing sources, cookies or integrations or the connection will be lost',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: Colors.redAccent),
                     ),

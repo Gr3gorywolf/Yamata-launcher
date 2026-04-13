@@ -11,15 +11,27 @@ import 'package:yamata_launcher/repository/download_sources_repository.dart';
 
 import 'package:yamata_launcher/services/download_sources_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
 
 class _CompilePayload {
   final List<RomInfo> roms;
-  final List<DownloadSourceWithDownloads> sources;
+  final _CompiledSourceIndex sourceIndex;
 
   _CompilePayload({
     required this.roms,
-    required this.sources,
+    required this.sourceIndex,
+  });
+}
+
+class _CompiledSourceIndex {
+  final Map<String, DownloadSource> sourceInfoByKey;
+  final Map<String, Map<String, Map<String, List<String>>>>
+      titleSourcesByConsolePrefix;
+  final Map<String, Map<String, List<String>>> sourceOrderByConsolePrefix;
+
+  _CompiledSourceIndex({
+    required this.sourceInfoByKey,
+    required this.titleSourcesByConsolePrefix,
+    required this.sourceOrderByConsolePrefix,
   });
 }
 
@@ -27,12 +39,10 @@ bool _isRomMatch(
   String sourceRomNormalizedTitle,
   String romNormalizedTitle,
 ) {
-  if (sourceRomNormalizedTitle.isEmpty || romNormalizedTitle.isEmpty)
+  if (sourceRomNormalizedTitle.isEmpty || romNormalizedTitle.isEmpty) {
     return false;
-
-  if (sourceRomNormalizedTitle == romNormalizedTitle) {
-    return true;
   }
+
   if (sourceRomNormalizedTitle[0] != romNormalizedTitle[0]) {
     return false;
   }
@@ -44,9 +54,8 @@ bool _isRomMatch(
   final long = sourceRomNormalizedTitle.length > romNormalizedTitle.length
       ? sourceRomNormalizedTitle
       : romNormalizedTitle;
-  var minMatch =
-      StringHelper.hasMinConsecutiveMatch(long, short, minLength: short.length);
-  return minMatch;
+
+  return long.contains(short);
 }
 
 String _prefix3(String s) => s.length <= 3 ? s : s.substring(0, 3);
@@ -70,6 +79,111 @@ String _removeMisplacedWords(String input) {
   return result;
 }
 
+String _normalizeTitleForMatching(String input) {
+  return RomService.normalizeRomTitle(
+    _removeMisplacedWords(input),
+    deleteRunes: true,
+  );
+}
+
+bool _isRomMatchInSamePrefixBucket(
+  String sourceRomNormalizedTitle,
+  String romNormalizedTitle,
+) {
+  if (sourceRomNormalizedTitle.isEmpty || romNormalizedTitle.isEmpty) {
+    return false;
+  }
+
+  final short = sourceRomNormalizedTitle.length <= romNormalizedTitle.length
+      ? sourceRomNormalizedTitle
+      : romNormalizedTitle;
+
+  final long = sourceRomNormalizedTitle.length > romNormalizedTitle.length
+      ? sourceRomNormalizedTitle
+      : romNormalizedTitle;
+
+  return long.contains(short);
+}
+
+String _getSourceKey(DownloadSource sourceInfo, int sourceIndex) {
+  final downloadUrl = sourceInfo.downloadUrl?.trim();
+  if (downloadUrl != null && downloadUrl.isNotEmpty) {
+    return downloadUrl;
+  }
+
+  return "${sourceInfo.title}#$sourceIndex";
+}
+
+DownloadSourceWithDownloads _prepareSourceForMatching(
+  DownloadSourceWithDownloads source,
+) {
+  source.downloads = (source.downloads ?? const []).map((download) {
+    download.titleClean = _normalizeTitleForMatching(download.title ?? "");
+    return download;
+  }).toList();
+
+  return source;
+}
+
+_CompiledSourceIndex _buildCompiledSourceIndexIsolate(
+  List<DownloadSourceWithDownloads> sources,
+) {
+  final sourceInfoByKey = <String, DownloadSource>{};
+  final titleSourcesByConsolePrefix =
+      <String, Map<String, Map<String, List<String>>>>{};
+  final sourceOrderByConsolePrefix = <String, Map<String, List<String>>>{};
+
+  for (var sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
+    final source = sources[sourceIndex];
+    final sourceKey = _getSourceKey(source.sourceInfo, sourceIndex);
+    sourceInfoByKey[sourceKey] = source.sourceInfo;
+
+    final seenBuckets = <String>{};
+    final seenTitles = <String>{};
+
+    for (final download in source.downloads ?? const []) {
+      final console = download.console ?? "";
+      if (console.isEmpty) continue;
+
+      final normalizedTitle = download.titleClean?.isNotEmpty == true
+          ? download.titleClean!
+          : _normalizeTitleForMatching(download.title ?? "");
+
+      if (normalizedTitle.isEmpty) continue;
+
+      final prefix = _prefix3(normalizedTitle);
+      final bucketKey = "$console|$prefix";
+      final titleKey = "$bucketKey|$normalizedTitle";
+
+      final consoleTitleMap =
+          titleSourcesByConsolePrefix.putIfAbsent(console, () => {});
+      final titleMap = consoleTitleMap.putIfAbsent(prefix, () => {});
+
+      final consoleSourceOrder =
+          sourceOrderByConsolePrefix.putIfAbsent(console, () => {});
+      final sourceOrder = consoleSourceOrder.putIfAbsent(prefix, () => []);
+
+      if (seenBuckets.add(bucketKey)) {
+        sourceOrder.add(sourceKey);
+      }
+
+      if (!seenTitles.add(titleKey)) {
+        continue;
+      }
+
+      final sourceKeysForTitle =
+          titleMap.putIfAbsent(normalizedTitle, () => []);
+      sourceKeysForTitle.add(sourceKey);
+    }
+  }
+
+  return _CompiledSourceIndex(
+    sourceInfoByKey: sourceInfoByKey,
+    titleSourcesByConsolePrefix: titleSourcesByConsolePrefix,
+    sourceOrderByConsolePrefix: sourceOrderByConsolePrefix,
+  );
+}
+
 /**
  * Isolate function to compile download sources for roms.
  */
@@ -80,70 +194,77 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
   final stopwatch = Stopwatch()..start();
 
   print("Isolate: Compiling ${payload.roms.length} roms");
-  var normalizedRoms = payload.roms.map((rom) {
-    rom.name = RomService.normalizeRomTitle(_removeMisplacedWords(rom.name),
-        deleteRunes: true);
-    return rom;
-  }).toList();
+  final romsByConsolePrefixAndName =
+      <String, Map<String, Map<String, List<String>>>>{};
 
-  final Map<String, Map<String, List<DownloadSourceWithDownloads>>> index = {};
+  for (final rom in payload.roms) {
+    final normalizedName = _normalizeTitleForMatching(rom.name);
+    if (normalizedName.isEmpty || rom.console.isEmpty) continue;
 
-  for (final source in payload.sources) {
-    for (final d in source.downloads ?? const []) {
-      final console = d.console;
-
-      d.titleClean = RomService.normalizeRomTitle(
-        _removeMisplacedWords(d.title ?? ""),
-        deleteRunes: true,
-      );
-      if (d.titleClean!.isEmpty) continue;
-
-      final prefix = _prefix3(d.titleClean!);
-
-      final consoleMap = index.putIfAbsent(console, () => {});
-      final list = consoleMap.putIfAbsent(prefix, () => []);
-
-      DownloadSourceWithDownloads? wrapper;
-      for (final s in list) {
-        if (s.sourceInfo == source.sourceInfo) {
-          wrapper = s;
-          break;
-        }
-      }
-
-      wrapper ??= DownloadSourceWithDownloads(
-        sourceInfo: source.sourceInfo,
-        downloads: [],
-      );
-
-      if (!list.contains(wrapper)) {
-        list.add(wrapper);
-      }
-
-      wrapper.downloads.add(d);
-    }
+    final prefix = _prefix3(normalizedName);
+    final consoleMap =
+        romsByConsolePrefixAndName.putIfAbsent(rom.console, () => {});
+    final romNamesByPrefix = consoleMap.putIfAbsent(prefix, () => {});
+    final romSlugs = romNamesByPrefix.putIfAbsent(normalizedName, () => []);
+    romSlugs.add(rom.slug);
   }
 
-  print("Index built in ${stopwatch.elapsedMilliseconds} ms");
+  print("ROM groups built in ${stopwatch.elapsedMilliseconds} ms");
 
-  for (final rom in normalizedRoms) {
-    final name = rom.name;
-    if (name.isEmpty) continue;
+  for (final consoleEntry in romsByConsolePrefixAndName.entries) {
+    final console = consoleEntry.key;
+    final indexedPrefixes =
+        payload.sourceIndex.titleSourcesByConsolePrefix[console];
+    final sourceOrderByPrefix =
+        payload.sourceIndex.sourceOrderByConsolePrefix[console];
 
-    final consoleMap = index[rom.console];
-    if (consoleMap == null) continue;
+    if (indexedPrefixes == null || sourceOrderByPrefix == null) continue;
 
-    final prefix = _prefix3(name);
-    final candidates = consoleMap[prefix];
-    if (candidates == null) continue;
+    for (final prefixEntry in consoleEntry.value.entries) {
+      final prefix = prefixEntry.key;
+      final titlesForPrefix = indexedPrefixes[prefix];
+      final sourceOrder = sourceOrderByPrefix[prefix];
 
-    final romResult = result.putIfAbsent(rom.slug, () => []);
+      if (titlesForPrefix == null ||
+          titlesForPrefix.isEmpty ||
+          sourceOrder == null ||
+          sourceOrder.isEmpty) {
+        continue;
+      }
 
-    for (final source in candidates) {
-      if (source.downloads.any(
-        (d) => _isRomMatch(d.titleClean!, name),
-      )) {
-        romResult.add(source.sourceInfo!);
+      final titleEntries = titlesForPrefix.entries.toList(growable: false);
+
+      for (final romEntry in prefixEntry.value.entries) {
+        final romName = romEntry.key;
+        final matchedSourceKeys = <String>{};
+
+        for (final titleEntry in titleEntries) {
+          if (_isRomMatchInSamePrefixBucket(titleEntry.key, romName)) {
+            matchedSourceKeys.addAll(titleEntry.value);
+          }
+        }
+
+        if (matchedSourceKeys.isEmpty) {
+          continue;
+        }
+
+        final matchedSources = <DownloadSource>[];
+        for (final sourceKey in sourceOrder) {
+          if (matchedSourceKeys.contains(sourceKey)) {
+            final sourceInfo = payload.sourceIndex.sourceInfoByKey[sourceKey];
+            if (sourceInfo != null) {
+              matchedSources.add(sourceInfo);
+            }
+          }
+        }
+
+        if (matchedSources.isEmpty) {
+          continue;
+        }
+
+        for (final slug in romEntry.value) {
+          result[slug] = matchedSources;
+        }
       }
     }
   }
@@ -162,6 +283,8 @@ class DownloadSourcesProvider extends ChangeNotifier {
   final Map<String, List<DownloadSource>> _romSources = {};
   final List<String> _sourceUrlsWithUpdates = [];
   final Set<String> _compilingRoms = {};
+  _CompiledSourceIndex? _compiledSourceIndex;
+  Future<_CompiledSourceIndex>? _compiledSourceIndexFuture;
   bool _initialized = false;
 
   List<DownloadSourceWithDownloads> get downloadSources => _downloadSources;
@@ -170,7 +293,10 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    _downloadSources = await DownloadSourcesService.getDownloadSources();
+    _downloadSources = (await DownloadSourcesService.getDownloadSources())
+        .map(_prepareSourceForMatching)
+        .toList();
+    _invalidateCompiledIndex();
     checkForUpdates();
     Timer.periodic(const Duration(hours: 1), (_) async {
       await checkForUpdates();
@@ -211,18 +337,17 @@ class DownloadSourcesProvider extends ChangeNotifier {
     DownloadSourceWithDownloads source,
     RomInfo rom,
   ) {
-    final normalizedRomName = RomService.normalizeRomTitle(
-        _removeMisplacedWords(rom.name),
-        deleteRunes: true);
+    final normalizedRomName = _normalizeTitleForMatching(rom.name);
 
     return source.downloads
         .where((sourceRom) =>
             sourceRom.console == rom.console &&
             _isRomMatch(
-                RomService.normalizeRomTitle(
-                    _removeMisplacedWords(sourceRom.title ?? ""),
-                    deleteRunes: true),
-                normalizedRomName))
+              sourceRom.titleClean?.isNotEmpty == true
+                  ? sourceRom.titleClean!
+                  : _normalizeTitleForMatching(sourceRom.title ?? ""),
+              normalizedRomName,
+            ))
         .toList();
   }
 
@@ -250,19 +375,27 @@ class DownloadSourcesProvider extends ChangeNotifier {
     if (romsToCompile.isEmpty) return;
     _compilingRoms.addAll(romsToCompile.map((e) => e.slug));
     notifyListeners();
-    final payload = _CompilePayload(
-      roms: romsToCompile,
-      sources: List.unmodifiable(_downloadSources),
-    );
-    final Map<String, List<DownloadSource>> compiled =
-        await compute(_compileRomSourcesIsolate, payload);
-    _romSources.addAll(compiled);
-    _compilingRoms.removeAll(romsToCompile.map((e) => e.slug));
-    notifyListeners();
+
+    try {
+      final sourceIndex = await _getCompiledSourceIndex();
+      final payload = _CompilePayload(
+        roms: romsToCompile,
+        sourceIndex: sourceIndex,
+      );
+      final Map<String, List<DownloadSource>> compiled =
+          await compute(_compileRomSourcesIsolate, payload);
+      _romSources.addAll(compiled);
+    } finally {
+      _compilingRoms.removeAll(romsToCompile.map((e) => e.slug));
+      notifyListeners();
+    }
   }
 
   Future<bool> setDownloadSource(DownloadSourceWithDownloads source) async {
-    final parsed = DownloadSourcesService.parseDownloadSourceNames(source);
+    final parsed = _prepareSourceForMatching(
+        DownloadSourcesService.parseDownloadSourceNames(
+      source,
+    ));
 
     final validFile = await DownloadSourcesService.saveDownloadSource(parsed);
 
@@ -279,6 +412,7 @@ class DownloadSourcesProvider extends ChangeNotifier {
     }
 
     _romSources.clear();
+    _invalidateCompiledIndex();
     notifyListeners();
     return true;
   }
@@ -286,7 +420,36 @@ class DownloadSourcesProvider extends ChangeNotifier {
   void removeDownloadSource(DownloadSourceWithDownloads source) {
     _downloadSources.remove(source);
     _romSources.clear();
+    _invalidateCompiledIndex();
     DownloadSourcesService.deleteDownloadSource(source);
     notifyListeners();
+  }
+
+  void _invalidateCompiledIndex() {
+    _compiledSourceIndex = null;
+    _compiledSourceIndexFuture = null;
+  }
+
+  Future<_CompiledSourceIndex> _getCompiledSourceIndex() async {
+    if (_compiledSourceIndex != null) {
+      return _compiledSourceIndex!;
+    }
+
+    if (_compiledSourceIndexFuture != null) {
+      return _compiledSourceIndexFuture!;
+    }
+
+    _compiledSourceIndexFuture =
+        compute<List<DownloadSourceWithDownloads>, _CompiledSourceIndex>(
+      _buildCompiledSourceIndexIsolate,
+      List<DownloadSourceWithDownloads>.unmodifiable(_downloadSources),
+    );
+
+    try {
+      _compiledSourceIndex = await _compiledSourceIndexFuture!;
+      return _compiledSourceIndex!;
+    } finally {
+      _compiledSourceIndexFuture = null;
+    }
   }
 }

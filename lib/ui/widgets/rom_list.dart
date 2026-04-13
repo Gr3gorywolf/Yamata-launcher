@@ -1,22 +1,11 @@
-import 'dart:io';
 import 'dart:math';
 
-import 'package:animate_do/animate_do.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/providers/download_provider.dart';
-import 'package:yamata_launcher/ui/pages/rom_details_dialog/rom_details_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
-import 'package:yamata_launcher/ui/widgets/focusable_element.dart';
-import 'package:yamata_launcher/ui/widgets/rom_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
-import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
-import 'package:yamata_launcher/services/console_service.dart';
-import 'package:yamata_launcher/constants/app_constants.dart';
-import 'package:yamata_launcher/services/files_system_service.dart';
 
 import '../../providers/app_provider.dart';
 
@@ -113,17 +102,25 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: CustomScrollView(
+        key: PageStorageKey('rom-list-${viewMode.name}'),
+        cacheExtent: viewMode == ViewModeToggleMode.list ? 900 : 500,
         slivers: [
           SliverToBoxAdapter(child: _buildTop()),
           if (viewMode == ViewModeToggleMode.list)
-            SliverList(
+            SliverPrototypeExtentList(
+              prototypeItem: _RomListItemWrapper(
+                rom: roms.first,
+                showConsole: widget.showConsole,
+              ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final rom = roms[index];
 
                   return RepaintBoundary(
                     child: _RomListItemWrapper(
-                        rom: rom, showConsole: widget.showConsole),
+                      rom: rom,
+                      showConsole: widget.showConsole,
+                    ),
                   );
                 },
                 childCount: roms.length,

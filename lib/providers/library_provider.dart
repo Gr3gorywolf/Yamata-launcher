@@ -22,7 +22,13 @@ class LibraryProvider extends ChangeNotifier {
 
   Map<String, RomLibraryItem> _libraryItems = {};
   Set<String> _runningGames = {};
+  int _libraryItemsRevision = 0;
   List<RomLibraryItem> get libraryItems => _libraryItems.values.toList();
+  int get libraryItemsRevision => _libraryItemsRevision;
+
+  void _bumpRevision() {
+    _libraryItemsRevision++;
+  }
 
   Future checkGamesExistence() async {
     final stopwatch = Stopwatch()..start();
@@ -53,6 +59,7 @@ class LibraryProvider extends ChangeNotifier {
     for (var item in library) {
       _libraryItems[item.rom.slug] = item;
     }
+    _bumpRevision();
     checkGamesExistence();
     Timer.periodic(const Duration(minutes: 20), (_) async {
       await checkGamesExistence();
@@ -119,6 +126,7 @@ class LibraryProvider extends ChangeNotifier {
     await LibraryDao(db!).insert(item);
     item.doesExists = await File(item.filePath ?? '').exists();
     _libraryItems[item.rom.slug] = item;
+    _bumpRevision();
     notifyListeners();
     if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
       DownloadService.catchRomPortrait(item.rom);
@@ -131,6 +139,7 @@ class LibraryProvider extends ChangeNotifier {
     }
     await LibraryDao(db!).delete(romSlug);
     _libraryItems.remove(romSlug);
+    _bumpRevision();
     notifyListeners();
   }
 
@@ -141,6 +150,7 @@ class LibraryProvider extends ChangeNotifier {
     await LibraryDao(db!).update(item);
     _libraryItems[item.rom.slug] = item;
     item.doesExists = await File(item.filePath ?? '').exists();
+    _bumpRevision();
     Future.microtask(() {
       notifyListeners();
     });

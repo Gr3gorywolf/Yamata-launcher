@@ -8,6 +8,7 @@ import 'package:yamata_launcher/services/scrapers/hosters/utils/common.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/string_helper.dart';
+import 'package:yamata_launcher/utils/url_helper.dart';
 
 enum DownloadUriType { magnet, torrent, direct }
 
@@ -36,6 +37,7 @@ class Aria2cClient {
       "--auto-save-interval=2",
       "--continue=true",
       "--max-resume-failure-tries=15",
+      "--content-disposition-default-utf8=true",
       '--header=User-Agent: ${CommonHosterUtils().hosterUserAgent}',
     ];
     if (downloadUrl != null && downloadUrl.contains("||")) {
@@ -77,6 +79,35 @@ class Aria2cClient {
     } else {
       return url;
     }
+  }
+
+  static Future<String?> extractFilename(String url) async {
+    final client = HttpClient();
+    try {
+      var headers = UrlHelper.extractHeadersFromUrl(url);
+      final request = await client.headUrl(Uri.parse(url));
+      headers?.forEach((key, value) {
+        request.headers.set(key, value);
+      });
+
+      final response = await request.close();
+      if (response.statusCode == HttpStatus.ok) {
+        final contentDisposition =
+            response.headers.value(HttpHeaders.contentDisposition);
+        if (contentDisposition != null) {
+          final filenameMatch =
+              RegExp(r'filename="?([^"]+)"?').firstMatch(contentDisposition);
+          if (filenameMatch != null) {
+            return filenameMatch.group(1)!;
+          }
+        }
+      }
+    } catch (e) {
+      print("Error obtaining filename from header$e");
+      return null;
+    }
+
+    return null;
   }
 
   static Future<Map<int, String>> showTorrentFiles({

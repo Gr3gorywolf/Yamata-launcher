@@ -41,6 +41,11 @@ class HttpHelper {
     return cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
   }
 
+  String getFileNameFromContentDispositionHeader(String header) {
+    final match = RegExp(r'filename="?([^"]+)"?').firstMatch(header);
+    return match != null ? match.group(1)! : 'unknown_filename';
+  }
+
   Map<String, String> parseHeaders(String raw) {
     final Map<String, String> headers = {};
 

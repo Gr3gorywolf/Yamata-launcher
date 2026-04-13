@@ -260,17 +260,19 @@ Future<void> _downloadIsolateMain(IsolateArgs args) async {
   try {
     final uriType = Aria2cClient.detectUriType(args.uri!);
     final romDir = Directory(args.downloadPath!)..createSync(recursive: true);
-
+    String? headerFilename = null;
     // Direct download Http/FTP ETC
     if (uriType == DownloadUriType.direct) {
       var certArgs =
           Aria2cClient.getCommonArgs(args.certPath, downloadUrl: args.uri);
+      var headerFilename = await Aria2cClient.extractFilename(args.uri!);
       print('Starting direct download with aria2c with args: ${certArgs}');
       final proc = await Process.start(
         args.aria2cPath!,
         [
           "--file-allocation=none",
           ...certArgs,
+          if (headerFilename != null) "--out=$headerFilename",
           Aria2cUtils.getCleanUrl(args.uri!)
         ],
         workingDirectory: romDir.path,

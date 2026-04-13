@@ -141,6 +141,7 @@ class TorboxDebrider implements Debrider {
         "token": apiKey,
         "torrent_id": torrentId.toString(),
         "zip_link": "true",
+        "append_name": "true",
       },
     );
 

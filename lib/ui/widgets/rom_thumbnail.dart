@@ -39,7 +39,6 @@ class RomThumbnail extends StatelessWidget {
         height: height,
         width: width,
         fit: BoxFit.cover,
-        gaplessPlayback: true,
         cacheWidth: width.toInt() * 3,
         cacheHeight: height.toInt() * 3,
         filterQuality: FilterQuality.low,
@@ -58,7 +57,6 @@ class RomThumbnail extends StatelessWidget {
       height: height,
       width: width,
       fit: BoxFit.cover,
-      gaplessPlayback: true,
       cacheWidth: width.toInt() * 3,
       cacheHeight: height.toInt() * 3,
       loadingBuilder: (context, child, progress) {

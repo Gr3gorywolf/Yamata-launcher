@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:yamata_launcher/providers/app_provider.dart';
 
 class FocusMemory {
   static String? lastFocusId;
@@ -99,20 +97,7 @@ class _FocusableElementState extends State<FocusableElement> {
 
   @override
   Widget build(BuildContext context) {
-    final isUsingGamepad =
-        context.select<AppProvider, bool>((p) => p.isUsingGamepad);
-
-    if (!isUsingGamepad) {
-      if (widget.onPressed == null) {
-        return widget.child;
-      }
-
-      return GestureDetector(
-        onTap: widget.onPressed,
-        behavior: HitTestBehavior.opaque,
-        child: widget.child,
-      );
-    }
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Focus(
       focusNode: _focusNode,

@@ -286,16 +286,10 @@ class DownloadSourcesProvider extends ChangeNotifier {
   _CompiledSourceIndex? _compiledSourceIndex;
   Future<_CompiledSourceIndex>? _compiledSourceIndexFuture;
   bool _initialized = false;
-  int _romSourcesRevision = 0;
 
   List<DownloadSourceWithDownloads> get downloadSources => _downloadSources;
   List<String> get sourceUrlsWithUpdates => _sourceUrlsWithUpdates;
   bool get initialized => _initialized;
-  int get romSourcesRevision => _romSourcesRevision;
-
-  void _bumpSourcesRevision() {
-    _romSourcesRevision++;
-  }
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -308,7 +302,6 @@ class DownloadSourcesProvider extends ChangeNotifier {
       await checkForUpdates();
     });
     _initialized = true;
-    _bumpSourcesRevision();
     notifyListeners();
   }
 
@@ -381,7 +374,6 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
     if (romsToCompile.isEmpty) return;
     _compilingRoms.addAll(romsToCompile.map((e) => e.slug));
-    _bumpSourcesRevision();
     notifyListeners();
 
     try {
@@ -395,7 +387,6 @@ class DownloadSourcesProvider extends ChangeNotifier {
       _romSources.addAll(compiled);
     } finally {
       _compilingRoms.removeAll(romsToCompile.map((e) => e.slug));
-      _bumpSourcesRevision();
       notifyListeners();
     }
   }
@@ -422,7 +413,6 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
     _romSources.clear();
     _invalidateCompiledIndex();
-    _bumpSourcesRevision();
     notifyListeners();
     return true;
   }
@@ -432,7 +422,6 @@ class DownloadSourcesProvider extends ChangeNotifier {
     _romSources.clear();
     _invalidateCompiledIndex();
     DownloadSourcesService.deleteDownloadSource(source);
-    _bumpSourcesRevision();
     notifyListeners();
   }
 

@@ -282,11 +282,6 @@ class RomListItem extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                if (appProvider.isUsingGamepad &&
-                                    download == null) ...[
-                                  SizedBox(height: 7),
-                                  buildGamepadStatusInfo(),
-                                ],
                                 if (hasDownloadInfo) ...[
                                   SizedBox(
                                     height: appProvider.isUsingGamepad ? 0 : 10,

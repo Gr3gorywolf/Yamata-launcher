@@ -35,17 +35,6 @@ class _DebriderSettingsPageState extends State<DebriderSettingsPage> {
     });
   }
 
-  void fetchAvailableRunners() async {
-    var runners = EmulatorService.runners;
-    await FlatpakUtils.getInstalledFlatpakAppIds();
-    for (var runner in runners) {
-      if (await runner.isRunnerAvailable) {
-        availableRunners.add(runner.name);
-      }
-    }
-    setState(() {});
-  }
-
   void handleDeleteCredentials(Debrider debrider) {
     AlertsService.showAlert(context, "Delete credentials",
         "Are you sure you want to delete the credentials for ${debrider.name}?",

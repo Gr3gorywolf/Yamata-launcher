@@ -19,6 +19,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/game-runners/heroic_game_runner.dart';
+import 'package:yamata_launcher/services/game-runners/retroarch_game_runner.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -33,6 +34,7 @@ class EmulatorService {
   static Map<String, Process> _activeGamesProcesses = {};
   static Map<String, Map<String, String>> _emulatorIntents = {};
   static List<GameRunner> runners = [
+    RetroarchGameRunner(),
     HeroicGameRunner(),
   ];
 
@@ -292,8 +294,19 @@ class EmulatorService {
         print(availableRunners);
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {
-            if (runner.executablePath.contains(emulatorBinary)) {
-              var runnerProcess = await runner.launchOnRunner(download);
+            if (emulatorBinary.contains(runner.executablePath)) {
+              Process? runnerProcess = null;
+              try {
+                runnerProcess =
+                    await runner.launchOnRunner(download, emulatorSetting);
+              } on Exception catch (e) {
+                print("Error checking runner availability: $e");
+                AlertsService.showErrorSnackbar(
+                    "Failed to launch the game with ${runner.name}",
+                    exception: e);
+                return;
+              }
+
               if (runnerProcess != null) {
                 process = runnerProcess;
               }

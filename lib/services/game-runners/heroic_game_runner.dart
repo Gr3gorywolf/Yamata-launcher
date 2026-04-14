@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
+import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:path/path.dart' as p;
@@ -20,14 +21,6 @@ class HeroicGameRunner implements GameRunner {
     OsType.linux: 'com.heroicgameslauncher.hgl',
     OsType.macos: '/Applications/Heroic.app/Contents/MacOS/Heroic',
   };
-
-  @override
-  // TODO: implement autoSyncWithLibrary
-  bool get autoSyncWithLibrary => false;
-
-  @override
-  // TODO: implement canSyncLibrary
-  bool get canSyncLibrary => true;
 
   @override
   String get name => 'Heroic Games Launcher';
@@ -54,6 +47,11 @@ class HeroicGameRunner implements GameRunner {
       return isRunnerAvailable && console == 'windows';
     }
     return false;
+  }
+
+  @override
+  Future<List<String>> getParams(String console, String executablePath) async {
+    return [];
   }
 
   String _generateId(String slug) {
@@ -138,7 +136,8 @@ class HeroicGameRunner implements GameRunner {
   }
 
   @override
-  Future<Process?> launchOnRunner(RomLibraryItem rom) async {
+  Future<Process?> launchOnRunner(
+      RomLibraryItem rom, EmulatorSetting emulatorSetting) async {
     final dataFolder = dataFolderByPlatform[OsService.osType];
     if (dataFolder == null) throw Exception('Unsupported OS');
 
@@ -266,15 +265,5 @@ class HeroicGameRunner implements GameRunner {
 
     ProcessHelper.pipeProcessOutput(process: process, onLog: print);
     return process;
-  }
-
-  @override
-  Future<void> setAutosync(bool value) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> syncLibrary(List<RomLibraryItem> items) {
-    throw UnimplementedError();
   }
 }

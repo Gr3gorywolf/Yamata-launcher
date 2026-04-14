@@ -7,6 +7,7 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
+import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/emulator_service.dart';
@@ -34,6 +35,8 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   List<Console> availableConsoles = [];
   List<String> availableFlatpaks = [];
   List<GameRunner> availableRunners = [];
+  List<String> availableParameters = [];
+  GameRunner? selectedRunner;
   var launchParametersController = TextEditingController();
   var selectedBinaryController = TextEditingController();
   String selectedConsole = "";
@@ -48,6 +51,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       selectedBinaryController.text = widget.editingSetting!.emulatorBinary;
       launchParametersController.text = widget.editingSetting!.launchParams;
       loadRunners();
+      handleLookupRunner();
     } else if (availableConsoles.isNotEmpty) {
       selectedConsole = availableConsoles.first.slug ?? "";
     }
@@ -62,6 +66,29 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       var flatpakSet = await FlatpakUtils.getInstalledFlatpakAppIds();
       setState(() {
         availableFlatpaks = flatpakSet.toList();
+      });
+    }
+  }
+
+  void handleLookupRunner() async {
+    var runners = await EmulatorService.getAvailableRunners(selectedConsole);
+    var binary = selectedBinaryController.text;
+    GameRunner? matchedRunner;
+    try {
+      matchedRunner = runners.firstWhere(
+        (runner) =>
+            binary.contains(runner.executablePath) ||
+            runner.executablePath.contains(binary),
+      );
+    } catch (e) {
+      print("Error looking up runner: $e");
+    }
+
+    if (matchedRunner != null) {
+      var params = await matchedRunner.getParams(selectedConsole, binary);
+      setState(() {
+        selectedRunner = matchedRunner;
+        availableParameters = params;
       });
     }
   }
@@ -103,13 +130,15 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       setState(() {
         selectedBinaryController.text = selectedFilePath!;
       });
+      handleLookupRunner();
     }
   }
 
-  void loadRunners() async {
+  Future loadRunners() async {
     var runners = await EmulatorService.getAvailableRunners(selectedConsole);
     setState(() {
-      availableRunners = runners;
+      availableRunners =
+          runners.where((runner) => runner.isRunnerAvailable).toList();
     });
   }
 
@@ -117,7 +146,10 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
     setState(() {
       selectedConsole = value ?? "";
     });
-    loadRunners();
+    await loadRunners();
+    if (selectedBinaryController.text.isNotEmpty) {
+      handleLookupRunner();
+    }
   }
 
   void handlePickFlatpak() async {
@@ -133,6 +165,20 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
     }
   }
 
+  void handlePickParameters() async {
+    if (selectedRunner == null) return;
+    var options = availableParameters
+        .map((param) => PickerOption(label: param, value: param))
+        .toList();
+    var selectedOption = await AlertsService.showPicker(
+        context, "Select launch parameters", options);
+    if (selectedOption != null) {
+      setState(() {
+        launchParametersController.text += selectedOption.value;
+      });
+    }
+  }
+
   void handlePickGameRunner() async {
     var options = availableRunners
         .map((app) => PickerOption(label: app.name, value: app.executablePath))
@@ -143,6 +189,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       setState(() {
         selectedBinaryController.text = selectedOption.value;
       });
+      handleLookupRunner();
     }
   }
 
@@ -281,6 +328,14 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                       setState(() {});
                     },
                   ),
+                  additionalContent: availableParameters.isNotEmpty
+                      ? [
+                          TextButton.icon(
+                              onPressed: handlePickParameters,
+                              label: Text("${selectedRunner?.name} parameters"),
+                              icon: Icon(Icons.code)),
+                        ]
+                      : null,
                 ),
             ],
           ),

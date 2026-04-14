@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
@@ -58,6 +59,10 @@ class RetroarchGameRunner implements GameRunner {
     }
     var installedCores =
         await _getConsoleInstalledCores(rom.rom.console, coresPath);
+    if (installedCores.isEmpty) {
+      throw Exception(
+          'No installed RetroArch cores found for ${ConsoleService.getConsoleFromName(rom.rom.console)?.name}');
+    }
     var launchArgs = [
       if (emulatorSetting.launchParams.isNotEmpty) ...[
         ...emulatorSetting.launchParams.split(' ')

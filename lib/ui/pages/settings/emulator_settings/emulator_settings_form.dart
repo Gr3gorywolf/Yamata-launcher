@@ -312,6 +312,8 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                   actions: [],
                   content: TextField(
                     controller: launchParametersController,
+                    maxLines: 4,
+                    minLines: 3,
                     decoration: InputDecoration(
                       hintText: "Custom launch parameters",
                       helperMaxLines: 3,

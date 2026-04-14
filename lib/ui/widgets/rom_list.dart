@@ -113,6 +113,8 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: CustomScrollView(
+        key: PageStorageKey('rom-list-${viewMode.name}'),
+        cacheExtent: viewMode == ViewModeToggleMode.list ? 900 : 500,
         slivers: [
           SliverToBoxAdapter(child: _buildTop()),
           if (viewMode == ViewModeToggleMode.list)

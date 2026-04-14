@@ -94,7 +94,7 @@ class AlertsService {
       int lines = 1,
       double? minWidth = 300}) {
     var completer = Completer<String?>();
-    var value = initialValue ?? "";
+    var controller = TextEditingController(text: initialValue ?? "");
     showDialog(
         context: ctx,
         builder: (cont) {
@@ -106,7 +106,7 @@ class AlertsService {
               width: minWidth,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 TextField(
-                  controller: TextEditingController(text: initialValue),
+                  controller: controller,
                   keyboardType: inputType,
                   decoration: InputDecoration(
                     hintText: inputPlaceholder ?? "",
@@ -116,7 +116,7 @@ class AlertsService {
                   minLines: lines,
                   maxLines: lines,
                   onChanged: (text) {
-                    value = text;
+                    controller.text = text;
                   },
                 ),
                 if (extraContent != null) ...[
@@ -137,7 +137,7 @@ class AlertsService {
               TextButton(
                   onPressed: () {
                     Navigator.of(ctx, rootNavigator: true).pop();
-                    completer.complete(value);
+                    completer.complete(controller.text);
                   },
                   child: Text("Ok"))
             ],

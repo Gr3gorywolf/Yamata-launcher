@@ -22,7 +22,15 @@ class LibraryProvider extends ChangeNotifier {
 
   Map<String, RomLibraryItem> _libraryItems = {};
   Set<String> _runningGames = {};
+  int _version = 0;
   List<RomLibraryItem> get libraryItems => _libraryItems.values.toList();
+  int get version => _version;
+
+  @override
+  void notifyListeners() {
+    _version++;
+    super.notifyListeners();
+  }
 
   Future checkGamesExistence() async {
     final stopwatch = Stopwatch()..start();

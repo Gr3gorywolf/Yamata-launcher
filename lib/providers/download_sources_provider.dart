@@ -286,10 +286,18 @@ class DownloadSourcesProvider extends ChangeNotifier {
   _CompiledSourceIndex? _compiledSourceIndex;
   Future<_CompiledSourceIndex>? _compiledSourceIndexFuture;
   bool _initialized = false;
+  int _version = 0;
 
   List<DownloadSourceWithDownloads> get downloadSources => _downloadSources;
   List<String> get sourceUrlsWithUpdates => _sourceUrlsWithUpdates;
   bool get initialized => _initialized;
+  int get version => _version;
+
+  @override
+  void notifyListeners() {
+    _version++;
+    super.notifyListeners();
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;

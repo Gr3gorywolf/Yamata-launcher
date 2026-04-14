@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:sembast/sembast.dart';
-import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/console_constants.dart';
-import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
-import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:provider/provider.dart';
-import 'package:yamata_launcher/utils/filter_helpers.dart';
+import 'package:yamata_launcher/utils/cached_filter_results.dart';
 import 'package:yamata_launcher/utils/plain_text_search.dart';
-import 'package:yamata_launcher/utils/toolbar_settings/filters/library_item_filters.dart';
-import 'package:yamata_launcher/utils/toolbar_settings/filters/rom_info_filters.dart';
 
 DateTime? _nextRevalidation = null;
 
@@ -30,15 +24,10 @@ class SearchResultsPage extends StatefulWidget {
 
 class _SearchResultsPageState extends State<SearchResultsPage> {
   List<RomInfo>? _roms = [];
+  final _filteredRomsCache = CachedFilterResults<RomInfo, RomInfo>();
   bool _isLoading = false;
   double loadingProgress = 0;
   ToolbarValue<RomInfo>? filterValues = null;
-
-  List<RomInfo> get filteredRoms {
-    if (_roms == null) return [];
-    if (filterValues == null) return _roms!;
-    return FilterHelpers.handleDynamicFilter<RomInfo>(_roms!, filterValues!);
-  }
 
   @override
   void initState() {
@@ -129,8 +118,21 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   @override
   Widget build(BuildContext context) {
     var appProvider = Provider.of<AppProvider>(context);
-    var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
-    var libraryProvider = Provider.of<LibraryProvider>(context);
+    final downloadSourcesProvider =
+        Provider.of<DownloadSourcesProvider>(context, listen: false);
+    final libraryProvider =
+        Provider.of<LibraryProvider>(context, listen: false);
+    final libraryVersion =
+        context.select<LibraryProvider, int>((provider) => provider.version);
+    final downloadSourcesVersion = context
+        .select<DownloadSourcesProvider, int>((provider) => provider.version);
+    final filteredRoms = _filteredRomsCache.resolve(
+      source: _roms,
+      toolbarValue: filterValues,
+      revisionKey: (_roms, libraryVersion, downloadSourcesVersion),
+      map: (rom) => rom,
+    );
+
     return Scaffold(
       appBar: Toolbar<RomInfo>(
         onChanged: (values) {

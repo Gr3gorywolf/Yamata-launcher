@@ -3,17 +3,15 @@ import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
-import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/cached_filter_results.dart';
 import 'package:yamata_launcher/utils/toolbar_settings/filters/rom_info_filters.dart';
 import 'package:yamata_launcher/utils/toolbar_settings/sorts/rom_info_sorts.dart';
-
-import '../../../utils/filter_helpers.dart';
 
 enum quickFiltersTypes { none, all, download_available, on_library }
 
@@ -27,16 +25,11 @@ class ConsoleRomsPage extends StatefulWidget {
 
 class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
   List<RomInfo>? _roms = [];
+  final _filteredRomsCache = CachedFilterResults<RomInfo, RomInfo>();
   final toolbarKey = GlobalKey<ToolbarState>();
   bool _isLoading = false;
   ToolbarValue<RomInfo>? filterValues = null;
   quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
-
-  List<RomInfo> get filteredRoms {
-    if (_roms == null) return [];
-    if (filterValues == null) return _roms!;
-    return FilterHelpers.handleDynamicFilter<RomInfo>(_roms!, filterValues!);
-  }
 
   handleQuickFilterChanged(quickFiltersTypes filter) {
     switch (filter) {
@@ -97,6 +90,17 @@ class _ConsoleRomsPageState extends State<ConsoleRomsPage> {
   @override
   Widget build(BuildContext context) {
     var appProvider = Provider.of<AppProvider>(context);
+    final libraryVersion =
+        context.select<LibraryProvider, int>((provider) => provider.version);
+    final downloadSourcesVersion = context
+        .select<DownloadSourcesProvider, int>((provider) => provider.version);
+    final filteredRoms = _filteredRomsCache.resolve(
+      source: _roms,
+      toolbarValue: filterValues,
+      revisionKey: (_roms, libraryVersion, downloadSourcesVersion),
+      map: (rom) => rom,
+    );
+
     return Scaffold(
       appBar: Toolbar<RomInfo>(
         key: toolbarKey,

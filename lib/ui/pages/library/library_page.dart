@@ -1,10 +1,5 @@
-import 'dart:io';
-
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yamata_launcher/models/console.dart';
-import 'package:yamata_launcher/models/emulator.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
@@ -13,13 +8,11 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
-import 'package:yamata_launcher/ui/widgets/console_card.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
-import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
-import 'package:yamata_launcher/utils/filter_helpers.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/utils/cached_filter_results.dart';
 import 'package:yamata_launcher/utils/toolbar_settings/filters/library_item_filters.dart';
 import 'package:yamata_launcher/utils/toolbar_settings/sorts/library_item_sorts.dart';
 
@@ -36,7 +29,10 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   ToolbarValue<RomLibraryItem>? filterValues = _initialToolbarValues;
   final toolbarKey = GlobalKey<ToolbarState>();
+  final _filteredRomsCache = CachedFilterResults<RomLibraryItem, RomInfo>();
   quickFiltersTypes selectedQuickFilter = quickFiltersTypes.all;
+  List<ToolBarFilterGroup<RomLibraryItem>> _toolbarFilters = const [];
+  int _lastToolbarFiltersVersion = -1;
 
   List<ToolBarFilterGroup<RomLibraryItem>> getFilters(
           List<RomLibraryItem> roms) =>
@@ -111,18 +107,24 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
-    var libraryProvider = LibraryProvider.of(context);
+    final libraryVersion =
+        context.select<LibraryProvider, int>((provider) => provider.version);
+    var libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
     var appProvider = Provider.of<AppProvider>(context);
     var roms = libraryProvider.libraryItems;
-    var getFilteredRoms = () {
-      if (filterValues == null) return roms.map((e) => e.rom).toList();
-      print(selectedQuickFilter);
-      return FilterHelpers.handleDynamicFilter<RomLibraryItem>(
-              roms, filterValues!,
-              nameField: 'rom.name')
-          .map((e) => e.rom)
-          .toList();
-    };
+
+    if (_lastToolbarFiltersVersion != libraryVersion) {
+      _toolbarFilters = getFilters(roms);
+      _lastToolbarFiltersVersion = libraryVersion;
+    }
+
+    final filteredRoms = _filteredRomsCache.resolve(
+      source: roms,
+      toolbarValue: filterValues,
+      revisionKey: libraryVersion,
+      nameField: 'rom.name',
+      map: (item) => item.rom,
+    );
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -140,7 +142,7 @@ class _LibraryPageState extends State<LibraryPage> {
         key: toolbarKey,
         settings: ToolbarSettings(
           title: "Library",
-          filters: getFilters(roms),
+          filters: _toolbarFilters,
           sorts: [
             LibraryItemSorts.romNameSort,
             LibraryItemSorts.addedDateSort,
@@ -188,7 +190,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 appProvider.setConsoleRomsItemType(mode);
               },
               initialViewMode: appProvider.romListItemType,
-              roms: getFilteredRoms(),
+              roms: filteredRoms,
             ),
     );
   }

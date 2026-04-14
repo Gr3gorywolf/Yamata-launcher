@@ -1,11 +1,6 @@
-import 'package:collection/collection.dart';
-import 'package:sembast/sembast.dart';
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
-import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
-import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/utils/plain_text_search.dart';
-import 'package:yamata_launcher/utils/string_helper.dart';
 
 class FilterHelpers {
   static _getValueByPath(Map<String, dynamic> json, String path) {
@@ -22,23 +17,64 @@ class FilterHelpers {
     return current;
   }
 
+  static String getToolbarSignature<T>(ToolbarValue<T>? toolbarValue) {
+    if (toolbarValue == null) return '';
+
+    final sort = toolbarValue.sortBy;
+    final filters = toolbarValue.filters
+        .map((filter) => '${filter.field}:${filter.value}')
+        .join('|');
+
+    return [
+      toolbarValue.search,
+      sort?.field ?? '',
+      sort?.value.name ?? '',
+      filters,
+    ].join('::');
+  }
+
   static List<T> handleDynamicFilter<T extends JsonSerializable>(
     List<T> subjects,
     ToolbarValue<T> toolbarValue, {
     String nameField = 'name',
   }) {
-    List<T> filteredSubjects = subjects;
+    if (subjects.isEmpty) return [];
+
+    final jsonCache = Expando<Map<String, dynamic>>('filter-json-cache');
+    final pathValueCache =
+        Expando<Map<String, dynamic>>('filter-path-value-cache');
+
+    Map<String, dynamic> getSubjectJson(T subject) {
+      return jsonCache[subject] ??= subject.toJson();
+    }
+
+    dynamic getSubjectValue(T subject, String path) {
+      final cache = pathValueCache[subject] ??= {};
+      if (cache.containsKey(path)) {
+        return cache[path];
+      }
+
+      final value = _getValueByPath(getSubjectJson(subject), path);
+      cache[path] = value;
+      return value;
+    }
+
+    List<T> filteredSubjects = List<T>.of(subjects);
     final sort = toolbarValue.sortBy;
+
     if (toolbarValue.search.isNotEmpty) {
-      var filterValues = filteredSubjects.map((subject) {
-        return _getValueByPath(subject.toJson(), nameField)?.toString() ?? "";
-      }).toList();
-      var filterResults =
-          PlainTextSearch.search(toolbarValue.search, filterValues)
-              .map((e) => e.item)
-              .toList();
+      final filterValues = filteredSubjects
+          .map((subject) =>
+              getSubjectValue(subject, nameField)?.toString() ?? '')
+          .toList(growable: false);
+
+      final filterResults = PlainTextSearch.search(
+        toolbarValue.search,
+        filterValues,
+      ).map((e) => e.item).toSet();
+
       filteredSubjects = filteredSubjects.where((subject) {
-        final value = _getValueByPath(subject.toJson(), nameField)?.toString();
+        final value = getSubjectValue(subject, nameField)?.toString();
         return filterResults.contains(value);
       }).toList();
     }
@@ -55,7 +91,7 @@ class FilterHelpers {
           final groupFilters = entry.value;
           final groupMatch = groupFilters.any((f) {
             if (f.matcher != null) return f.matcher!(subject);
-            final value = _getValueByPath(subject.toJson(), f.field);
+            final value = getSubjectValue(subject, f.field);
             return value?.toString() == f.value;
           });
 
@@ -68,9 +104,15 @@ class FilterHelpers {
     }
 
     if (sort != null) {
+      final sortValueCache = Expando('filter-sort-value-cache');
+
+      dynamic getSortValue(T subject) {
+        return sortValueCache[subject] ??= getSubjectValue(subject, sort.field);
+      }
+
       filteredSubjects.sort((a, b) {
-        final aValue = _getValueByPath(a.toJson(), sort.field);
-        final bValue = _getValueByPath(b.toJson(), sort.field);
+        final aValue = getSortValue(a);
+        final bValue = getSortValue(b);
 
         bool hasValue(dynamic v) {
           if (v == null) return false;

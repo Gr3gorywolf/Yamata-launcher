@@ -259,7 +259,8 @@ class AlertsService {
   }
 
   static Future<PickerOption?> showPicker(
-      BuildContext context, String title, List<PickerOption> options) {
+      BuildContext context, String title, List<PickerOption> options,
+      {bool showOptionValues = false}) {
     return showAlert(context, title, "",
         extraContent: SingleChildScrollView(
           child: Column(
@@ -267,6 +268,11 @@ class AlertsService {
             children: options
                 .map((option) => ListTile(
                       title: Text(option.label),
+                      subtitle: showOptionValues
+                          ? Opacity(
+                              opacity: 0.7,
+                              child: Text(option.value.toString()))
+                          : null,
                       onTap: () {
                         Navigator.of(context).pop(option);
                       },

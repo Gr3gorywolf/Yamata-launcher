@@ -50,7 +50,8 @@ class HeroicGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<String>> getParams(String console, String executablePath) async {
+  Future<List<GameRunnerParam>> getParams(
+      String console, String executablePath) async {
     return [];
   }
 

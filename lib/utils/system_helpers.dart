@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:path/path.dart' as p;
 
 class SystemHelpers {
   static bool get isArm {
@@ -12,6 +13,33 @@ class SystemHelpers {
       binary = "aria2c.exe";
     }
     return binary;
+  }
+
+  /**
+   * Resolves the executable path inside a macOS .app bundle.
+   */
+  static Future<String> resolveMacAppExecutable(String appPath) async {
+    if (!appPath.endsWith('.app')) {
+      return appPath;
+    }
+
+    final macOSDir = Directory(p.join(appPath, 'Contents', 'MacOS'));
+    if (!await macOSDir.exists()) {
+      throw StateError(
+          'Invalid macOS app bundle (missing Contents/MacOS): $appPath');
+    }
+
+    final candidates = await macOSDir
+        .list(followLinks: false)
+        .where((e) => e is File)
+        .cast<File>()
+        .toList();
+
+    if (candidates.isEmpty) {
+      throw StateError('No executable found inside: ${macOSDir.path}');
+    }
+
+    return candidates.first.path;
   }
 
   static String getFileExtension(String fileName) {

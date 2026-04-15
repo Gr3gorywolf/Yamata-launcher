@@ -6,10 +6,12 @@ import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/console_service.dart';
+import 'package:yamata_launcher/services/emulator_service.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
+import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class RetroarchGameRunner implements GameRunner {
   var dataFolderByPlatform = {
@@ -23,7 +25,7 @@ class RetroarchGameRunner implements GameRunner {
   var executablesByPlatform = {
     OsType.windows: 'retroarch.exe',
     OsType.linux: 'org.libretro.RetroArch',
-    OsType.macos: '/Applications/RetroArch.app/Contents/MacOS/RetroArch',
+    OsType.macos: '/Applications/RetroArch.app',
   };
 
   @override
@@ -73,8 +75,13 @@ class RetroarchGameRunner implements GameRunner {
       rom.filePath ?? "",
       '-v'
     ];
+    var executableBinary = this.executablePath;
+    if (Platform.isMacOS) {
+      executableBinary =
+          await SystemHelpers.resolveMacAppExecutable(this.executablePath);
+    }
     final command =
-        Platform.isWindows ? emulatorSetting.emulatorBinary : executablePath;
+        Platform.isWindows ? emulatorSetting.emulatorBinary : executableBinary;
     print("launching retroarch with command $command ${launchArgs.join(' ')}");
 
     final process = Platform.isLinux
@@ -94,7 +101,8 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<String>> getParams(String console, String executablePath) async {
+  Future<List<GameRunnerParam>> getParams(
+      String console, String executablePath) async {
     var coresPath = await _getCoresPath(executablePath);
     if (coresPath == null) {
       return [];
@@ -103,7 +111,14 @@ class RetroarchGameRunner implements GameRunner {
     if (installedCores.isEmpty) {
       return [];
     }
-    return installedCores.map((core) => '-L $core').toList();
+    var params = [
+      ...installedCores
+          .map((core) => GameRunnerParam("Use ${core} core", "-L $core"))
+          .toList(),
+      GameRunnerParam("Launch fullscreen", "-f"),
+      GameRunnerParam("Show RetroArch menu on launch", "--menu"),
+    ];
+    return params;
   }
 
   Future<List<String>> _getConsoleInstalledCores(

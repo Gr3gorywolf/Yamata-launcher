@@ -26,6 +26,7 @@ import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
+import 'package:yamata_launcher/utils/system_helpers.dart';
 
 enum EmulatorLaunchResult { success, failedToLaunch, needsExtraction }
 
@@ -134,33 +135,6 @@ class EmulatorService {
       return EmulatorLaunchResult.failedToLaunch;
     }
     return EmulatorLaunchResult.success;
-  }
-
-  /**
-   * Resolves the executable path inside a macOS .app bundle.
-   */
-  static Future<String> _resolveMacAppExecutable(String appPath) async {
-    if (!appPath.endsWith('.app')) {
-      return appPath;
-    }
-
-    final macOSDir = Directory(p.join(appPath, 'Contents', 'MacOS'));
-    if (!await macOSDir.exists()) {
-      throw StateError(
-          'Invalid macOS app bundle (missing Contents/MacOS): $appPath');
-    }
-
-    final candidates = await macOSDir
-        .list(followLinks: false)
-        .where((e) => e is File)
-        .cast<File>()
-        .toList();
-
-    if (candidates.isEmpty) {
-      throw StateError('No executable found inside: ${macOSDir.path}');
-    }
-
-    return candidates.first.path;
   }
 
   static closeRunningRom(String slug) {
@@ -317,7 +291,8 @@ class EmulatorService {
         print(process);
         if (process == null) {
           if (Platform.isMacOS) {
-            final execPath = await _resolveMacAppExecutable(emulatorBinary);
+            final execPath =
+                await SystemHelpers.resolveMacAppExecutable(emulatorBinary);
             print("resolved emulator binary to ${execPath}");
             process = await Process.start(execPath, launchParams);
           } else {

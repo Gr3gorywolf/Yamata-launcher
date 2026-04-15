@@ -15,6 +15,7 @@ import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/ui/widgets/app_selection_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
+import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
 
 class EmulatorSettingsForm extends StatefulWidget {
@@ -35,7 +36,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   List<Console> availableConsoles = [];
   List<String> availableFlatpaks = [];
   List<GameRunner> availableRunners = [];
-  List<String> availableParameters = [];
+  List<GameRunnerParam> availableParameters = [];
   GameRunner? selectedRunner;
   var launchParametersController = TextEditingController();
   var selectedBinaryController = TextEditingController();
@@ -168,14 +169,15 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   void handlePickParameters() async {
     if (selectedRunner == null) return;
     var options = availableParameters
-        .map((param) => PickerOption(label: param, value: param))
+        .map((param) => PickerOption(label: param.name, value: param.value))
         .toList();
     var selectedOption = await AlertsService.showPicker(
-        context, "Select launch parameters", options);
+        context, "Append a launch parameter", options,
+        showOptionValues: true);
     if (selectedOption != null) {
-      setState(() {
-        launchParametersController.text += selectedOption.value;
-      });
+      launchParametersController.text += " " + selectedOption.value;
+      launchParametersController.text = launchParametersController.text.trim();
+      setState(() {});
     }
   }
 
@@ -245,6 +247,15 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                       .toList(),
                   onChanged: handleChangeSelectedConsole,
                 ),
+                additionalContent: [
+                  if (selectedRunner != null)
+                    WrappedLinkText(
+                      text:
+                          "The games will be launched using ${selectedRunner?.name} game runner",
+                      linkText: "Learn more about game runners here",
+                      link: "https://example.com/game-runners",
+                    ),
+                ],
               ),
               DialogSectionItem(
                 title: "Emulator $emulatorExecutableType",
@@ -283,25 +294,24 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                     setState(() {});
                   },
                 ),
-                additionalContent: (availableRunners.isNotEmpty ||
-                        availableFlatpaks.isNotEmpty)
-                    ? [
-                        Row(
-                          children: [
-                            if (availableFlatpaks.isNotEmpty)
-                              TextButton.icon(
-                                  onPressed: handlePickFlatpak,
-                                  label: Text("Pick a flatpak"),
-                                  icon: Icon(Icons.apps)),
-                            if (availableRunners.isNotEmpty)
-                              TextButton.icon(
-                                  onPressed: handlePickGameRunner,
-                                  label: Text("Pick a runner"),
-                                  icon: Icon(Icons.rocket_launch)),
-                          ],
-                        )
-                      ]
-                    : null,
+                additionalContent: [
+                  if (availableRunners.isNotEmpty ||
+                      availableFlatpaks.isNotEmpty)
+                    Row(
+                      children: [
+                        if (availableFlatpaks.isNotEmpty)
+                          TextButton.icon(
+                              onPressed: handlePickFlatpak,
+                              label: Text("Pick a flatpak"),
+                              icon: Icon(Icons.apps)),
+                        if (availableRunners.isNotEmpty)
+                          TextButton.icon(
+                              onPressed: handlePickGameRunner,
+                              label: Text("Pick a runner"),
+                              icon: Icon(Icons.rocket_launch)),
+                      ],
+                    )
+                ],
               ),
               if (FileSystemService.isDesktop)
                 DialogSectionItem(

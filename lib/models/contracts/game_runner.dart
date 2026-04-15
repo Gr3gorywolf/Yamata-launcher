@@ -11,5 +11,13 @@ abstract class GameRunner {
   Future<bool> canRunOnRunner(String console);
   Future<Process?> launchOnRunner(
       RomLibraryItem rom, EmulatorSetting emulatorSetting);
-  Future<List<String>> getParams(String console, String executablePath);
+  Future<List<GameRunnerParam>> getParams(
+      String console, String executablePath);
+}
+
+class GameRunnerParam {
+  final String name;
+  final String value;
+
+  GameRunnerParam(this.name, this.value);
 }

@@ -65,16 +65,18 @@ class RetroarchGameRunner implements GameRunner {
       throw Exception(
           'No installed RetroArch cores found for ${ConsoleService.getConsoleFromName(rom.rom.console)?.name}');
     }
-    var launchArgs = [
-      if (emulatorSetting.launchParams.isNotEmpty) ...[
-        ...emulatorSetting.launchParams.split(' ')
-      ] else ...[
-        '-L',
-        installedCores.first,
-      ],
-      rom.filePath ?? "",
-      '-v'
-    ];
+
+    var launchParams = "-L ${installedCores.first}";
+    if (rom.openParams != null && rom.openParams!.isNotEmpty) {
+      launchParams = rom.openParams ?? "";
+    } else if (emulatorSetting.launchParams.isNotEmpty) {
+      launchParams = emulatorSetting.launchParams;
+    }
+    if (!launchParams.contains("-L")) {
+      throw Exception(
+          'Launch parameters must include a core selection using -L, if no params is specified the first installed core will be used.');
+    }
+    var launchArgs = [...launchParams.split(' '), rom.filePath ?? "", '-v'];
     var executableBinary = this.executablePath;
     if (Platform.isMacOS) {
       executableBinary =

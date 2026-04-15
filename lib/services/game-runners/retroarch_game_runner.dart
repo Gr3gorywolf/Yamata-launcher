@@ -43,7 +43,8 @@ class RetroarchGameRunner implements GameRunner {
           FlatpakUtils.cachedFlatpakApps?.contains('org.libretro.RetroArch') ==
               true;
     }
-    return File(executablePath).existsSync();
+    return File(executablePath).existsSync() ||
+        Directory(executablePath).existsSync();
   }
 
   @override
@@ -79,8 +80,8 @@ class RetroarchGameRunner implements GameRunner {
     var launchArgs = [...launchParams.split(' '), rom.filePath ?? "", '-v'];
     var executableBinary = this.executablePath;
     if (Platform.isMacOS) {
-      executableBinary =
-          await SystemHelpers.resolveMacAppExecutable(this.executablePath);
+      executableBinary = await SystemHelpers.resolveMacAppExecutable(
+          executablesByPlatform[OsType.macos]!);
     }
     final command =
         Platform.isWindows ? emulatorSetting.emulatorBinary : executableBinary;
@@ -88,10 +89,7 @@ class RetroarchGameRunner implements GameRunner {
 
     final process = Platform.isLinux
         ? await FlatpakUtils.launchFlatpak(command, launchArgs)
-        : await Process.start(
-            command,
-            launchArgs,
-          );
+        : await Process.start(command, launchArgs);
 
     ProcessHelper.pipeProcessOutput(
       process: process,
@@ -106,17 +104,14 @@ class RetroarchGameRunner implements GameRunner {
   Future<List<GameRunnerParam>> getParams(
       String console, String executablePath) async {
     var coresPath = await _getCoresPath(executablePath);
-    if (coresPath == null) {
-      return [];
-    }
-    var installedCores = await _getConsoleInstalledCores(console, coresPath);
-    if (installedCores.isEmpty) {
-      return [];
+    var installedCores = [];
+    if (coresPath != null) {
+      installedCores = await _getConsoleInstalledCores(console, coresPath);
     }
     var params = [
       ...installedCores.map((core) {
         var coreName = p.basenameWithoutExtension(core);
-        return GameRunnerParam("Use ${coreName} core", "-L $core");
+        return GameRunnerParam("Use ${coreName} core", '-L $core');
       }).toList(),
       GameRunnerParam("Launch fullscreen", "-f"),
       GameRunnerParam("Show RetroArch menu on launch", "--menu"),
@@ -137,7 +132,7 @@ class RetroarchGameRunner implements GameRunner {
           var foundCore = coresByConsole
               .firstWhere((core) => fileName.contains(core), orElse: () => '');
           if (foundCore.isNotEmpty) {
-            cores.add(file.path);
+            cores.add(p.basename(file.path));
           }
         }
       }

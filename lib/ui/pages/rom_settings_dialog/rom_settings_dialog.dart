@@ -1,179 +1,207 @@
 import 'dart:io';
 
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:flutter_device_apps/flutter_device_apps.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:yamata_launcher/database/app_database.dart';
+import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
-import 'package:yamata_launcher/services/emulator_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
-import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/ui/widgets/app_selection_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/duration_picker_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/emulator_launch_settings_fields.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
-import 'package:provider/provider.dart';
-import 'package:path/path.dart' as p;
 
-class RomSettingsDialog extends StatelessWidget {
+class RomSettingsDialog extends StatefulWidget {
   final RomInfo rom;
-  RomSettingsDialog({super.key, required this.rom});
-  var launchParameters = TextEditingController();
+
+  const RomSettingsDialog({super.key, required this.rom});
+
+  @override
+  State<RomSettingsDialog> createState() => _RomSettingsDialogState();
+}
+
+class _RomSettingsDialogState extends State<RomSettingsDialog> {
+  final launchParametersController = TextEditingController();
+  final overrideEmulatorController = TextEditingController();
+  bool _didInitializeControllers = false;
+  EmulatorSetting? defaultEmulatorSetting;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitializeControllers) {
+      return;
+    }
+
+    final provider = Provider.of<LibraryProvider>(context, listen: false);
+    final libraryItem = provider.getLibraryItem(widget.rom.slug);
+    overrideEmulatorController.text = libraryItem?.overrideEmulator ?? "";
+    launchParametersController.text = libraryItem?.openParams ?? "";
+    _didInitializeControllers = true;
+    _loadDefaultEmulatorSetting();
+  }
+
+  @override
+  void dispose() {
+    launchParametersController.dispose();
+    overrideEmulatorController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    var provider = Provider.of<LibraryProvider>(context);
-    var libraryItem = provider.getLibraryItem(rom.slug);
-    var _downloadPath = libraryItem?.filePath ?? "";
-    var overrideEmulator = libraryItem?.overrideEmulator ?? "";
-    launchParameters.text = libraryItem?.openParams ?? "";
-    var hasPath = _downloadPath.isNotEmpty;
+    final provider = Provider.of<LibraryProvider>(context);
+    final libraryItem = provider.getLibraryItem(widget.rom.slug);
+    final downloadPath = libraryItem?.filePath ?? "";
+    final hasPath = downloadPath.isNotEmpty;
 
-    bool _getFileExist() {
-      if (hasPath) {
-        var filePath = libraryItem!.filePath!;
-        if (Platform.isMacOS && filePath.endsWith(".app")) {
-          return Directory(filePath).existsSync();
-        }
-        return File(filePath).existsSync();
+    bool getFileExists() {
+      if (!hasPath || libraryItem == null) {
+        return false;
       }
-      return false;
+
+      final filePath = libraryItem.filePath!;
+      if (Platform.isMacOS && filePath.endsWith(".app")) {
+        return Directory(filePath).existsSync();
+      }
+      return File(filePath).existsSync();
     }
 
-    _getFileCanBeExtracted() {
-      if (!hasPath) return false;
-      if (!_getFileExist()) return false;
-      var fileExtension =
-          SystemHelpers.getFileExtension(libraryItem!.filePath!).toLowerCase();
+    bool getFileCanBeExtracted() {
+      if (!hasPath || libraryItem == null || !getFileExists()) {
+        return false;
+      }
+
+      final fileExtension =
+          SystemHelpers.getFileExtension(libraryItem.filePath!).toLowerCase();
       return VALID_COMPRESSED_EXTENSIONS.contains(fileExtension);
     }
 
-    _pickRomPath() async {
-      var file = await FileSystemService.showFilePicker();
-      if (file == null || libraryItem == null) return;
+    Future<void> pickRomPath() async {
+      final file = await FileSystemService.showFilePicker();
+      if (file == null || libraryItem == null) {
+        return;
+      }
+
       libraryItem.filePath = file;
       await provider.updateLibraryItem(libraryItem);
     }
 
-    _removeRomPath() async {
-      if (libraryItem != null) {
-        libraryItem.filePath = "";
-        await provider.updateLibraryItem(libraryItem);
-      }
-    }
-
-    _pickEmulatorBinary() async {
-      if (Platform.isAndroid) {
-        var consoleEmulators =
-            EmulatorService.getEmulatorPackagesForConsole(rom.console);
-        var result = await AppSelectionDialog.show(context,
-            filteredApps: consoleEmulators);
-        if (result != null && libraryItem != null) {
-          libraryItem.overrideEmulator = result.packageName;
-          await provider.updateLibraryItem(libraryItem);
-        }
+    Future<void> removeRomPath() async {
+      if (libraryItem == null) {
         return;
       }
-      var validExtensions = VALID_EXECUTABLE_EXTENSIONS;
-      String? selectedFilePath = null;
-      try {
-        FilePickerResult? selectedFile = await FilePicker.platform.pickFiles(
-          dialogTitle: "Select Emulator Binary",
-          type: FileType.custom,
-          initialDirectory: Platform.isMacOS ? "/Applications" : null,
-          allowedExtensions: validExtensions,
-        );
-        if (selectedFile != null) {
-          selectedFilePath = selectedFile.files.single.path ?? "";
-        }
-      } catch (e) {
-        print("Error selecting emulator binary: $e");
-        var filePath = await FileSystemService.showFilePicker(
-            allowedExtensions: validExtensions);
-        if (filePath != null) {
-          selectedFilePath = filePath;
-        }
-      }
-      if (selectedFilePath == null || libraryItem == null) return;
-      libraryItem.overrideEmulator = selectedFilePath;
+
+      libraryItem.filePath = "";
       await provider.updateLibraryItem(libraryItem);
     }
 
-    _restoreEmulator() async {
-      if (libraryItem != null) {
-        libraryItem.overrideEmulator = "";
-        await provider.updateLibraryItem(libraryItem);
+    Future<void> updateOverrideEmulator(String value) async {
+      if (libraryItem == null) {
+        return;
       }
+
+      libraryItem.overrideEmulator = value;
+      await provider.updateLibraryItem(libraryItem);
     }
 
-    _handleOpenFolder() async {
+    Future<void> updateLaunchParameters(String value) async {
+      if (libraryItem == null) {
+        return;
+      }
+
+      libraryItem.openParams = value;
+      await provider.updateLibraryItem(libraryItem);
+    }
+
+    void handleOpenFolder() {
       FileSystemService.openFileFolder(libraryItem?.filePath ?? "");
     }
 
-    _handleExtractRom() async {
-      await RomService.extractRom(libraryItem!);
-    }
-
-    _removeFromLibrary() async {
-      await AlertsService.showAlert(context, "Remove from library",
-          "Are you sure you want to remove this game from your library? all the game settings will be removed as well (No files will be deleted)",
-          callback: () async {
-        await provider.removeLibraryItem(rom.slug);
-        Navigator.of(context).pop();
-      });
-    }
-
-    _pickTime() async {
-      if (libraryItem != null) {
-        showDialog<int>(
-          context: context,
-          builder: (context) => DurationPickerDialog(
-            title: "Select Played Time",
-            initialMinutes: libraryItem.playTimeMins?.toInt() ?? 0,
-            onSubmit: (minutes) {
-              libraryItem.playTimeMins = minutes.toDouble();
-              provider.updateLibraryItem(libraryItem);
-            },
-          ),
-        );
+    Future<void> handleExtractRom() async {
+      if (libraryItem == null) {
+        return;
       }
+
+      await RomService.extractRom(libraryItem);
     }
 
-    _restoreTime() async {
-      if (libraryItem != null) {
-        libraryItem.playTimeMins = 0;
-        await provider.updateLibraryItem(libraryItem);
+    Future<void> removeFromLibrary() async {
+      await AlertsService.showAlert(
+        context,
+        "Remove from library",
+        "Are you sure you want to remove this game from your library? all the game settings will be removed as well (No files will be deleted)",
+        callback: () async {
+          await provider.removeLibraryItem(widget.rom.slug);
+          Navigator.of(context).pop();
+        },
+      );
+    }
+
+    Future<void> pickTime() async {
+      if (libraryItem == null) {
+        return;
       }
+
+      showDialog<int>(
+        context: context,
+        builder: (context) => DurationPickerDialog(
+          title: "Select Played Time",
+          initialMinutes: libraryItem.playTimeMins.toInt(),
+          onSubmit: (minutes) {
+            libraryItem.playTimeMins = minutes.toDouble();
+            provider.updateLibraryItem(libraryItem);
+          },
+        ),
+      );
     }
 
-    _deleteRomFile() async {
-      await AlertsService.showAlert(context, "Remove game file",
-          "Are you sure you want to remove this game from your computer? This action cannot be undone.",
-          callback: () async {
-        var loader = AlertsService.showLoadingAlert(
-            navigatorContext!, "Deleting", "Deleting game files...");
-        if (libraryItem != null && libraryItem.filePath!.isNotEmpty) {
-          var deleted = await RomService.deleteRomFiles(libraryItem);
-          if (deleted) {
-            libraryItem.filePath = "";
-            await provider.updateLibraryItem(libraryItem);
-          } else {
-            loader.close();
-            AlertsService.showErrorSnackbar(
-                "Failed to delete Game files. It may have already been removed or is inaccessible.");
-            return;
+    Future<void> restoreTime() async {
+      if (libraryItem == null) {
+        return;
+      }
+
+      libraryItem.playTimeMins = 0;
+      await provider.updateLibraryItem(libraryItem);
+    }
+
+    Future<void> deleteRomFile() async {
+      await AlertsService.showAlert(
+        context,
+        "Remove game file",
+        "Are you sure you want to remove this game from your computer? This action cannot be undone.",
+        callback: () async {
+          final loader = AlertsService.showLoadingAlert(
+            navigatorContext!,
+            "Deleting",
+            "Deleting game files...",
+          );
+
+          final filePath = libraryItem?.filePath;
+          if (libraryItem != null && filePath != null && filePath.isNotEmpty) {
+            final deleted = await RomService.deleteRomFiles(libraryItem);
+            if (deleted) {
+              libraryItem.filePath = "";
+              await provider.updateLibraryItem(libraryItem);
+            } else {
+              loader.close();
+              AlertsService.showErrorSnackbar(
+                "Failed to delete Game files. It may have already been removed or is inaccessible.",
+              );
+              return;
+            }
           }
 
           loader.close();
-        }
-      });
+        },
+      );
     }
 
     return AlertDialog(
@@ -192,149 +220,130 @@ class RomSettingsDialog extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: 0),
                 title: "Rom path",
                 content: Text(
-                    _downloadPath.isEmpty ? "Not downloaded" : _downloadPath),
+                    downloadPath.isEmpty ? "Not downloaded" : downloadPath),
                 icon: Icons.description,
                 actions: [
-                  ..._downloadPath.isEmpty
-                      ? []
-                      : [
-                          IconButton(
-                              icon: Icon(Icons.clear),
-                              onPressed: _removeRomPath),
-                        ],
+                  if (downloadPath.isNotEmpty)
+                    IconButton(
+                      icon: Icon(Icons.clear),
+                      onPressed: removeRomPath,
+                    ),
                   IconButton(
-                      icon: Icon(Icons.file_open), onPressed: _pickRomPath)
+                    icon: Icon(Icons.file_open),
+                    onPressed: pickRomPath,
+                  ),
                 ],
               ),
-              ...!_downloadPath.isEmpty
-                  ? [
-                      !_getFileExist()
-                          ? Padding(
-                              padding: const EdgeInsets.only(left: 5),
-                              child: Text("The file cannot be found on disk",
-                                  style: TextStyle(
-                                      color: Colors.redAccent,
-                                      fontWeight: FontWeight.w500)),
-                            )
-                          : Row(
-                              children: [
-                                TextButton.icon(
-                                    onPressed: _handleOpenFolder,
-                                    label: Text("Open Folder"),
-                                    icon: Icon(Icons.folder_open)),
-                                if (_getFileCanBeExtracted())
-                                  TextButton.icon(
-                                      onPressed: _handleExtractRom,
-                                      label: Text("Extract Rom"),
-                                      icon: Icon(Icons.folder_zip)),
-                              ],
-                            ),
-                      SizedBox(height: 10),
-                    ]
-                  : [],
-              DialogSectionItem(
-                title: "Emulator override",
-                content: Text(overrideEmulator.isEmpty
-                    ? "Default Emulator"
-                    : overrideEmulator),
-                icon: Icons.videogame_asset,
-                actions: [
-                  ...overrideEmulator.isEmpty
-                      ? []
-                      : [
-                          IconButton(
-                              icon: Icon(Icons.clear),
-                              onPressed: _restoreEmulator),
-                        ],
-                  IconButton(
-                      icon: Icon(Icons.file_open),
-                      onPressed: () => _pickEmulatorBinary()),
-                ],
-              ),
-              if (FileSystemService.isDesktop)
-                DialogSectionItem(
-                  title: "Launch parameters",
-                  helperText:
-                      "Parameters flags used when launching the ROM (if supported by the emulator)",
-                  content: TextField(
-                    controller: launchParameters,
-                    decoration: InputDecoration(
-                      hintText: "Custom launch parameters",
-                      helperMaxLines: 3,
-                      helperStyle: TextStyle(color: Colors.grey[500]),
-                      filled: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 7),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+              if (downloadPath.isNotEmpty) ...[
+                if (!getFileExists())
+                  Padding(
+                    padding: const EdgeInsets.only(left: 5),
+                    child: Text(
+                      "The file cannot be found on disk",
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    onChanged: (text) {
-                      libraryItem?.openParams = text;
-                      if (libraryItem != null) {
-                        provider.updateLibraryItem(libraryItem);
-                      }
-                    },
+                  )
+                else
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: handleOpenFolder,
+                        label: Text("Open Folder"),
+                        icon: Icon(Icons.folder_open),
+                      ),
+                      if (getFileCanBeExtracted())
+                        TextButton.icon(
+                          onPressed: handleExtractRom,
+                          label: Text("Extract Rom"),
+                          icon: Icon(Icons.folder_zip),
+                        ),
+                    ],
                   ),
-                  icon: Icons.terminal,
-                  actions: [],
-                ),
+                SizedBox(height: 10),
+              ],
+              EmulatorLaunchSettingsFields(
+                console: widget.rom.console,
+                binaryController: overrideEmulatorController,
+                launchParametersController: launchParametersController,
+                emulatorSetting: defaultEmulatorSetting,
+                binaryTitle: "Emulator override",
+                binaryHintText: "Default emulator",
+                binaryHelperText:
+                    "Override the console emulator for this game only. Leave it empty to keep using the console default.",
+                launchParametersTitle: "Launch parameters",
+                launchParametersHintText: "Custom launch parameters",
+                launchParametersHelperText:
+                    "Parameters flags used when launching the ROM. These are appended on top of the console-level emulator parameters.",
+                enableBinaryEditing: FileSystemService.isDesktop,
+                showLaunchParameters: FileSystemService.isDesktop,
+                onBinaryChanged: updateOverrideEmulator,
+                onLaunchParametersChanged: updateLaunchParameters,
+              ),
               DialogSectionItem(
                 title: "Time played",
                 content: Text(TimeHelpers.formatMinutes(
                     libraryItem?.playTimeMins.toInt() ?? 0)),
                 icon: Icons.access_time,
                 actions: [
-                  ...((libraryItem?.playTimeMins.toInt() ?? 0) == 0
-                      ? []
-                      : [
-                          IconButton(
-                              icon: Icon(Icons.settings_backup_restore),
-                              onPressed: _restoreTime),
-                        ]),
+                  if ((libraryItem?.playTimeMins.toInt() ?? 0) != 0)
+                    IconButton(
+                      icon: Icon(Icons.settings_backup_restore),
+                      onPressed: restoreTime,
+                    ),
                   IconButton(
-                      icon: Icon(Icons.edit), onPressed: () => _pickTime()),
+                    icon: Icon(Icons.edit),
+                    onPressed: pickTime,
+                  ),
                 ],
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 4),
-                child: Text("Danger Zone",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.redAccent)),
+                child: Text(
+                  "Danger Zone",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.redAccent,
+                  ),
+                ),
               ),
               _DangerSettingItem(
-                  title: "Remove from library",
-                  enabled: true,
-                  content: Text(
-                      "This will delete configuration and metadata. The file will remain on disk"),
-                  icon: Icons.dangerous,
-                  actions: [
-                    IconButton(
-                        icon: Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: _removeFromLibrary)
-                  ]),
+                title: "Remove from library",
+                enabled: true,
+                content: Text(
+                    "This will delete configuration and metadata. The file will remain on disk"),
+                icon: Icons.dangerous,
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: removeFromLibrary,
+                  ),
+                ],
+              ),
               _DangerSettingItem(
-                  title: "Delete files",
-                  enabled: hasPath,
-                  content: Text(
-                      "Permanently delete the file from storage. The library entry will not be removed."),
-                  icon: Icons.dangerous,
-                  actions: hasPath
-                      ? [
-                          IconButton(
-                              icon: Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: _deleteRomFile)
-                        ]
-                      : []),
+                title: "Delete files",
+                enabled: hasPath,
+                content: Text(
+                    "Permanently delete the file from storage. The library entry will not be removed."),
+                icon: Icons.dangerous,
+                actions: hasPath
+                    ? [
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: deleteRomFile,
+                        ),
+                      ]
+                    : [],
+              ),
             ],
           ),
         ),
@@ -347,6 +356,21 @@ class RomSettingsDialog extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _loadDefaultEmulatorSetting() async {
+    if (db == null) {
+      return;
+    }
+
+    final setting = await EmulatorSettingsDao(db!).get(widget.rom.console);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      defaultEmulatorSetting = setting;
+    });
+  }
 }
 
 class _DangerSettingItem extends StatelessWidget {
@@ -356,32 +380,37 @@ class _DangerSettingItem extends StatelessWidget {
   final List<IconButton> actions;
   final bool enabled;
 
-  const _DangerSettingItem(
-      {required this.title,
-      required this.enabled,
-      required this.content,
-      required this.icon,
-      required this.actions});
+  const _DangerSettingItem({
+    required this.title,
+    required this.enabled,
+    required this.content,
+    required this.icon,
+    required this.actions,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: enabled ? Colors.redAccent : Colors.grey),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: ListTile(
-          title: Text(title,
-              style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  color: enabled ? Colors.redAccent : Colors.grey)),
-          subtitle: Opacity(opacity: 0.6, child: content),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: actions,
+      decoration: BoxDecoration(
+        border: Border.all(color: enabled ? Colors.redAccent : Colors.grey),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: ListTile(
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: enabled ? Colors.redAccent : Colors.grey,
           ),
-        ));
+        ),
+        subtitle: Opacity(opacity: 0.6, child: content),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: actions,
+        ),
+      ),
+    );
   }
 }

@@ -112,9 +112,10 @@ class RetroarchGameRunner implements GameRunner {
       return [];
     }
     var params = [
-      ...installedCores
-          .map((core) => GameRunnerParam("Use ${core} core", "-L $core"))
-          .toList(),
+      ...installedCores.map((core) {
+        var coreName = p.basenameWithoutExtension(core);
+        return GameRunnerParam("Use ${coreName} core", "-L $core");
+      }).toList(),
       GameRunnerParam("Launch fullscreen", "-f"),
       GameRunnerParam("Show RetroArch menu on launch", "--menu"),
     ];

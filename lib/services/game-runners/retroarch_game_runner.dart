@@ -68,14 +68,14 @@ class RetroarchGameRunner implements GameRunner {
     }
 
     var launchParams = "-L ${installedCores.first}";
-    if (rom.openParams != null && rom.openParams!.isNotEmpty) {
-      launchParams = rom.openParams ?? "";
-    } else if (emulatorSetting.launchParams.isNotEmpty) {
+    if (emulatorSetting.launchParams.isNotEmpty) {
       launchParams = emulatorSetting.launchParams;
     }
+    if (rom.openParams != null && rom.openParams!.isNotEmpty) {
+      launchParams += " ${rom.openParams}";
+    }
     if (!launchParams.contains("-L")) {
-      throw Exception(
-          'Launch parameters must include a core selection using -L, if no params is specified the first installed core will be used.');
+      launchParams = "-L ${installedCores.first} $launchParams";
     }
     var launchArgs = [...launchParams.split(' '), rom.filePath ?? "", '-v'];
     var executableBinary = this.executablePath;

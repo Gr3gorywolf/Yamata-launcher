@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:yamata_launcher/models/argument_group.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
@@ -101,7 +102,7 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<GameRunnerParam>> getParams(
+  Future<List<ArgumentGroup>> getParams(
       String console, String executablePath) async {
     var coresPath = await _getCoresPath(executablePath);
     var installedCores = [];
@@ -109,12 +110,24 @@ class RetroarchGameRunner implements GameRunner {
       installedCores = await _getConsoleInstalledCores(console, coresPath);
     }
     var params = [
-      ...installedCores.map((core) {
-        var coreName = p.basenameWithoutExtension(core);
-        return GameRunnerParam("Use ${coreName} core", '-L $core');
-      }).toList(),
-      GameRunnerParam("Launch fullscreen", "-f"),
-      GameRunnerParam("Show RetroArch menu on launch", "--menu"),
+      ArgumentGroup(
+        key: 'cores',
+        name: 'Core to use',
+        singleSelect: true,
+        arguments: installedCores.map((core) {
+          var coreName = p.basenameWithoutExtension(core);
+          return Argument("${coreName}", '-L $core');
+        }).toList(),
+      ),
+      ArgumentGroup(
+        key: 'system',
+        name: 'System options',
+        singleSelect: false,
+        arguments: [
+          Argument("Launch fullscreen", "-f"),
+          Argument("Show RetroArch menu on launch", "--menu")
+        ],
+      ),
     ];
     return params;
   }

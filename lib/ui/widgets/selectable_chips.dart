@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 
 class SelectableChips<T> extends StatelessWidget {
   final List<ChipOption<T>> options;
-  final T? value;
-  final ValueChanged<T?> onChanged;
+
+  final List<T> values;
+
+  final ValueChanged<List<T>> onChanged;
+
+  final bool multiple;
+
   final bool allowDeselect;
 
   const SelectableChips({
     super.key,
     required this.options,
-    required this.value,
+    required this.values,
     required this.onChanged,
-    this.allowDeselect = false,
+    this.multiple = true,
+    this.allowDeselect = true,
   });
 
   @override
@@ -22,17 +28,37 @@ class SelectableChips<T> extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: options.map((option) {
-        final isSelected = option.value == value;
+        final isSelected = values.contains(option.value);
 
         return ChoiceChip(
           label: Text(option.label),
           selected: isSelected,
           onSelected: (_) {
-            if (isSelected && allowDeselect) {
-              onChanged(null);
+            List<T> newValues = List<T>.from(values);
+
+            if (multiple) {
+              // -------------------------
+              // MULTIPLE MODE
+              // -------------------------
+              if (isSelected) {
+                if (!allowDeselect) return;
+                newValues.remove(option.value);
+              } else {
+                newValues.add(option.value);
+              }
             } else {
-              onChanged(option.value);
+              // -------------------------
+              // SINGLE MODE
+              // -------------------------
+              if (isSelected) {
+                if (!allowDeselect) return;
+                newValues.clear();
+              } else {
+                newValues = [option.value];
+              }
             }
+
+            onChanged(newValues);
           },
           showCheckmark: false,
           avatar: isSelected

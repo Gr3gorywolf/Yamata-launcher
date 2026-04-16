@@ -4,12 +4,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/models/argument_group.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/emulator_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/ui/widgets/app_selection_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/arguments_picker_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
@@ -58,7 +60,7 @@ class _EmulatorLaunchSettingsFieldsState
   List<String> availableFlatpaks = [];
   List<GameRunner> consoleRunners = [];
   List<GameRunner> availableRunners = [];
-  List<GameRunnerParam> availableParameters = [];
+  List<ArgumentGroup> availableParameters = [];
   GameRunner? selectedRunner;
   String _lastBinaryValue = '';
   String _lastLaunchParametersValue = '';
@@ -306,24 +308,20 @@ class _EmulatorLaunchSettingsFieldsState
     if (selectedRunner == null) {
       return;
     }
-
-    final options = availableParameters
-        .map((param) => PickerOption(label: param.name, value: param.value))
-        .toList();
-    final selectedOption = await AlertsService.showPicker(
+    final selectedOption = await ArgumentsPickerDialog.show(
       context,
-      "Append a launch parameter",
-      options,
-      showOptionValues: true,
+      argumentGroups: availableParameters,
+      title: "Pick ${selectedRunner?.name} Parameters",
     );
-    if (selectedOption == null) {
+    if (selectedOption.selectedArguments.isEmpty) {
       return;
     }
 
     final existingValue = widget.launchParametersController.text.trim();
     final appendedValue = [
-      if (existingValue.isNotEmpty) existingValue,
-      selectedOption.value,
+      if (existingValue.isNotEmpty && !selectedOption.replaceArgs)
+        existingValue,
+      ...selectedOption.selectedArguments,
     ].join(' ');
     widget.launchParametersController.text = appendedValue;
   }

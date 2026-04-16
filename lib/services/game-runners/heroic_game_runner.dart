@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:yamata_launcher/models/argument_group.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
@@ -50,7 +51,7 @@ class HeroicGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<GameRunnerParam>> getParams(
+  Future<List<ArgumentGroup>> getParams(
       String console, String executablePath) async {
     return [];
   }

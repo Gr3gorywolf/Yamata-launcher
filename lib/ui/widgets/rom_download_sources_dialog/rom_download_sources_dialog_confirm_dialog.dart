@@ -536,11 +536,15 @@ class _DownloadSourcesDialogConfirmDialogState
                       subtitle: Container(
                         margin: const EdgeInsets.only(top: 8),
                         child: SelectableChips<Debrider>(
-                          value: selectedDebrider,
-                          allowDeselect: true, // opcional (como "no selection")
+                          values: selectedDebrider != null
+                              ? [selectedDebrider!]
+                              : [],
+                          multiple: false,
+                          allowDeselect: true,
                           onChanged: (debrider) {
                             setState(() {
-                              selectedDebrider = debrider;
+                              selectedDebrider =
+                                  debrider.isNotEmpty ? debrider.first : null;
                             });
                           },
                           options: authDebriders

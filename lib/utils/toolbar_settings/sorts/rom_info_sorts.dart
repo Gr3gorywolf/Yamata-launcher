@@ -6,7 +6,7 @@ class RomInfoSorts {
 
   static var releaseDateSort = ToolBarSortByElement(
       label: 'Release Date',
-      field: 'releaseDate',
+      field: 'releaseDateTime',
       value: ToolBarSortByType.ascending);
 
   static var popularitySort = ToolBarSortByElement(

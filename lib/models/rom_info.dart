@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
 import 'package:yamata_launcher/utils/filter_helpers.dart';
 
@@ -13,6 +14,13 @@ class RomInfo implements JsonSerializable {
   List<String>? categories;
   List<String>? gameplayCovers;
   String console = "";
+
+  int? get releaseDateTime {
+    if (this.releaseDate == null || this.releaseDate!.isEmpty) return null;
+    var formatter = DateFormat('dd-MM-yyyy');
+    var date = formatter.parse(this.releaseDate!);
+    return date.millisecondsSinceEpoch;
+  }
 
   RomInfo({
     required this.slug,
@@ -59,6 +67,7 @@ class RomInfo implements JsonSerializable {
     data['releaseDate'] = this.releaseDate;
     data['rating'] = this.rating;
     data['categories'] = this.categories;
+    data['releaseDateTime'] = this.releaseDateTime;
     return data;
   }
 }

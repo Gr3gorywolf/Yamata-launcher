@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:yamata_launcher/models/contracts/debrider.dart';
+import 'package:yamata_launcher/models/exceptions/debrider_is_processing_exception.dart';
 import 'package:yamata_launcher/services/debrider_service.dart';
 import 'package:yamata_launcher/utils/torrent_helper.dart';
 
@@ -44,7 +45,14 @@ class TorboxDebrider implements Debrider {
 
       return link;
     } on DioException catch (error) {
-      throw Exception(_formatDioError(error));
+      var dioExMessage = _formatDioError(error);
+      print(error);
+      if (dioExMessage.contains(
+          "There was an error processing your request. Please try again later")) {
+        throw DebriderIsProcessingException("Status Processing");
+      }
+      print("TorboxDebrider DioException: $dioExMessage");
+      throw Exception(dioExMessage);
     } finally {
       client.close(force: true);
     }

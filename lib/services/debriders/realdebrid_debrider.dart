@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:yamata_launcher/models/contracts/debrider.dart';
+import 'package:yamata_launcher/models/exceptions/debrider_is_processing_exception.dart';
 import 'package:yamata_launcher/services/debrider_service.dart';
 import 'package:yamata_launcher/utils/torrent_helper.dart';
 
@@ -106,8 +107,8 @@ class RealdebridDebrider implements Debrider {
         return Uri.decodeComponent(download);
       }
 
-      throw Exception(
-        "Torrent is not ready in Real-Debrid yet (status: ${status ?? "unknown"}). Try again in a few moments.",
+      throw DebriderIsProcessingException(
+        "status: ${status ?? "unknown"}",
       );
     }
 

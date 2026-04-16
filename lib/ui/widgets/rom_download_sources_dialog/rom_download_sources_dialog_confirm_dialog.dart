@@ -12,6 +12,7 @@ import 'package:yamata_launcher/main.dart';
 import 'package:yamata_launcher/models/contracts/debrider.dart';
 import 'package:yamata_launcher/models/contracts/hoster.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
+import 'package:yamata_launcher/models/exceptions/debrider_is_processing_exception.dart';
 import 'package:yamata_launcher/models/exceptions/download_require_manual_exception.dart';
 import 'package:yamata_launcher/models/hoster_info.dart';
 import 'package:yamata_launcher/models/hoster_metadata.dart';
@@ -226,7 +227,7 @@ class _DownloadSourcesDialogConfirmDialogState
     var link = null;
     var sourceRomLink = selectedHoster!.uri;
     var isDirectDownload = selectedHoster!.isDirect;
-    // If its a torrent or magnet
+    // If the selected source is compatible with a debrid service, use it to get the direct download link
     if (selectedDebrider != null &&
         selectedDebrider!.canHandleUrl(sourceRomLink)) {
       setState(() {
@@ -237,10 +238,14 @@ class _DownloadSourcesDialogConfirmDialogState
         if (link != null && link.isNotEmpty) {
           handleSendResult(link);
         }
-      } catch (e) {
-        setState(() {
-          isLoadingDirectLink = false;
+      } on DebriderIsProcessingException catch (e) {
+        Future.microtask(() {
+          AlertsService.showSnackbar(
+            e.toString(),
+            title: "Download is being processed",
+          );
         });
+      } on Exception catch (e) {
         Future.microtask(() {
           AlertsService.showErrorSnackbar(
               "Failed to get direct download link from debrid service: $e");

@@ -36,7 +36,7 @@ class RetroarchGameRunner implements GameRunner {
   String get executablePath => executablesByPlatform[OsService.osType] ?? '';
 
   @override
-  bool get isRunnerAvailable {
+  bool get isRunnerInstalled {
     final executablePath = executablesByPlatform[OsService.osType];
     if (executablePath == null) return false;
     if (Platform.isLinux) {
@@ -49,13 +49,13 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Future<bool> canRunOnRunner(String console) async {
+  Future<bool> canRunOnConsole(String console) async {
     var coresByConsole = await getCoresByConsole(console);
     return coresByConsole.isNotEmpty;
   }
 
   @override
-  Future<Process?> launchOnRunner(
+  Future<Process?> launch(
       RomLibraryItem rom, EmulatorSetting emulatorSetting) async {
     var coresPath = await _getCoresPath(emulatorSetting.emulatorBinary);
     if (coresPath == null) {
@@ -102,7 +102,7 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<ArgumentGroup>> getParams(
+  Future<List<ArgumentGroup>> getAvailableParams(
       String console, String executablePath) async {
     var coresPath = await _getCoresPath(executablePath);
     var installedCores = [];

@@ -22,7 +22,7 @@ class _GameRunnersSettingsPageState extends State<GameRunnersSettingsPage> {
     var runners = EmulatorService.runners;
     await FlatpakUtils.getInstalledFlatpakAppIds();
     for (var runner in runners) {
-      if (await runner.isRunnerAvailable) {
+      if (await runner.isRunnerInstalled) {
         availableRunners.add(runner.name);
       }
     }

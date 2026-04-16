@@ -164,13 +164,13 @@ class EmulatorService {
   /**
    * Checks if there's an available game runner for the given game, and returns it.
    */
-  static Future<List<GameRunner>> getAvailableRunners(String console) async {
+  static Future<List<GameRunner>> getCompatibleRunners(String console) async {
     if (Platform.isLinux) {
       await FlatpakUtils.getInstalledFlatpakAppIds();
     }
     final availableRunners = <GameRunner>[];
     for (final runner in runners) {
-      if (await runner.canRunOnRunner(console)) {
+      if (await runner.canRunOnConsole(console)) {
         availableRunners.add(runner);
       }
     }
@@ -209,7 +209,7 @@ class EmulatorService {
 
     final provider =
         Provider.of<LibraryProvider>(navigatorContext!, listen: false);
-
+    // Called every minute to update the playtime of the game while it's running
     void handleUpdateLibraryItem({bool addTime = false}) {
       final currentItem = provider.getLibraryItem(slug);
       if (currentItem == null) return;
@@ -264,15 +264,15 @@ class EmulatorService {
         );
       } else {
         Process? process;
-        var availableRunners = await getAvailableRunners(consoleKey);
+        var availableRunners = await getCompatibleRunners(consoleKey);
         print(availableRunners);
+        // If theres a compatible runner it will launch it only if the executable path matches
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {
             if (emulatorBinary.contains(runner.executablePath)) {
               Process? runnerProcess = null;
               try {
-                runnerProcess =
-                    await runner.launchOnRunner(download, emulatorSetting);
+                runnerProcess = await runner.launch(download, emulatorSetting);
               } on Exception catch (e) {
                 print("Error checking runner availability: $e");
                 AlertsService.showErrorSnackbar(
@@ -288,7 +288,6 @@ class EmulatorService {
             }
           }
         }
-        print(process);
         if (process == null) {
           if (Platform.isMacOS) {
             final execPath =

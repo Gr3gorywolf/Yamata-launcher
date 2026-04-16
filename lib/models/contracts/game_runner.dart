@@ -8,9 +8,9 @@ import 'package:yamata_launcher/models/rom_library_item.dart';
 abstract class GameRunner {
   String get name;
   String get executablePath;
-  bool get isRunnerAvailable;
-  Future<bool> canRunOnRunner(String console);
-  Future<Process?> launchOnRunner(
-      RomLibraryItem rom, EmulatorSetting emulatorSetting);
-  Future<List<ArgumentGroup>> getParams(String console, String executablePath);
+  bool get isRunnerInstalled;
+  Future<bool> canRunOnConsole(String console);
+  Future<Process?> launch(RomLibraryItem rom, EmulatorSetting emulatorSetting);
+  Future<List<ArgumentGroup>> getAvailableParams(
+      String console, String executablePath);
 }

@@ -30,7 +30,7 @@ class HeroicGameRunner implements GameRunner {
   String get executablePath => executablesByPlatform[OsService.osType] ?? '';
 
   @override
-  bool get isRunnerAvailable {
+  bool get isRunnerInstalled {
     final executablePath = executablesByPlatform[OsService.osType];
     if (executablePath == null) return false;
     if (Platform.isLinux) {
@@ -43,15 +43,15 @@ class HeroicGameRunner implements GameRunner {
   }
 
   @override
-  Future<bool> canRunOnRunner(String console) async {
+  Future<bool> canRunOnConsole(String console) async {
     if (Platform.isLinux || Platform.isMacOS) {
-      return isRunnerAvailable && console == 'windows';
+      return isRunnerInstalled && console == 'windows';
     }
     return false;
   }
 
   @override
-  Future<List<ArgumentGroup>> getParams(
+  Future<List<ArgumentGroup>> getAvailableParams(
       String console, String executablePath) async {
     return [];
   }
@@ -138,7 +138,7 @@ class HeroicGameRunner implements GameRunner {
   }
 
   @override
-  Future<Process?> launchOnRunner(
+  Future<Process?> launch(
       RomLibraryItem rom, EmulatorSetting emulatorSetting) async {
     final dataFolder = dataFolderByPlatform[OsService.osType];
     if (dataFolder == null) throw Exception('Unsupported OS');

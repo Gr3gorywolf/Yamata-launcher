@@ -136,9 +136,9 @@ class _EmulatorLaunchSettingsFieldsState
     final console = widget.console.trim();
     final runners = console.isEmpty
         ? <GameRunner>[]
-        : await EmulatorService.getAvailableRunners(console);
+        : await EmulatorService.getCompatibleRunners(console);
     final filteredRunners =
-        runners.where((runner) => runner.isRunnerAvailable).toList();
+        runners.where((runner) => runner.isRunnerInstalled).toList();
 
     if (!mounted) {
       return;
@@ -191,8 +191,8 @@ class _EmulatorLaunchSettingsFieldsState
       return;
     }
 
-    final params =
-        await matchedRunner.getParams(widget.console.trim(), effectiveBinary);
+    final params = await matchedRunner.getAvailableParams(
+        widget.console.trim(), effectiveBinary);
     if (!mounted || lookupVersion != _lookupVersion) {
       return;
     }

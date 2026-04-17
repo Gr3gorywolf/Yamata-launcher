@@ -488,7 +488,7 @@ class RomListItem extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: double.infinity,
-                      height: 180,
+                      height: 230,
                       child: thumbnail,
                     ),
                     Positioned(

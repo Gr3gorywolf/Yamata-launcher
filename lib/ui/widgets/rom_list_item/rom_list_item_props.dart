@@ -1,7 +1,100 @@
 import 'package:flutter/material.dart';
-import 'package:yamata_launcher/models/download_history_item.dart';
+import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+
+class RomListItemDownloadState {
+  final bool hasCurrentDownload;
+  final String? contentTitle;
+  final bool isExtraContent;
+  final String? statusText;
+  final int? progressPercent;
+  final bool isExtracting;
+
+  const RomListItemDownloadState({
+    required this.hasCurrentDownload,
+    required this.contentTitle,
+    required this.isExtraContent,
+    required this.statusText,
+    required this.progressPercent,
+    required this.isExtracting,
+  });
+
+  factory RomListItemDownloadState.fromDownloadInfo(
+      DownloadInfo? downloadInfo) {
+    return RomListItemDownloadState(
+      hasCurrentDownload: downloadInfo != null,
+      contentTitle: downloadInfo?.contentTitle,
+      isExtraContent: downloadInfo?.isExtraContent ?? false,
+      statusText: downloadInfo?.downloadInfo,
+      progressPercent: downloadInfo?.downloadPercent,
+      isExtracting: downloadInfo?.isExtracting ?? false,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is RomListItemDownloadState &&
+        other.hasCurrentDownload == hasCurrentDownload &&
+        other.contentTitle == contentTitle &&
+        other.isExtraContent == isExtraContent &&
+        other.statusText == statusText &&
+        other.progressPercent == progressPercent &&
+        other.isExtracting == isExtracting;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        hasCurrentDownload,
+        contentTitle,
+        isExtraContent,
+        statusText,
+        progressPercent,
+        isExtracting,
+      );
+}
+
+class RomListItemLibraryState {
+  final String? filePath;
+  final bool? fileExists;
+  final String lastPlayedLabel;
+
+  const RomListItemLibraryState({
+    required this.filePath,
+    required this.fileExists,
+    required this.lastPlayedLabel,
+  });
+
+  factory RomListItemLibraryState.fromLibraryItem({
+    required RomLibraryItem? libraryItem,
+    required String lastPlayedLabel,
+  }) {
+    return RomListItemLibraryState(
+      filePath: libraryItem?.filePath,
+      fileExists: libraryItem?.doesExists,
+      lastPlayedLabel: lastPlayedLabel,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is RomListItemLibraryState &&
+        other.filePath == filePath &&
+        other.fileExists == fileExists &&
+        other.lastPlayedLabel == lastPlayedLabel;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        filePath,
+        fileExists,
+        lastPlayedLabel,
+      );
+}
 
 class RomListItemStatus {
   final IconData icon;
@@ -33,8 +126,6 @@ class RomListItemDownloadStatus {
 
 class RomListItemProps {
   final RomInfo romItem;
-  final DownloadHistoryItem? download;
-  final RomLibraryItem? libraryDetails;
   final Widget thumbnail;
   final Widget gameplayThumbnail;
   final String focusId;
@@ -50,8 +141,6 @@ class RomListItemProps {
 
   const RomListItemProps({
     required this.romItem,
-    required this.download,
-    required this.libraryDetails,
     required this.thumbnail,
     required this.gameplayThumbnail,
     required this.focusId,

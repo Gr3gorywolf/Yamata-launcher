@@ -72,7 +72,7 @@ class RomListItemListVariant extends StatelessWidget {
                             ),
                             if (downloadStatus?.hasContent == true) ...[
                               SizedBox(
-                                height: props.isUsingGamepad ? 0 : 10,
+                                height: props.isUsingGamepad ? 0 : 4,
                               ),
                               RomListItemDownloadContent(
                                 downloadStatus: downloadStatus,
@@ -82,7 +82,7 @@ class RomListItemListVariant extends StatelessWidget {
                               downloadStatus: downloadStatus,
                             ),
                             if (!props.isUsingGamepad)
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 10),
                             if (props.showActionButton)
                               RomActionButton(
                                 props.romItem,
@@ -104,7 +104,6 @@ class RomListItemListVariant extends StatelessWidget {
                             top: 0,
                             child: RomLibraryActions(
                               rom: props.romItem,
-                              downloadHistoryItem: props.download,
                             ),
                           ),
                       ],

@@ -2,13 +2,12 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/ui/widgets/download_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
-import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 
 class DownloadsPage extends StatefulWidget {
@@ -25,12 +24,6 @@ class _DownloadsPageState extends State<DownloadsPage> {
   void initState() {
     super.initState();
     Future.microtask(compileDownloadedRoms);
-  }
-
-  bool getIsRomDownloading(RomInfo rom) {
-    final downloadProvider =
-        Provider.of<DownloadProvider>(context, listen: false);
-    return downloadProvider.isRomDownloading(rom);
   }
 
   void compileDownloadedRoms() {
@@ -117,8 +110,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           final download = ongoingDownloads[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
-                            child: RomListItem(
-                                romItem: download.romInfo!, showConsole: true),
+                            child: DownloadListItem(
+                              romItem: download.romInfo!,
+                              downloadInfo: download,
+                              showConsole: true,
+                            ),
                           );
                         },
                         childCount: ongoingDownloads.length,
@@ -151,8 +147,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           final download = pausedDownloads[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
-                            child: RomListItem(
-                                romItem: download.romInfo!, showConsole: true),
+                            child: DownloadListItem(
+                              romItem: download.romInfo!,
+                              downloadInfo: download,
+                              showConsole: true,
+                            ),
                           );
                         },
                         childCount: pausedDownloads.length,
@@ -186,9 +185,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           final item = completedDownloads[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
-                            child: RomListItem(
+                            child: DownloadListItem(
                               romItem: item.romInfo!,
-                              download: item,
+                              downloadHistoryItem: item,
                               showConsole: true,
                             ),
                           );

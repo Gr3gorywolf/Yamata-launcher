@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/console.dart';
-import 'package:yamata_launcher/models/download_history_item.dart';
-import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
@@ -17,21 +14,18 @@ import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_card_vari
 import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_list_variant.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_props.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
-import 'package:yamata_launcher/utils/time_helpers.dart';
 
 enum RomListItemType { card, listItem }
 
 class RomListItem extends StatelessWidget {
   final RomInfo romItem;
   final RomListItemType itemType;
-  final DownloadHistoryItem? download;
   final bool showConsole;
 
   const RomListItem({
     super.key,
     required this.romItem,
     this.showConsole = false,
-    this.download,
     this.itemType = RomListItemType.listItem,
   });
 
@@ -40,11 +34,21 @@ class RomListItem extends StatelessWidget {
     final theme = Theme.of(context);
     final isUsingGamepad =
         context.select<AppProvider, bool>((p) => p.isUsingGamepad);
-    final currentDownloadInfo = context.select<DownloadProvider, DownloadInfo?>(
-      (p) => p.getDownloadInfo(romItem),
+    final downloadState =
+        context.select<DownloadProvider, RomListItemDownloadState>(
+      (p) => RomListItemDownloadState.fromDownloadInfo(
+        p.getDownloadInfo(romItem),
+      ),
     );
-    final libraryDetails = context.select<LibraryProvider, RomLibraryItem?>(
-      (p) => p.getLibraryItem(romItem.slug),
+    final libraryState =
+        context.select<LibraryProvider, RomListItemLibraryState>(
+      (p) {
+        final libraryItem = p.getLibraryItem(romItem.slug);
+        return RomListItemLibraryState.fromLibraryItem(
+          libraryItem: libraryItem,
+          lastPlayedLabel: RomService.getLastPlayedLabel(libraryItem),
+        );
+      },
     );
     final hasAvailableSources = context.select<DownloadSourcesProvider, bool>(
       (p) => p.getRomSources(romItem.slug).isNotEmpty,
@@ -55,15 +59,13 @@ class RomListItem extends StatelessWidget {
     final console = ConsoleService.getConsoleFromName(romItem.console);
     final status = _buildStatus(
       theme: theme,
-      currentDownloadInfo: currentDownloadInfo,
-      libraryDetails: libraryDetails,
+      downloadState: downloadState,
+      libraryState: libraryState,
       hasAvailableSources: hasAvailableSources,
       isLoadingSources: isLoadingSources,
     );
     final props = RomListItemProps(
       romItem: romItem,
-      download: download,
-      libraryDetails: libraryDetails,
       thumbnail: RomThumbnail(
         romItem,
         timeout: const Duration(milliseconds: 60),
@@ -78,14 +80,14 @@ class RomListItem extends StatelessWidget {
       focusId: romItem.slug,
       subHeader: _buildSubHeader(console),
       consoleName: showConsole ? _buildConsoleName(console) : null,
-      downloadStatus: _buildDownloadStatus(currentDownloadInfo),
+      downloadStatus: _buildDownloadStatus(downloadState),
       trailingLabel: _buildTrailingLabel(
-        currentDownloadInfo: currentDownloadInfo,
-        libraryDetails: libraryDetails,
+        downloadState: downloadState,
+        libraryState: libraryState,
       ),
       isUsingGamepad: isUsingGamepad,
-      showActionButton: download == null && !isUsingGamepad,
-      showLibraryActions: currentDownloadInfo == null && !isUsingGamepad,
+      showActionButton: !isUsingGamepad,
+      showLibraryActions: !downloadState.hasCurrentDownload && !isUsingGamepad,
       status: status,
       onOpenDetails: () => _openDetails(context),
     );
@@ -139,28 +141,24 @@ class RomListItem extends StatelessWidget {
     return name;
   }
 
-  String? _buildDownloadContentLabel(DownloadInfo? currentDownloadInfo) {
-    final source = download ?? currentDownloadInfo;
-    if (source == null) {
+  String? _buildDownloadContentLabel(RomListItemDownloadState downloadState) {
+    if (!downloadState.hasCurrentDownload) {
       return null;
     }
 
-    final isExtraContent = download?.isExtraContent ??
-        currentDownloadInfo?.isExtraContent ??
-        false;
-    final contentTitle =
-        download?.contentTitle ?? currentDownloadInfo?.contentTitle ?? '';
+    final isExtraContent = downloadState.isExtraContent;
+    final contentTitle = downloadState.contentTitle ?? '';
     final contentType = isExtraContent ? 'Extra Content' : 'Base Game';
 
     return '($contentType) $contentTitle'.trim();
   }
 
   RomListItemDownloadStatus? _buildDownloadStatus(
-    DownloadInfo? currentDownloadInfo,
+    RomListItemDownloadState downloadState,
   ) {
-    final contentLabel = _buildDownloadContentLabel(currentDownloadInfo);
-    final progressValue = currentDownloadInfo != null && download == null
-        ? (currentDownloadInfo.downloadPercent ?? 0) / 100
+    final contentLabel = _buildDownloadContentLabel(downloadState);
+    final progressValue = downloadState.hasCurrentDownload
+        ? (downloadState.progressPercent ?? 0) / 100
         : null;
 
     if (contentLabel == null && progressValue == null) {
@@ -169,45 +167,41 @@ class RomListItem extends StatelessWidget {
 
     return RomListItemDownloadStatus(
       contentLabel: contentLabel,
-      statusText: currentDownloadInfo?.downloadInfo,
+      statusText: downloadState.statusText,
       progressValue: progressValue,
     );
   }
 
   String? _buildTrailingLabel({
-    required DownloadInfo? currentDownloadInfo,
-    required RomLibraryItem? libraryDetails,
+    required RomListItemDownloadState downloadState,
+    required RomListItemLibraryState libraryState,
   }) {
-    if (download != null) {
-      return 'Downloaded ${TimeHelpers.getTimeAgo(download!.downloadedAt ?? DateTime.now())}';
-    }
-
-    if (currentDownloadInfo != null) {
+    if (downloadState.hasCurrentDownload) {
       return null;
     }
 
-    return RomService.getLastPlayedLabel(libraryDetails);
+    return libraryState.lastPlayedLabel;
   }
 
   RomListItemStatus _buildStatus({
     required ThemeData theme,
-    required DownloadInfo? currentDownloadInfo,
-    required RomLibraryItem? libraryDetails,
+    required RomListItemDownloadState downloadState,
+    required RomListItemLibraryState libraryState,
     required bool hasAvailableSources,
     required bool isLoadingSources,
   }) {
-    if (currentDownloadInfo != null) {
-      final percent = currentDownloadInfo.downloadPercent ?? 0;
+    if (downloadState.hasCurrentDownload) {
+      final percent = downloadState.progressPercent ?? 0;
       return RomListItemStatus(
         icon: Icons.downloading,
         text:
-            '$percent% ${currentDownloadInfo.isExtracting ? 'Extracted' : 'Downloaded'}',
+            '$percent% ${downloadState.isExtracting ? 'Extracted' : 'Downloaded'}',
         color: theme.colorScheme.primary,
       );
     }
 
-    if (libraryDetails?.filePath?.isNotEmpty == true) {
-      if (libraryDetails?.doesExists == true) {
+    if (libraryState.filePath?.isNotEmpty == true) {
+      if (libraryState.fileExists == true) {
         return RomListItemStatus(
           icon: Icons.check_circle,
           text: 'Downloaded',

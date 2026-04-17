@@ -38,25 +38,10 @@ class RomListItemCardVariant extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: double.infinity,
-                        height: 200,
+                        height: 220,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
-                          child: Opacity(
-                            opacity: 0.5,
-                            child: props.gameplayThumbnail,
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Center(
-                          child: SizedBox(
-                            width: 100,
-                            height: 100,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: props.thumbnail,
-                            ),
-                          ),
+                          child: props.thumbnail,
                         ),
                       ),
                       Positioned(
@@ -100,7 +85,6 @@ class RomListItemCardVariant extends StatelessWidget {
                         if (props.showLibraryActions)
                           RomLibraryActions(
                             rom: props.romItem,
-                            downloadHistoryItem: props.download,
                           ),
                       ],
                     ),

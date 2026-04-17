@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:yamata_launcher/models/platform_catalog_source.dart';
 import 'package:yamata_launcher/repository/platform_catalog_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:path/path.dart' as p;
+import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ConsoleSourcesPage extends StatefulWidget {
   @override
@@ -95,6 +99,7 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
       context,
       'Add Game Catalog Source',
       inputPlaceholder: 'Enter game catalog source URL',
+      canPasteText: true,
       message:
           "The game catalog source must be a valid URL pointing to a JSON file containing game catalog definitions.",
     );
@@ -206,8 +211,41 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
                   child: ListTile(
                     leading: Icon(Icons.gamepad),
                     title: Text((source.sourceName ?? "")),
-                    subtitle: Opacity(
-                        opacity: 0.7, child: Text(source.console.name ?? "")),
+                    subtitle: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Opacity(
+                            opacity: 0.7,
+                            child: Text(source.console.name ?? "")),
+                        SizedBox(height: 2),
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                    ClipboardData(text: source.downloadUrl!));
+                                AlertsService.showSnackbar(
+                                    "Source URL copied to clipboard");
+                              },
+                              icon: Icon(Icons.copy, size: 16),
+                              label: Text("Copy URL"),
+                            ),
+                            if (Platform.isAndroid) ...[
+                              SizedBox(width: 3),
+                              TextButton.icon(
+                                onPressed: () async {
+                                  SystemHelpers.androidShareWithChooser(
+                                      "This is the url for ${source.sourceName} ${source.console.name} catalog source on Yamata Launcher:\n\n${source.downloadUrl!}");
+                                },
+                                icon: Icon(Icons.share, size: 16),
+                                label: Text("Share"),
+                              ),
+                            ]
+                          ],
+                        )
+                      ],
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -3,6 +3,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/main.dart';
@@ -91,6 +92,7 @@ class AlertsService {
       String? inputPlaceholder,
       Widget? extraContent,
       String? initialValue,
+      bool? canPasteText,
       int lines = 1,
       double? minWidth = 300}) {
     var completer = Completer<String?>();
@@ -112,6 +114,18 @@ class AlertsService {
                     hintText: inputPlaceholder ?? "",
                     helperText: message ?? "",
                     helperMaxLines: 3,
+                    suffixIcon: canPasteText == true
+                        ? IconButton(
+                            onPressed: () async {
+                              var data = await Clipboard.getData("text/plain");
+                              if (data != null) {
+                                controller.text = data.text ?? "";
+                              }
+                            },
+                            icon: Icon(Icons.paste, size: 16),
+                            tooltip: "Paste from clipboard",
+                          )
+                        : null,
                   ),
                   minLines: lines,
                   maxLines: lines,

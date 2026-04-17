@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
@@ -11,6 +14,7 @@ import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
+import 'package:yamata_launcher/utils/system_helpers.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 
 class DownloadSourcesPage extends StatefulWidget {
@@ -113,6 +117,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
             "Add Download Source",
             message: "Enter the URL of the download source:",
             inputPlaceholder: "Source URL",
+            canPasteText: true,
             extraContent: DialogSectionItem(
               title: "Download Source Type",
               icon: Icons.cloud,
@@ -241,7 +246,7 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
                       Opacity(
                           opacity: 0.7,
                           child: Text(
-                              '${source.sourceInfo.type?.name} - ${source.downloads!.length} games - Last Updated: $timeAgo')),
+                              '${source.sourceInfo.type?.name} - ${StringHelper.formatNumber(source.downloads!.length)} games - Last Updated: $timeAgo')),
                       if (tags.length > 0) ...[
                         SizedBox(height: 4),
                         Row(children: [
@@ -249,7 +254,35 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
                               .map((tag) => [tag, SizedBox(width: 4)])
                               .expand((i) => i)
                         ])
-                      ]
+                      ],
+                      SizedBox(height: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () async {
+                              await Clipboard.setData(ClipboardData(
+                                  text: source.sourceInfo!.downloadUrl!));
+                              AlertsService.showSnackbar(
+                                  "Source URL copied to clipboard");
+                            },
+                            icon: Icon(Icons.copy, size: 16),
+                            label: Text("Copy URL"),
+                          ),
+                          if (Platform.isAndroid) ...[
+                            SizedBox(width: 3),
+                            TextButton.icon(
+                              onPressed: () async {
+                                SystemHelpers.androidShareWithChooser(
+                                    "This is the url for ${source.sourceInfo!.title} ${source.sourceInfo!.type?.name} download source on Yamata Launcher:\n\n${source.sourceInfo!.downloadUrl!}");
+                              },
+                              icon: Icon(Icons.share, size: 16),
+                              label: Text("Share"),
+                            ),
+                          ]
+                        ],
+                      )
                     ],
                   ),
                   trailing: Row(

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:path/path.dart' as p;
 
 class SystemHelpers {
@@ -13,6 +14,18 @@ class SystemHelpers {
       binary = "aria2c.exe";
     }
     return binary;
+  }
+
+  static Future androidShareWithChooser(String text) async {
+    final intent = AndroidIntent(
+      action: 'android.intent.action.SEND',
+      type: 'text/plain',
+      arguments: {
+        'android.intent.extra.TEXT': text,
+      },
+    );
+
+    await intent.launch();
   }
 
   /**

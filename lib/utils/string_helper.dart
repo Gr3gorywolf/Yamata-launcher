@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:intl/intl.dart';
 
 extension StringNormalize on String {
   String normalizeForSearch() {
@@ -196,5 +197,10 @@ class StringHelper {
       }
     }
     return false;
+  }
+
+  static String formatNumber(int number) {
+    final us = NumberFormat.decimalPattern('en_US');
+    return us.format(number);
   }
 }

@@ -123,6 +123,15 @@ class Aria2cDownloadManager {
       }
     }
 
+    var certPath = null;
+    if (Platform.isWindows) {
+      certPath = p.join(
+          FileSystemService.appDataFolderPath, "aria2c", "yamata_launcher.pem");
+    } else if (Platform.isAndroid &&
+        Aria2cAndroidInterface.certPath.isNotEmpty) {
+      certPath = Aria2cAndroidInterface.certPath;
+    }
+
     final isolate = await Isolate.spawn<IsolateArgs>(
       _downloadIsolateMain,
       IsolateArgs(
@@ -132,9 +141,7 @@ class Aria2cDownloadManager {
         aria2cPath: aria2cPath,
         uri: Uri.decodeComponent(uri),
         fileIndex: source.fileIndex,
-        certPath: Aria2cAndroidInterface.certPath.isEmpty
-            ? null
-            : Aria2cAndroidInterface.certPath,
+        certPath: certPath,
         filePath: source.filePath != null
             ? Uri.decodeComponent(source.filePath!)
             : null,

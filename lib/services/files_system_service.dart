@@ -405,6 +405,14 @@ class FileSystemService {
     if (!Platform.isWindows) {
       await Process.run('chmod', ['+x', file.path]);
     }
+    if (Platform.isWindows) {
+      // Write pem cert file for windows, because it cant access the system certs like linux and mac
+      final certFile = File("${aria2cDir.path}/yamata_launcher.pem");
+      final byteData =
+          await rootBundle.load("assets/bin/aria2c/yamata_launcher.pem");
+      final bytes = byteData.buffer.asUint8List();
+      await certFile.writeAsBytes(bytes, flush: true);
+    }
 
     return file.path;
   }

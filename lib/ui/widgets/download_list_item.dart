@@ -185,10 +185,11 @@ class DownloadListItem extends StatelessWidget {
                                         type: StatusTagType.normal,
                                         size: StatusTagSize.sm),
                                     const SizedBox(width: 6),
-                                    StatusTag(
-                                        text: _buildSizeLabel() ?? '---',
-                                        type: StatusTagType.success,
-                                        size: StatusTagSize.sm),
+                                    if (_buildSizeLabel() != null)
+                                      StatusTag(
+                                          text: _buildSizeLabel() ?? '---',
+                                          type: StatusTagType.success,
+                                          size: StatusTagSize.sm),
                                   ],
                                 ),
                                 Row(

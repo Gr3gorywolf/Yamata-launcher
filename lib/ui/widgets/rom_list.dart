@@ -60,7 +60,7 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
             if (widget.topRightChild != null) widget.topRightChild!,
           ],
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 9),
       ],
     );
   }
@@ -101,7 +101,7 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       child: CustomScrollView(
         key: PageStorageKey('rom-list-${viewMode.name}'),
         cacheExtent: viewMode == ViewModeToggleMode.list ? 900 : 500,

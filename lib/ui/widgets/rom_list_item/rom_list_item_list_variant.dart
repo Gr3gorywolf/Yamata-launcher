@@ -32,90 +32,97 @@ class RomListItemListVariant extends StatelessWidget {
             ),
             child: Padding(
               padding: EdgeInsets.all(props.isUsingGamepad ? 9 : 13),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
                 children: [
-                  Stack(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: thumbnailSize,
-                        height: thumbnailSize,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: props.thumbnail,
-                        ),
+                      Stack(
+                        children: [
+                          SizedBox(
+                            width: thumbnailSize,
+                            height: thumbnailSize,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: props.thumbnail,
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: RomRating(
+                              rating: props.romItem.rating,
+                            ),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: RomRating(
-                          rating: props.romItem.rating,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RomListItemHeader(
+                                  title: props.romItem.name,
+                                  subHeader: props.subHeader,
+                                  titleStyle:
+                                      Theme.of(context).textTheme.titleMedium,
+                                  titleMaxLines: 1,
+                                  titleRightInset: 82,
+                                  subHeaderRightInset: 110,
+                                ),
+                                // Gamepad content
+                                if (props.isUsingGamepad) ...[
+                                  const SizedBox(height: 6),
+                                  RomListItemStatusInfo(status: props.status),
+                                ],
+                                if (props.showActionButton) ...[
+                                  SizedBox(
+                                    height: 5,
+                                  ),
+                                  RomActionButton(
+                                    props.romItem,
+                                    size: RomActionButtonSize.small,
+                                  ),
+                                ]
+                              ],
+                            ),
+                            if (props.hasTrailingLabel)
+                              Positioned(
+                                right: 0,
+                                bottom: 10,
+                                child: RomListItemTrailingLabel(
+                                  label: props.trailingLabel,
+                                ),
+                              ),
+                            if (props.showLibraryActions)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: RomLibraryActions(
+                                  rom: props.romItem,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RomListItemHeader(
-                              title: props.romItem.name,
-                              subHeader: props.subHeader,
-                              titleStyle:
-                                  Theme.of(context).textTheme.titleMedium,
-                              titleMaxLines: 1,
-                              titleRightInset: 82,
-                              subHeaderRightInset: 110,
-                            ),
-                            // Regular content
-                            if (!props.isUsingGamepad) ...[
-                              if (downloadStatus?.hasContent == true) ...[
-                                SizedBox(
-                                  height: props.isUsingGamepad ? 0 : 4,
-                                ),
-                                RomListItemDownloadContent(
-                                  downloadStatus: downloadStatus,
-                                ),
-                              ],
-                              RomListItemDownloadProgress(
-                                downloadStatus: downloadStatus,
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                            // Gamepad content
-                            if (props.isUsingGamepad) ...[
-                              const SizedBox(height: 6),
-                              RomListItemStatusInfo(status: props.status),
-                            ],
-                            if (props.showActionButton)
-                              RomActionButton(
-                                props.romItem,
-                                size: RomActionButtonSize.small,
-                              ),
-                          ],
-                        ),
-                        if (props.hasTrailingLabel)
-                          Positioned(
-                            right: 0,
-                            bottom: 10,
-                            child: RomListItemTrailingLabel(
-                              label: props.trailingLabel,
-                            ),
-                          ),
-                        if (props.showLibraryActions)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: RomLibraryActions(
-                              rom: props.romItem,
-                            ),
-                          ),
-                      ],
+                  if (!props.isUsingGamepad && downloadStatus != null) ...[
+                    if (downloadStatus?.hasContent == true) ...[
+                      SizedBox(
+                        height: 4,
+                      ),
+                      RomListItemDownloadContent(
+                        downloadStatus: downloadStatus,
+                      ),
+                    ],
+                    RomListItemDownloadProgress(
+                      downloadStatus: downloadStatus,
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                  ],
                 ],
               ),
             ),

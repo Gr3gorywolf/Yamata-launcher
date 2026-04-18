@@ -275,14 +275,28 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
           SizedBox(
             height: 5,
           ),
-          Opacity(
-            opacity: 0.7,
-            child: Text(
-              "(${downloadInfo.isExtraContent ? "Extra Content" : "Base Game"}) ${downloadInfo.contentTitle ?? ""}",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.cloud_download,
+                size: 15,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Opacity(
+                  opacity: 0.7,
+                  child: Text(
+                    "(${downloadInfo.isExtraContent ? "Extra Content" : "Base Game"}) ${downloadInfo.contentTitle ?? ""}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(
             height: 7,

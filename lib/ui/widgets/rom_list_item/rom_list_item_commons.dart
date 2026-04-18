@@ -71,16 +71,29 @@ class RomListItemDownloadContent extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 5),
-        Opacity(
-          opacity: 0.7,
-          child: Text(
-            downloadStatus?.contentLabel ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+        Row(
+          children: [
+            Icon(
+              Icons.cloud_download,
+              size: 14,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Opacity(
+                opacity: 0.7,
+                child: Text(
+                  downloadStatus?.contentLabel ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 7),
       ],

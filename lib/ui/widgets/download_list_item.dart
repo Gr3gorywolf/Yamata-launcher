@@ -14,6 +14,7 @@ import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_commons.d
 import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_props.dart';
 import 'package:yamata_launcher/ui/widgets/rom_rating.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
+import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 
 class DownloadListItem extends StatelessWidget {
@@ -32,122 +33,23 @@ class DownloadListItem extends StatelessWidget {
           downloadInfo != null || downloadHistoryItem != null,
           'DownloadListItem requires downloadInfo or downloadHistoryItem.',
         );
-
-  @override
-  Widget build(BuildContext context) {
-    final isUsingGamepad =
-        context.select<AppProvider, bool>((p) => p.isUsingGamepad);
-    final thumbnailSize = isUsingGamepad ? 70.0 : 80.0;
-    final downloadStatus = _buildDownloadStatus();
-
-    return RepaintBoundary(
-      child: FocusableElement(
-        focusId: romItem.slug,
-        child: InkWell(
-          canRequestFocus: false,
-          onTap: () => _openDetails(context),
-          child: Card(
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(isUsingGamepad ? 9 : 13),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    children: [
-                      SizedBox(
-                        width: thumbnailSize,
-                        height: thumbnailSize,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: RomThumbnail(
-                            romItem,
-                            timeout: const Duration(milliseconds: 60),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: RomRating(
-                          rating: romItem.rating,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RomListItemHeader(
-                              title: romItem.name,
-                              subHeader: _buildSubHeader(),
-                              titleStyle:
-                                  Theme.of(context).textTheme.titleMedium,
-                              titleMaxLines: 1,
-                              titleRightInset: 82,
-                              subHeaderRightInset: 110,
-                            ),
-                            if (downloadStatus?.hasContent == true) ...[
-                              SizedBox(
-                                height: isUsingGamepad ? 0 : 4,
-                              ),
-                              RomListItemDownloadContent(
-                                downloadStatus: downloadStatus,
-                              ),
-                            ],
-                            RomListItemDownloadProgress(
-                              downloadStatus: downloadStatus,
-                            ),
-                            if (!isUsingGamepad) const SizedBox(height: 10),
-                            if (_showActionButton(isUsingGamepad))
-                              RomActionButton(
-                                romItem,
-                                size: RomActionButtonSize.small,
-                              ),
-                          ],
-                        ),
-                        if (_trailingLabel != null)
-                          Positioned(
-                            right: 0,
-                            bottom: 10,
-                            child: RomListItemTrailingLabel(
-                              label: _trailingLabel,
-                            ),
-                          ),
-                        if (_showHistoryActions)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: RomLibraryActions(
-                              rom: romItem,
-                              downloadHistoryItem: downloadHistoryItem,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _openDetails(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => RomDetailsDialog(rom: romItem),
     );
+  }
+
+  String? _buildSizeLabel() {
+    final size =
+        (downloadHistoryItem?.downloadSize ?? downloadInfo?.totalSize)?.trim();
+
+    if (size == null || size.isEmpty) {
+      return null;
+    }
+
+    return size;
   }
 
   String _buildSubHeader() {
@@ -193,19 +95,21 @@ class DownloadListItem extends StatelessWidget {
     );
   }
 
+  bool get isExtraContent {
+    return downloadHistoryItem?.isExtraContent ??
+        downloadInfo?.isExtraContent ??
+        false;
+  }
+
   String? _buildContentLabel() {
     if (downloadInfo == null && downloadHistoryItem == null) {
       return null;
     }
 
-    final isExtraContent = downloadHistoryItem?.isExtraContent ??
-        downloadInfo?.isExtraContent ??
-        false;
     final contentTitle =
         downloadHistoryItem?.contentTitle ?? downloadInfo?.contentTitle ?? '';
-    final contentType = isExtraContent ? 'Extra Content' : 'Base Game';
 
-    return '($contentType) $contentTitle'.trim();
+    return '$contentTitle'.trim();
   }
 
   String? get _trailingLabel {
@@ -216,9 +120,163 @@ class DownloadListItem extends StatelessWidget {
     return 'Downloaded ${TimeHelpers.getTimeAgo(downloadHistoryItem!.downloadedAt ?? DateTime.now())}';
   }
 
-  bool _showActionButton(bool isUsingGamepad) {
-    return downloadHistoryItem == null && !isUsingGamepad;
-  }
-
   bool get _showHistoryActions => downloadHistoryItem != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final downloadStatus = _buildDownloadStatus();
+    var isDownloading = downloadStatus?.hasProgress == true;
+
+    return RepaintBoundary(
+      child: FocusableElement(
+        focusId: romItem.slug,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: () => _openDetails(context),
+          child: Card(
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(isDownloading ? 18 : 9),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          SizedBox(
+                            width: 87,
+                            height: 87,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: RomThumbnail(
+                                romItem,
+                                timeout: const Duration(milliseconds: 60),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: RomRating(
+                              rating: romItem.rating,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    StatusTag(
+                                        text: isExtraContent
+                                            ? 'Extra Content'
+                                            : 'Base Game',
+                                        type: StatusTagType.normal,
+                                        size: StatusTagSize.sm),
+                                    const SizedBox(width: 6),
+                                    StatusTag(
+                                        text: _buildSizeLabel() ?? '---',
+                                        type: StatusTagType.success,
+                                        size: StatusTagSize.sm),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 0),
+                                      child: Text(
+                                        romItem.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Padding(
+                                  padding: EdgeInsets.only(right: 110),
+                                  child: Opacity(
+                                    opacity: 0.7,
+                                    child: Text(
+                                      _buildSubHeader(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall,
+                                    ),
+                                  ),
+                                ),
+                                if (downloadStatus?.hasContent == true) ...[
+                                  SizedBox(
+                                    height: 2,
+                                  ),
+                                  RomListItemDownloadContent(
+                                    downloadStatus: downloadStatus,
+                                  )
+                                ],
+                              ],
+                            ),
+                            if (_trailingLabel != null)
+                              Positioned(
+                                right: 0,
+                                bottom: 10,
+                                child: RomListItemTrailingLabel(
+                                  label: _trailingLabel,
+                                ),
+                              ),
+                            if (_showHistoryActions)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: RomLibraryActions(
+                                  rom: romItem,
+                                  downloadHistoryItem: downloadHistoryItem,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isDownloading) ...[
+                    Container(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RomListItemDownloadProgress(
+                            downloadStatus: downloadStatus,
+                          ),
+                          SizedBox(height: 8),
+                          RomActionButton(
+                            romItem,
+                            size: RomActionButtonSize.small,
+                          )
+                        ],
+                      ),
+                    )
+                  ]
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

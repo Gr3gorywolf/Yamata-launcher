@@ -33,6 +33,7 @@ class RomListItemCardVariant extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(13),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(

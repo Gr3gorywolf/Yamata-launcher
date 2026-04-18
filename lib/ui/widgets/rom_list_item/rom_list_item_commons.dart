@@ -3,7 +3,7 @@ import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item_props.dar
 
 class RomListItemHeader extends StatelessWidget {
   final String title;
-  final String subHeader;
+  final String? subHeader;
   final TextStyle? titleStyle;
   final int titleMaxLines;
   final int subHeaderMaxLines;
@@ -13,7 +13,7 @@ class RomListItemHeader extends StatelessWidget {
   const RomListItemHeader({
     super.key,
     required this.title,
-    required this.subHeader,
+    this.subHeader,
     this.titleStyle,
     this.titleMaxLines = 2,
     this.subHeaderMaxLines = 1,
@@ -35,19 +35,21 @@ class RomListItemHeader extends StatelessWidget {
             style: titleStyle,
           ),
         ),
-        const SizedBox(height: 3),
-        Padding(
-          padding: EdgeInsets.only(right: subHeaderRightInset),
-          child: Opacity(
-            opacity: 0.7,
-            child: Text(
-              subHeader,
-              maxLines: subHeaderMaxLines,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
+        if (subHeader != null) ...[
+          const SizedBox(height: 3),
+          Padding(
+            padding: EdgeInsets.only(right: subHeaderRightInset),
+            child: Opacity(
+              opacity: 0.7,
+              child: Text(
+                subHeader ?? '',
+                maxLines: subHeaderMaxLines,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ),
           ),
-        ),
+        ]
       ],
     );
   }

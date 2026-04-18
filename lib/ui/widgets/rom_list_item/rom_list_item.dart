@@ -56,6 +56,7 @@ class RomListItem extends StatelessWidget {
     final isLoadingSources = context.select<DownloadSourcesProvider, bool>(
       (p) => p.isRomCompilingDownloadSources(romItem.slug),
     );
+
     final console = ConsoleService.getConsoleFromName(romItem.console);
     final status = _buildStatus(
       theme: theme,
@@ -68,13 +69,6 @@ class RomListItem extends StatelessWidget {
       romItem: romItem,
       thumbnail: RomThumbnail(
         romItem,
-        timeout: const Duration(milliseconds: 60),
-      ),
-      gameplayThumbnail: RomThumbnail(
-        romItem,
-        customUrl: romItem.gameplayCovers?.isNotEmpty == true
-            ? romItem.gameplayCovers!.first
-            : null,
         timeout: const Duration(milliseconds: 60),
       ),
       focusId: romItem.slug,

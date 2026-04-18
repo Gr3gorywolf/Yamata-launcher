@@ -17,6 +17,7 @@ class RomListItemCardVariant extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final downloadStatus = props.downloadStatus;
+    var isDownloading = downloadStatus?.hasProgress == true;
 
     return RepaintBoundary(
       child: FocusableElement(
@@ -38,7 +39,7 @@ class RomListItemCardVariant extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: double.infinity,
-                        height: 220,
+                        height: 260,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: props.thumbnail,
@@ -57,16 +58,16 @@ class RomListItemCardVariant extends StatelessWidget {
                   const SizedBox(height: 7),
                   RomListItemHeader(
                     title: props.romItem.name,
-                    subHeader: props.subHeader,
+                    titleMaxLines: isDownloading ? 1 : 2,
+                    subHeader: isDownloading ? null : props.subHeader,
                     titleStyle: Theme.of(context).textTheme.titleSmall,
                   ),
                   if (downloadStatus?.hasContent == true) ...[
-                    const Spacer(),
                     RomListItemDownloadContent(
                       downloadStatus: downloadStatus,
                     ),
                   ],
-                  if (downloadStatus?.hasProgress == true) ...[
+                  if (isDownloading) ...[
                     if (downloadStatus?.hasContent != true) const Spacer(),
                     RomListItemDownloadProgress(
                       downloadStatus: downloadStatus,
@@ -88,8 +89,10 @@ class RomListItemCardVariant extends StatelessWidget {
                           ),
                       ],
                     ),
-                  const SizedBox(height: 3),
-                  RomListItemTrailingLabel(label: props.trailingLabel),
+                  if (!isDownloading) ...[
+                    const SizedBox(height: 3),
+                    RomListItemTrailingLabel(label: props.trailingLabel),
+                  ]
                 ],
               ),
             ),

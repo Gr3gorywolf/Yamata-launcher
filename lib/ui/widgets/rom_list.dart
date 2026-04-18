@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
-import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
+import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 
 import '../../providers/app_provider.dart';
@@ -72,8 +72,8 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
     final roms = widget.roms ?? const [];
     final screenWidth = MediaQuery.of(context).size.width;
     final appProvider = Provider.of<AppProvider>(context);
-    final cardWidth = appProvider.isUsingGamepad ? 230 : 283;
-    final cardHeight = appProvider.isUsingGamepad ? 230 : 410;
+    final cardWidth = appProvider.isUsingGamepad ? 260 : 283;
+    final cardHeight = appProvider.isUsingGamepad ? 260 : 430;
     final gridSpacing = appProvider.isUsingGamepad ? 25 : 8;
     final gridAxisCount =
         max(1, (screenWidth / (cardWidth + gridSpacing)).floor());

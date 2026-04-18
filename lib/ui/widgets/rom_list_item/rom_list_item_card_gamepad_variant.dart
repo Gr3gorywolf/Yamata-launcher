@@ -45,14 +45,14 @@ class RomListItemCardGamepadVariant extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: double.infinity,
-                        height: 230,
+                        height: 270,
                         child: props.thumbnail,
                       ),
                       Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        height: 130,
+                        height: 168,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/widgets.dart';
 import 'package:yamata_launcher/models/setting.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
-import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
+import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item.dart';
 
 enum SettingsKeys {
   DOWNLOAD_PATH,

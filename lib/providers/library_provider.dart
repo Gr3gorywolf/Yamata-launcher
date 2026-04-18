@@ -11,7 +11,6 @@ import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
-import 'package:yamata_launcher/ui/widgets/rom_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:provider/provider.dart';
 

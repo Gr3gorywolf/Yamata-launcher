@@ -127,7 +127,6 @@ class RomListItemDownloadStatus {
 class RomListItemProps {
   final RomInfo romItem;
   final Widget thumbnail;
-  final Widget gameplayThumbnail;
   final String focusId;
   final String subHeader;
   final String? consoleName;
@@ -142,7 +141,6 @@ class RomListItemProps {
   const RomListItemProps({
     required this.romItem,
     required this.thumbnail,
-    required this.gameplayThumbnail,
     required this.focusId,
     required this.subHeader,
     required this.consoleName,

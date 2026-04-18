@@ -70,19 +70,26 @@ class RomListItemListVariant extends StatelessWidget {
                               titleRightInset: 82,
                               subHeaderRightInset: 110,
                             ),
-                            if (downloadStatus?.hasContent == true) ...[
-                              SizedBox(
-                                height: props.isUsingGamepad ? 0 : 4,
-                              ),
-                              RomListItemDownloadContent(
+                            // Regular content
+                            if (!props.isUsingGamepad) ...[
+                              if (downloadStatus?.hasContent == true) ...[
+                                SizedBox(
+                                  height: props.isUsingGamepad ? 0 : 4,
+                                ),
+                                RomListItemDownloadContent(
+                                  downloadStatus: downloadStatus,
+                                ),
+                              ],
+                              RomListItemDownloadProgress(
                                 downloadStatus: downloadStatus,
                               ),
-                            ],
-                            RomListItemDownloadProgress(
-                              downloadStatus: downloadStatus,
-                            ),
-                            if (!props.isUsingGamepad)
                               const SizedBox(height: 10),
+                            ],
+                            // Gamepad content
+                            if (props.isUsingGamepad) ...[
+                              const SizedBox(height: 6),
+                              RomListItemStatusInfo(status: props.status),
+                            ],
                             if (props.showActionButton)
                               RomActionButton(
                                 props.romItem,

@@ -33,19 +33,6 @@ class RomListItemDownloadState {
   }
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is RomListItemDownloadState &&
-        other.hasCurrentDownload == hasCurrentDownload &&
-        other.contentTitle == contentTitle &&
-        other.isExtraContent == isExtraContent &&
-        other.statusText == statusText &&
-        other.progressPercent == progressPercent &&
-        other.isExtracting == isExtracting;
-  }
-
-  @override
   int get hashCode => Object.hash(
         hasCurrentDownload,
         contentTitle,
@@ -77,17 +64,6 @@ class RomListItemLibraryState {
       lastPlayedLabel: lastPlayedLabel,
     );
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is RomListItemLibraryState &&
-        other.filePath == filePath &&
-        other.fileExists == fileExists &&
-        other.lastPlayedLabel == lastPlayedLabel;
-  }
-
   @override
   int get hashCode => Object.hash(
         filePath,

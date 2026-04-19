@@ -26,6 +26,7 @@ class RomLibraryItem extends JsonSerializable {
       this.overrideEmulator,
       this.isImported = false});
 
+  // implement copyWith method
   RomLibraryItem.fromJson(Map<String, dynamic> json)
       : rom = RomInfo.fromJson(json['rom']),
         isFavorite = json['isFavorite'] ?? false,

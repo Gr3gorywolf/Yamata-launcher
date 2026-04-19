@@ -14,7 +14,7 @@ class LibraryMassImportReviewStep extends StatelessWidget {
   final String selectedConsoleName;
   final String scanFolder;
   final VoidCallback onBackToSetup;
-  final Function(RomLibraryItem) onUpdate;
+  final Function(RomLibraryItem, String) onUpdate;
 
   LibraryMassImportReviewStep({
     super.key,
@@ -29,6 +29,21 @@ class LibraryMassImportReviewStep extends StatelessWidget {
     required this.onBackToSetup,
     required this.onUpdate,
   });
+  int get validFilesCount {
+    var count = 0;
+    for (var validGame in validGames) {
+      count += validGame.sourceFiles.length;
+    }
+    return count;
+  }
+
+  int get invalidFilesCount {
+    var count = 0;
+    for (var invalidGame in invalidGames) {
+      count += invalidGame.sourceFiles.length;
+    }
+    return count;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,16 +93,15 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                       ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.check_circle_outline,
-                        label: '${validGames.length} valid games',
+                        label: '${validFilesCount} valid game files',
                       ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.error_outline,
-                        label: '${invalidGames.length} invalid games',
+                        label: '${invalidFilesCount} invalid game files',
                       ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.sync,
-                        label:
-                            '${needsScrapeGames.length} games needs scraping',
+                        label: '${needsScrapeGames.length}  needs scraping',
                       ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.videogame_asset,
@@ -162,7 +176,7 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
   final List<LibraryMassImportPreviewItem> items;
   final String emptyTitle;
   final String emptyDescription;
-  final Function(RomLibraryItem) onUpdate;
+  final Function(RomLibraryItem, String) onUpdate;
 
   const _LibraryMassImportPreviewList({
     required this.items,
@@ -213,9 +227,11 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = items[index];
+        final originalSlug = item.libraryItem.rom.slug;
         return LibraryMassImportPreviewCard(
+          key: ValueKey(originalSlug),
           item: item,
-          onUpdate: (updatedItem) => onUpdate(updatedItem),
+          onUpdate: (updatedItem) => onUpdate(updatedItem, originalSlug),
         );
       },
     );

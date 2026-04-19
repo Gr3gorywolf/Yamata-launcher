@@ -173,7 +173,10 @@ class GameImportService {
       var execName = p.basename(filePath).toLowerCase();
       var execWithParentPath =
           p.join(p.basename(p.dirname(filePath)), execName).toLowerCase();
-      for (var nameVariant in [execName, execWithParentPath]) {
+      for (var nameVariant in [
+        execWithParentPath,
+        execName,
+      ]) {
         var nameVariantHash = StringHelper.hashSha(nameVariant);
         try {
           var foundMetadatas = await RomsRepository()
@@ -193,35 +196,15 @@ class GameImportService {
         );
       }
     }
-    // Try a lookup by filename
+    // Try to scrape directly the rom
     for (var console in inferredConsoles ?? [] as List<CONSOLE_SLUGS>) {
       var slug = RomService.getRomSlug(console.value, filename);
-      if (launchboxRegistry != null && !launchboxRegistry.containsKey(slug)) {
-        break;
-      }
-      try {
-        var foundMetadatas = await RomsRepository()
-            .fetchRomMetadata(slug, RomMetadataLookups.SLUG);
-        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.first;
-          break;
-        }
-      } catch (e) {}
-    }
-    // Try a lookup by the title againgst the registry
-    if (metadata == null && launchboxRegistry != null) {
-      var normalizedFilename = RomService.normalizeRomTitle(
-          StringHelper.removeMisplacedWords(filename));
+      RomInfo? scrapedInfo = await scrapeRomInfo(
+          RomInfo(slug: slug, name: filename, console: console.value),
+          launchboxRegistry: launchboxRegistry);
 
-      for (var console in inferredConsoles ?? [] as List<CONSOLE_SLUGS>) {
-        var normalizedSlug =
-            RomService.getRomSlug(console.value, normalizedFilename);
-        var registryEntry = launchboxRegistry[normalizedSlug];
-        if (registryEntry != null) {
-          metadata = RomMetadata(
-              name: registryEntry.name, console: registryEntry.console);
-          break;
-        }
+      if (scrapedInfo != null) {
+        return scrapedInfo;
       }
     }
     // Try to scrape by serial
@@ -258,14 +241,14 @@ class GameImportService {
             fileSize.toString(), RomMetadataLookups.FILE_SIZE);
         if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
           metadata = foundMetadatas?.firstWhereOrNull((dat) {
-            var matchedConsole =
-                inferredConsoles?.any((data) => data.value == dat.console) ??
-                    false;
-            var matchedName = RomService.normalizeRomTitle(
-                    StringHelper.removeMisplacedWords(filename))
-                .contains(RomService.normalizeRomTitle(
-                    StringHelper.removeMisplacedWords(dat.name)));
-            return matchedName && matchedConsole;
+            var matchedConsole = inferredConsoles
+                ?.firstWhereOrNull((data) => data.value == dat.console);
+            var datSlug = RomService.getRomSlug(dat.console, dat.name,
+                removeMisplacedWords: true);
+            var fileSlug = RomService.getRomSlug(
+                matchedConsole?.value ?? '', filename,
+                removeMisplacedWords: true);
+            return matchedConsole != null && datSlug == fileSlug;
           });
         }
       } catch (e) {}
@@ -296,7 +279,12 @@ class GameImportService {
       {Map<String, LaunchboxRegistry>? launchboxRegistry}) async {
     RomInfo? scrapedInfo;
     if (launchboxRegistry != null && !launchboxRegistry.containsKey(rom.slug)) {
-      return null;
+      var normalizedSlug = RomService.getRomSlug(rom.name, rom.console,
+          removeMisplacedWords: true);
+      if (!launchboxRegistry.containsKey(normalizedSlug)) {
+        return null;
+      }
+      rom.slug = launchboxRegistry[normalizedSlug]!.slug;
     }
     try {
       var foundMetadatas = await RomsRepository()

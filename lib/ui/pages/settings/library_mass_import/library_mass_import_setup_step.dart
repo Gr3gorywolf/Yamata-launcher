@@ -84,14 +84,20 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                     SearchableDropdownFormField<String>(
                       value:
                           selectedConsole.isNotEmpty ? selectedConsole : null,
-                      items: availableConsoles
-                          .map(
-                            (console) => DropdownMenuItem<String>(
-                              value: console.slug ?? '',
-                              child: Text(console.name ?? ''),
-                            ),
-                          )
-                          .toList(),
+                      items: [
+                        const DropdownMenuItem(
+                          value: '',
+                          child: Text('All consoles'),
+                        ),
+                        ...availableConsoles
+                            .map(
+                              (console) => DropdownMenuItem<String>(
+                                value: console.slug ?? '',
+                                child: Text(console.name ?? ''),
+                              ),
+                            )
+                            .toList()
+                      ],
                       onChanged: onSelectConsole,
                       decoration: InputDecoration(
                         hintText: 'All consoles',

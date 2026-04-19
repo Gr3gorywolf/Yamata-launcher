@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/console_service.dart';
+import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
@@ -117,6 +119,15 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
     onUpdate(updatedLibraryItem);
   }
 
+  void handleUpdate(BuildContext context) async {
+    var dialog = await LibraryImportDialog.show(context, (info, path) {
+      final updatedItem = item.libraryItem;
+      updatedItem.rom = info;
+      updatedItem.filePath = path;
+      onUpdate(updatedItem);
+    }, libraryItem: item.libraryItem, canEditConsole: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -191,7 +202,7 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextButton.icon(
-          onPressed: () => onUpdate(item.libraryItem),
+          onPressed: () => handleUpdate(context),
           icon: const Icon(Icons.travel_explore),
           label: const Text('Manual scrape'),
         ),

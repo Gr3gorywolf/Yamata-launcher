@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
+import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -14,17 +15,26 @@ import 'package:yamata_launcher/utils/custom_validators.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
 class LibraryImportDialog extends StatefulWidget {
+  final RomLibraryItem? libraryItem;
+  final bool canEditConsole;
   final Function(RomInfo info, String filePath) onPicked;
 
-  const LibraryImportDialog({super.key, required this.onPicked});
+  LibraryImportDialog(
+      {super.key,
+      required this.onPicked,
+      this.libraryItem,
+      this.canEditConsole = true});
 
   static show(
-    BuildContext context,
-    Function(RomInfo info, String filePath) onPicked,
-  ) {
+      BuildContext context, Function(RomInfo info, String filePath) onPicked,
+      {RomLibraryItem? libraryItem, bool canEditConsole = true}) {
     showDialog(
       context: context,
-      builder: (context) => LibraryImportDialog(onPicked: onPicked),
+      builder: (context) => LibraryImportDialog(
+        onPicked: onPicked,
+        libraryItem: libraryItem,
+        canEditConsole: canEditConsole,
+      ),
     );
   }
 
@@ -45,6 +55,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     'console': FormControl<String>(
       value: '',
       validators: [Validators.required],
+      disabled: !widget.canEditConsole,
     ),
     'romPath': FormControl<String>(
       value: '',
@@ -60,10 +71,24 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     ),
   });
 
+  bool get isEditing => widget.libraryItem != null;
+
   @override
   void initState() {
     super.initState();
     consoles = ConsoleService.getConsoles(includeUnsupported: true);
+    if (isEditing) {
+      final item = widget.libraryItem!;
+      form.control('title').value = item.rom.name;
+      form.control('console').value = item.rom.console;
+      form.control('romPath').value = item.filePath;
+      form.control('portraitUrl').value = item.rom.portrait ?? '';
+      form.control('gameplayUrl').value =
+          item.rom.gameplayCovers?.isNotEmpty == true
+              ? item.rom.gameplayCovers!.first
+              : '';
+      detailsUrl = item.rom.detailsUrl ?? '';
+    }
   }
 
   @override
@@ -87,7 +112,9 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
 
   void _onScrape(RomInfo info) {
     form.control('title').value = info.name;
-    form.control('console').value = info.console;
+    if (widget.canEditConsole) {
+      form.control('console').value = info.console;
+    }
     form.control('portraitUrl').value = info.portrait ?? '';
     form.control('gameplayUrl').value = info.gameplayCovers?.isNotEmpty == true
         ? info.gameplayCovers!.first
@@ -127,7 +154,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     return ReactiveForm(
       formGroup: form,
       child: AlertDialog(
-        title: const Text('Import Game'),
+        title: Text(isEditing ? 'Edit Game Metadata' : 'Import Game'),
         insetPadding:
             const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
         contentPadding: const EdgeInsets.all(10.0),
@@ -225,7 +252,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
             builder: (context, form, _) {
               return TextButton(
                 onPressed: form.valid ? _onImport : null,
-                child: const Text('Import'),
+                child: Text(isEditing ? 'Save' : 'Import'),
               );
             },
           ),

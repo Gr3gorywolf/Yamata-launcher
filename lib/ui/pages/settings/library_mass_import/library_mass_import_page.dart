@@ -46,8 +46,10 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   int _revealedItems = 0;
   bool _isInitialScrapeRunning = false;
 
-  List<LibraryMassImportPreviewItem> get _visibleItems =>
-      _previewItems.values.take(_revealedItems).toList();
+  List<LibraryMassImportPreviewItem> get _visibleItems {
+    final list = _previewItems.values.toList();
+    return list.take(_revealedItems).toList();
+  }
 
   List<LibraryMassImportPreviewItem> get _validGames => _visibleItems
       .where((item) =>
@@ -236,19 +238,45 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
     );
   }
 
-  void _handleUpdate(RomLibraryItem item) {
+  void _handleUpdate(RomLibraryItem item, String originalSlug) {
     var status = item.rom.console == 'unknown' && item.rom.name == 'unknown'
         ? LibraryImportPreviewStatus.NONE
         : LibraryImportPreviewStatus.PARTIAL;
     if (item.rom.isScraped) {
       status = LibraryImportPreviewStatus.COMPLETE;
     }
-    var existingPreviewItem = _previewItems[item.rom.slug];
+    var existingPreviewItem = _previewItems[originalSlug];
     if (existingPreviewItem == null) return;
-    _previewItems[item.rom.slug] = existingPreviewItem.copyWith(
-        isScraped: item.rom.isScraped, matchStatus: status, libraryItem: item);
+
+    var newPreviewItems =
+        Map<String, LibraryMassImportPreviewItem>.from(_previewItems);
+
+    final existing = newPreviewItems.remove(originalSlug);
+
+    if (existing == null) return;
+
+    final entries = newPreviewItems.entries.toList();
+
+    int index = _previewItems.keys.toList().indexOf(originalSlug);
+
+    if (index < 0) index = entries.length;
+
+    entries.insert(
+      index,
+      MapEntry(
+        item.rom.slug,
+        existing.copyWith(
+          isScraped: item.rom.isScraped,
+          matchStatus: status,
+          libraryItem: item,
+        ),
+      ),
+    );
+
+    newPreviewItems = Map.fromEntries(entries);
+
     setState(() {
-      _previewItems;
+      _previewItems = newPreviewItems;
     });
   }
 
@@ -293,7 +321,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
               onStartInitialScrape: _handleStartInitialScrape,
             ),
           _LibraryMassImportStage.review => LibraryMassImportReviewStep(
-              key: const ValueKey('review-state'),
+              key: const ValueKey('review-state-'),
               isInitialScrapeRunning: _isInitialScrapeRunning,
               scrapeProgress: _scrapeProgress,
               validGames: _validGames,

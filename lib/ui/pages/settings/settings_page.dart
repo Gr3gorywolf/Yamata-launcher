@@ -245,6 +245,13 @@ class _SettingsPageState extends State<SettingsPage> {
               onChanged: (v) =>
                   _setSetting(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR, v),
             ),
+            _NavigationTile(
+              icon: Icons.import_export,
+              title: 'Game importer',
+              subtitle:
+                  'Import existing games from your system to the launcher, this will scan the default download path for rom files and add them to the library, it will also try to match the games with the configured platforms and get their metadata.',
+              onTap: () => context.push("/settings/game-importer"),
+            ),
             const _SectionHeader(title: 'Sources'),
             Consumer<DownloadSourcesProvider>(
               builder: (context, provider, child) {

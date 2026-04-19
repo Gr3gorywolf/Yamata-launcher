@@ -5,6 +5,7 @@ import 'package:yamata_launcher/ui/pages/console_roms/console_roms_page.dart';
 import 'package:yamata_launcher/ui/pages/explore/search_results/search_results_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/debriders_settings/debrider_settings_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/game_runners_settings/game_runners_settings_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/platform_catalogs/platform_catalog_sources_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/custom_paths/custom_paths_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/download_sources/download_sources_page.dart';
@@ -105,6 +106,10 @@ final router = GoRouter(
             GoRoute(
               path: 'debrider-settings',
               builder: (context, state) => DebriderSettingsPage(),
+            ),
+            GoRoute(
+              path: 'game-importer',
+              builder: (context, state) => LibraryMassImportPage(),
             ),
           ],
         ),

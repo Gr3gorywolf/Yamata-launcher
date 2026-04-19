@@ -148,7 +148,7 @@ class StringHelper {
         .replaceAll(RegExp(r'\([^)]*\)'), '') // ( ... )
         .replaceAll(RegExp(r'\[[^\]]*\]'), '') // [ ... ]
         .replaceAll(RegExp(r'\{[^}]*\}'), '') // { ... }
-        .replaceAll(RegExp(r'\s{2,}'), ' ') // collapse spaces
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
         .trim();
 
     return cleaned;
@@ -173,6 +173,9 @@ class StringHelper {
 
   static String hash20(String input) =>
       sha1.convert(utf8.encode(input)).toString().substring(0, 20);
+
+  static String hashSha(String input) =>
+      sha1.convert(utf8.encode(input)).toString();
 
   static String generateUUID() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;

@@ -30,7 +30,7 @@ const REDIST_FILE_MATCHES = [
 
 const ENGINE_FILE_MATCHES = ["unity", "sandfall"];
 // removes tokens that are not commonly found on game titles and interfere with the lookup
-const INVALID_TITLE_TOKENS = ['.nkit'];
+const INVALID_TITLE_TOKENS = ['.nkit', 'ROMSLAB', 'sxs-', 'zzz-UNK -'];
 
 const VALID_EXECUTABLE_EXTENSIONS = [
   "exe",

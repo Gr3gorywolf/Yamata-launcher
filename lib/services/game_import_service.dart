@@ -22,6 +22,7 @@ typedef GameImportProgressCallback = void Function(
 class GameImportService {
   // 70mb
   static final double _MAX_ALLOWED_TO_READ = 7e+7;
+  static const int _completeRomInfoBatchSize = 15;
 
   /// Performs a single-pass recursive scan over the selected folder.
   ///
@@ -33,9 +34,13 @@ class GameImportService {
     List<String>? filesToSkip,
     GameImportProgressCallback? onProgress,
     String? consoleFilter,
+    Future<RomInfo> Function(String filePath)? completeRomInfoOverride,
   }) async {
     var discoveredFiles = 0;
     var processedFiles = 0;
+    final completeRomInfoFn = completeRomInfoOverride ?? completeRomInfo;
+    final pendingLookups = <_PendingRomLookup>[];
+    var batchQueue = Future<void>.value();
 
     _notifyProgress(
       onProgress,
@@ -49,37 +54,101 @@ class GameImportService {
       consoleFilter: consoleFilter,
     )) {
       discoveredFiles += 1;
-      var rom = _buildRomInfo(filePath);
-      // Create Futures for each rom
-      Future<RomInfo>(() async {
-        if (rom.console == 'unknown' || rom.name == "unknown") {
-          rom = await completeRomInfo(filePath);
-        }
-        return rom;
-      }).then((rom) {
-        callback(
-          GameImportScanCallbackPayload(
-            currentRom: rom,
-            currentFile: filePath,
+      final rom = _buildRomInfo(filePath);
+      if (rom.console == 'unknown' || rom.name == "unknown") {
+        pendingLookups.add(
+          _PendingRomLookup(
+            filePath: filePath,
+            fallbackRom: rom,
           ),
         );
-        processedFiles += 1;
-        _notifyProgress(
-          onProgress,
-          totalFiles: discoveredFiles,
-          processedFiles: processedFiles,
-        );
-      });
-    }
-    while (processedFiles < discoveredFiles) {
-      // In case the stream finished but some metadata lookups are still running,
-      // keep the progress updated until all files gets processed.
-      await Future.delayed(const Duration(seconds: 1));
+        if (pendingLookups.length >= _completeRomInfoBatchSize) {
+          final currentBatch = List<_PendingRomLookup>.from(pendingLookups);
+          pendingLookups.clear();
+          batchQueue = batchQueue.then((_) async {
+            await _flushPendingLookups(
+              currentBatch,
+              completeRomInfoFn: completeRomInfoFn,
+              onResolved: (payload) {
+                callback(payload);
+                processedFiles += 1;
+                _notifyProgress(
+                  onProgress,
+                  totalFiles: discoveredFiles,
+                  processedFiles: processedFiles,
+                );
+              },
+            );
+          });
+        }
+        continue;
+      }
+
+      callback(
+        GameImportScanCallbackPayload(
+          currentRom: rom,
+          currentFile: filePath,
+        ),
+      );
+      processedFiles += 1;
       _notifyProgress(
         onProgress,
         totalFiles: discoveredFiles,
         processedFiles: processedFiles,
       );
+    }
+
+    if (pendingLookups.isNotEmpty) {
+      final currentBatch = List<_PendingRomLookup>.from(pendingLookups);
+      pendingLookups.clear();
+      batchQueue = batchQueue.then((_) async {
+        await _flushPendingLookups(
+          currentBatch,
+          completeRomInfoFn: completeRomInfoFn,
+          onResolved: (payload) {
+            callback(payload);
+            processedFiles += 1;
+            _notifyProgress(
+              onProgress,
+              totalFiles: discoveredFiles,
+              processedFiles: processedFiles,
+            );
+          },
+        );
+      });
+    }
+
+    await batchQueue;
+  }
+
+  static Future<void> _flushPendingLookups(
+    List<_PendingRomLookup> pendingLookups,
+    {
+    required Future<RomInfo> Function(String filePath) completeRomInfoFn,
+    required void Function(GameImportScanCallbackPayload payload) onResolved,
+  }) async {
+    final resolvedPayloads = await Future.wait(
+      pendingLookups.map((lookup) async {
+        try {
+          final rom = await completeRomInfoFn(lookup.filePath);
+          return GameImportScanCallbackPayload(
+            currentRom: rom,
+            currentFile: lookup.filePath,
+          );
+        } catch (e) {
+          print(
+            'GameImportService lookup warning for ${lookup.filePath}: $e',
+          );
+          return GameImportScanCallbackPayload(
+            currentRom: lookup.fallbackRom,
+            currentFile: lookup.filePath,
+          );
+        }
+      }),
+    );
+
+    for (final payload in resolvedPayloads) {
+      onResolved(payload);
     }
   }
 
@@ -347,5 +416,15 @@ class GameImportScanCallbackPayload {
   GameImportScanCallbackPayload({
     required this.currentRom,
     required this.currentFile,
+  });
+}
+
+class _PendingRomLookup {
+  final String filePath;
+  final RomInfo fallbackRom;
+
+  _PendingRomLookup({
+    required this.filePath,
+    required this.fallbackRom,
   });
 }

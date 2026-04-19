@@ -32,7 +32,6 @@ class LibraryMassImportPage extends StatefulWidget {
 class _LibraryMassImportPageState extends State<LibraryMassImportPage>
     with SingleTickerProviderStateMixin {
   late final List<Console> _availableConsoles;
-  late final TabController _tabController;
 
   Timer? _registryTimer;
   Timer? _scrapeTimer;
@@ -48,8 +47,17 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   List<LibraryMassImportPreviewItem> get _visibleItems =>
       _previewItems.values.take(_revealedItems).toList();
 
-  List<LibraryMassImportPreviewItem> get _validGames =>
-      _visibleItems.where((item) => item.isValid).toList();
+  List<LibraryMassImportPreviewItem> get _validGames => _visibleItems
+      .where((item) =>
+          item.isValid &&
+          item.matchStatus == LibraryImportPreviewStatus.COMPLETE)
+      .toList();
+
+  List<LibraryMassImportPreviewItem> get _needsScrape => _visibleItems
+      .where((item) =>
+          item.isValid &&
+          item.matchStatus == LibraryImportPreviewStatus.PARTIAL)
+      .toList();
 
   List<LibraryMassImportPreviewItem> get _invalidGames =>
       _visibleItems.where((item) => !item.isValid).toList();
@@ -69,7 +77,6 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   void initState() {
     super.initState();
     _availableConsoles = ConsoleService.getConsoles(includeUnsupported: true);
-    _tabController = TabController(length: 2, vsync: this);
     _startRegistrySync();
   }
 
@@ -77,7 +84,6 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   void dispose() {
     _registryTimer?.cancel();
     _scrapeTimer?.cancel();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -129,19 +135,26 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
       var newPreviewItem = null;
       if (_previewItems.containsKey(payload.currentRom.slug)) {
         var existingItem = _previewItems[payload.currentRom.slug]!;
+        var sourceFiles = [...existingItem.sourceFiles, payload.currentFile];
+        sourceFiles.sort((a, b) => a.length.compareTo(b.length));
+        var existingLibraryItem = existingItem.libraryItem;
+        existingLibraryItem.filePath = sourceFiles.first;
         newPreviewItem = existingItem.copyWith(
-          sourceFiles: [...existingItem.sourceFiles, payload.currentFile],
+          sourceFiles: sourceFiles,
+          libraryItem: existingLibraryItem,
         );
       } else {
+        var status = isValid
+            ? LibraryImportPreviewStatus.PARTIAL
+            : LibraryImportPreviewStatus.NONE;
+        if (payload.currentRom.isScraped) {
+          status = LibraryImportPreviewStatus.COMPLETE;
+        }
         newPreviewItem = LibraryMassImportPreviewItem(
             sourceFiles: [payload.currentFile],
-            matchStatus: isValid
-                ? "Found name and console"
-                : "Name or console not found",
-            description: '',
-            confidenceLabel: isValid ? "High" : "Low",
+            matchStatus: status,
             isValid: isValid,
-            isScraped: false,
+            isScraped: payload.currentRom.isScraped,
             libraryItem: RomLibraryItem(
                 filePath: payload.currentFile,
                 isImported: true,
@@ -153,7 +166,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
       setState(() {
         _previewItems;
       });
-      if (isValid) {
+      if (isValid && !payload.currentRom.isScraped) {
         handleAdditionalScrape(newPreviewItem);
       }
     }, onProgress: (progress) {
@@ -173,11 +186,13 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
     if (updatedInfo == null) {
       return;
     }
-    var libItem = item.libraryItem;
+    var updatedItem = _previewItems[item.libraryItem.rom.slug];
+    if (updatedItem == null) return;
+    var libItem = updatedItem.libraryItem;
     libItem.rom = updatedInfo;
-    var newItem = item.copyWith(
+    var newItem = updatedItem.copyWith(
       libraryItem: libItem,
-      matchStatus: "Scraped",
+      matchStatus: LibraryImportPreviewStatus.COMPLETE,
       confidenceLabel: "High",
       isValid: true,
       isScraped: true,
@@ -202,6 +217,22 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  void _handleUpdate(RomLibraryItem item) {
+    var status = item.rom.console == 'unknown' && item.rom.name == 'unknown'
+        ? LibraryImportPreviewStatus.NONE
+        : LibraryImportPreviewStatus.PARTIAL;
+    if (item.rom.isScraped) {
+      status = LibraryImportPreviewStatus.COMPLETE;
+    }
+    var existingPreviewItem = _previewItems[item.rom.slug];
+    if (existingPreviewItem == null) return;
+    _previewItems[item.rom.slug] = existingPreviewItem.copyWith(
+        isScraped: item.rom.isScraped, matchStatus: status, libraryItem: item);
+    setState(() {
+      _previewItems;
+    });
   }
 
   @override
@@ -246,19 +277,16 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
             ),
           _LibraryMassImportStage.review => LibraryMassImportReviewStep(
               key: const ValueKey('review-state'),
-              tabController: _tabController,
               isInitialScrapeRunning: _isInitialScrapeRunning,
               scrapeProgress: _scrapeProgress,
               validGames: _validGames,
               invalidGames: _invalidGames,
+              needsScrapeGames: _needsScrape,
+              filesFound: _revealedItems,
               selectedConsoleName: _selectedConsoleName,
               scanFolder: _scanFolder,
               onBackToSetup: _handleBackToSetup,
-              onManualScrape: (item) {
-                _showPendingMessage(
-                  'Manual scrape for "${item.libraryItem.rom.name}" is visual-only for now.',
-                );
-              },
+              onUpdate: _handleUpdate,
             ),
         },
       ),

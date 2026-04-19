@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/services/game_import_service.dart';
 
 void main() {
@@ -23,7 +24,7 @@ void main() {
       final progressPayloads = <GameImportProgressPayload>[];
       final scanPayloads = <GameImportScanCallbackPayload>[];
 
-      await GameImportService().scanForGames(
+      await GameImportService.scanForGames(
         tempDir.path,
         scanPayloads.add,
         onProgress: progressPayloads.add,
@@ -40,6 +41,48 @@ void main() {
 
       expect(progressPayloads[2].totalFiles, 2);
       expect(progressPayloads[2].processedFiles, 2);
+    });
+
+    test('scanForGames batches completeRomInfo lookups in groups of 15',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('game_import_batching_');
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      for (var i = 0; i < 31; i++) {
+        File('${tempDir.path}/Game $i.exe').writeAsStringSync('a');
+      }
+
+      final scanPayloads = <GameImportScanCallbackPayload>[];
+      var activeLookups = 0;
+      var maxConcurrentLookups = 0;
+
+      await GameImportService.scanForGames(
+        tempDir.path,
+        scanPayloads.add,
+        completeRomInfoOverride: (filePath) async {
+          activeLookups += 1;
+          if (activeLookups > maxConcurrentLookups) {
+            maxConcurrentLookups = activeLookups;
+          }
+
+          await Future.delayed(const Duration(milliseconds: 20));
+          activeLookups -= 1;
+
+          return RomInfo(
+            slug: filePath,
+            name: filePath,
+            console: 'windows',
+          );
+        },
+      );
+
+      expect(scanPayloads.length, 31);
+      expect(maxConcurrentLookups, lessThanOrEqualTo(15));
     });
   });
 }

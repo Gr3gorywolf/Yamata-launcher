@@ -1,29 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_card.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
+import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item.dart';
 
 class LibraryMassImportReviewStep extends StatelessWidget {
-  final TabController tabController;
   final bool isInitialScrapeRunning;
   final double scrapeProgress;
+  final int filesFound;
   final List<LibraryMassImportPreviewItem> validGames;
+  final List<LibraryMassImportPreviewItem> needsScrapeGames;
   final List<LibraryMassImportPreviewItem> invalidGames;
   final String selectedConsoleName;
   final String scanFolder;
   final VoidCallback onBackToSetup;
-  final ValueChanged<LibraryMassImportPreviewItem> onManualScrape;
+  final Function(RomLibraryItem) onUpdate;
 
-  const LibraryMassImportReviewStep({
+  LibraryMassImportReviewStep({
     super.key,
-    required this.tabController,
     required this.isInitialScrapeRunning,
     required this.scrapeProgress,
     required this.validGames,
+    required this.filesFound,
+    required this.needsScrapeGames,
     required this.invalidGames,
     required this.selectedConsoleName,
     required this.scanFolder,
     required this.onBackToSetup,
-    required this.onManualScrape,
+    required this.onUpdate,
   });
 
   @override
@@ -48,24 +52,9 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              summaryLabel,
-                              style: theme.textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              isInitialScrapeRunning
-                                  ? 'Preview items are being streamed in as the importer finds candidates.'
-                                  : 'Valid games can be completed immediately, while invalid games can be fixed with manual scrape.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.75),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          summaryLabel,
+                          style: theme.textTheme.titleLarge,
                         ),
                       ),
                       TextButton.icon(
@@ -75,14 +64,18 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 7),
                   if (isInitialScrapeRunning)
                     LinearProgressIndicator(value: scrapeProgress),
                   if (isInitialScrapeRunning) const SizedBox(height: 14),
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                    spacing: 0,
+                    runSpacing: 0,
                     children: [
+                      _LibraryMassImportReviewChip(
+                        icon: Icons.search,
+                        label: '${filesFound} files found',
+                      ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.check_circle_outline,
                         label: '${validGames.length} valid games',
@@ -90,6 +83,11 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                       _LibraryMassImportReviewChip(
                         icon: Icons.error_outline,
                         label: '${invalidGames.length} invalid games',
+                      ),
+                      _LibraryMassImportReviewChip(
+                        icon: Icons.sync,
+                        label:
+                            '${needsScrapeGames.length} games needs scraping',
                       ),
                       _LibraryMassImportReviewChip(
                         icon: Icons.videogame_asset,
@@ -109,35 +107,51 @@ class LibraryMassImportReviewStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          TabBar(
-            controller: tabController,
-            tabs: [
-              Tab(text: 'Valid (${validGames.length})'),
-              Tab(text: 'Invalid (${invalidGames.length})'),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: TabBarView(
-              controller: tabController,
-              children: [
-                _LibraryMassImportPreviewList(
-                  items: validGames,
-                  emptyTitle: 'No valid matches yet',
-                  emptyDescription:
-                      'As the initial scrape resolves games they will appear here ready for import.',
-                  onManualScrape: onManualScrape,
-                ),
-                _LibraryMassImportPreviewList(
-                  items: invalidGames,
-                  emptyTitle: 'No invalid games',
-                  emptyDescription:
-                      'This tab will collect files that still need a better match or a manual scrape.',
-                  onManualScrape: onManualScrape,
-                ),
-              ],
-            ),
-          ),
+          DefaultTabController(
+              length: 3,
+              child: Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TabBar(
+                        tabs: [
+                          Tab(text: 'Valid (${validGames.length})'),
+                          Tab(
+                              text:
+                                  'Needs Scrape (${needsScrapeGames.length})'),
+                          Tab(text: 'Invalid (${invalidGames.length})'),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _LibraryMassImportPreviewList(
+                              items: validGames,
+                              emptyTitle: 'No valid matches yet',
+                              emptyDescription:
+                                  'As the initial scrape resolves games they will appear here ready for import.',
+                              onUpdate: onUpdate,
+                            ),
+                            _LibraryMassImportPreviewList(
+                              items: needsScrapeGames,
+                              emptyTitle: 'No games need scraping',
+                              emptyDescription:
+                                  'This tab will collect games that still need a manual scrape.',
+                              onUpdate: onUpdate,
+                            ),
+                            _LibraryMassImportPreviewList(
+                              items: invalidGames,
+                              emptyTitle: 'No invalid games',
+                              emptyDescription:
+                                  'This tab will collect files that still need a better match or a manual scrape.',
+                              onUpdate: onUpdate,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
+              )),
         ],
       ),
     );
@@ -148,13 +162,13 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
   final List<LibraryMassImportPreviewItem> items;
   final String emptyTitle;
   final String emptyDescription;
-  final ValueChanged<LibraryMassImportPreviewItem> onManualScrape;
+  final Function(RomLibraryItem) onUpdate;
 
   const _LibraryMassImportPreviewList({
     required this.items,
     required this.emptyTitle,
     required this.emptyDescription,
-    required this.onManualScrape,
+    required this.onUpdate,
   });
 
   @override
@@ -201,7 +215,7 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
         final item = items[index];
         return LibraryMassImportPreviewCard(
           item: item,
-          onManualScrape: () => onManualScrape(item),
+          onUpdate: (updatedItem) => onUpdate(updatedItem),
         );
       },
     );

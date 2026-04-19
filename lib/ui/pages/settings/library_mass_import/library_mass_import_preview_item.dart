@@ -1,21 +1,23 @@
 import 'package:yamata_launcher/models/rom_library_item.dart';
 
+enum LibraryImportPreviewStatus {
+  COMPLETE,
+  PARTIAL,
+  NONE,
+}
+
 class LibraryMassImportPreviewItem {
   final RomLibraryItem libraryItem;
   final List<String> sourceFiles;
-  final String matchStatus;
-  final String description;
-  final String confidenceLabel;
   final bool isValid;
+  final LibraryImportPreviewStatus matchStatus;
   final bool isScraped;
 
   const LibraryMassImportPreviewItem({
     required this.libraryItem,
     required this.sourceFiles,
-    required this.matchStatus,
-    required this.description,
-    required this.confidenceLabel,
     required this.isValid,
+    required this.matchStatus,
     required this.isScraped,
   });
 
@@ -23,7 +25,7 @@ class LibraryMassImportPreviewItem {
   LibraryMassImportPreviewItem copyWith({
     RomLibraryItem? libraryItem,
     List<String>? sourceFiles,
-    String? matchStatus,
+    LibraryImportPreviewStatus? matchStatus,
     String? description,
     String? confidenceLabel,
     bool? isValid,
@@ -33,8 +35,6 @@ class LibraryMassImportPreviewItem {
       libraryItem: libraryItem ?? this.libraryItem,
       sourceFiles: List<String>.from(sourceFiles ?? this.sourceFiles),
       matchStatus: matchStatus ?? this.matchStatus,
-      description: description ?? this.description,
-      confidenceLabel: confidenceLabel ?? this.confidenceLabel,
       isValid: isValid ?? this.isValid,
       isScraped: isScraped ?? this.isScraped,
     );

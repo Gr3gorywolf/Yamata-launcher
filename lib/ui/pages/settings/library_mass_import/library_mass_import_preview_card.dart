@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
+import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 
 class LibraryMassImportPreviewCard extends StatelessWidget {
   final LibraryMassImportPreviewItem item;
-  final VoidCallback onManualScrape;
+  final Function(RomLibraryItem) onUpdate;
 
   const LibraryMassImportPreviewCard({
     super.key,
     required this.item,
-    required this.onManualScrape,
+    required this.onUpdate,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusColor =
-        item.isValid ? Colors.green.shade600 : theme.colorScheme.error;
     final consoleName =
         ConsoleService.getConsoleFromName(item.libraryItem.rom.console)?.name ??
             item.libraryItem.rom.console.toUpperCase();
@@ -30,10 +30,8 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
             final isCompact = constraints.maxWidth < 620;
 
             return Flex(
-              direction: isCompact ? Axis.vertical : Axis.horizontal,
-              crossAxisAlignment: isCompact
-                  ? CrossAxisAlignment.start
-                  : CrossAxisAlignment.center,
+              direction: Axis.horizontal,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
@@ -48,23 +46,12 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(width: isCompact ? 0 : 16, height: isCompact ? 16 : 0),
-                if (isCompact)
-                  _LibraryMassImportPreviewCardContent(
-                    item: item,
-                    consoleName: consoleName,
-                    statusColor: statusColor,
-                    onManualScrape: onManualScrape,
-                  )
-                else
-                  Expanded(
-                    child: _LibraryMassImportPreviewCardContent(
-                      item: item,
-                      consoleName: consoleName,
-                      statusColor: statusColor,
-                      onManualScrape: onManualScrape,
-                    ),
-                  ),
+                SizedBox(width: 16),
+                _LibraryMassImportPreviewCardContent(
+                  item: item,
+                  consoleName: consoleName,
+                  onUpdate: onUpdate,
+                )
               ],
             );
           },
@@ -74,18 +61,61 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
   }
 }
 
+class _LibraryMassImportPreviewItemStatus {
+  final LibraryMassImportPreviewItem item;
+  _LibraryMassImportPreviewItemStatus(this.item);
+  String get label {
+    switch (item.matchStatus) {
+      case LibraryImportPreviewStatus.COMPLETE:
+        return "Matched and scraped";
+      case LibraryImportPreviewStatus.PARTIAL:
+        return "Needs scraping";
+      case LibraryImportPreviewStatus.NONE:
+        return "Invalid match";
+    }
+  }
+
+  String get confidenceLabel {
+    switch (item.matchStatus) {
+      case LibraryImportPreviewStatus.COMPLETE:
+        return "High";
+      case LibraryImportPreviewStatus.PARTIAL:
+        return "Medium";
+      case LibraryImportPreviewStatus.NONE:
+        return "Low";
+    }
+  }
+}
+
 class _LibraryMassImportPreviewCardContent extends StatelessWidget {
   final LibraryMassImportPreviewItem item;
   final String consoleName;
-  final Color statusColor;
-  final VoidCallback onManualScrape;
+  final Function(RomLibraryItem) onUpdate;
 
-  const _LibraryMassImportPreviewCardContent({
+  _LibraryMassImportPreviewCardContent({
     required this.item,
     required this.consoleName,
-    required this.statusColor,
-    required this.onManualScrape,
+    required this.onUpdate,
   });
+
+  late final _LibraryMassImportPreviewItemStatus dataByConfidence =
+      _LibraryMassImportPreviewItemStatus(item);
+  StatusTagType get statusColor {
+    switch (item.matchStatus) {
+      case LibraryImportPreviewStatus.COMPLETE:
+        return StatusTagType.success;
+      case LibraryImportPreviewStatus.PARTIAL:
+        return StatusTagType.warning;
+      case LibraryImportPreviewStatus.NONE:
+        return StatusTagType.error;
+    }
+  }
+
+  void selectItemSourceFile(String source) {
+    final updatedLibraryItem = item.libraryItem;
+    updatedLibraryItem.filePath = source;
+    onUpdate(updatedLibraryItem);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,47 +133,65 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
               item.libraryItem.rom.name,
               style: theme.textTheme.titleMedium,
             ),
-            _LibraryMassImportStatusBadge(
-              color: statusColor,
-              label: item.matchStatus,
+            StatusTag(
+              size: StatusTagSize.sm,
+              text: dataByConfidence.label,
+              type: statusColor,
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        const SizedBox(height: 3),
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             _LibraryMassImportCardInfoChip(
               icon: Icons.videogame_asset_outlined,
               label: consoleName,
             ),
+            const SizedBox(width: 12),
             _LibraryMassImportCardInfoChip(
               icon: Icons.analytics_outlined,
-              label: item.confidenceLabel,
+              label: dataByConfidence.confidenceLabel,
             ),
           ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          item.description,
-          style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
         ...item.sourceFiles.map(
           (source) => Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: Text(
-              source,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.68),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              onTap: item.sourceFiles.length > 1
+                  ? () => selectItemSourceFile(source)
+                  : null,
+              child: Row(
+                children: [
+                  if (item.sourceFiles.length > 1) ...[
+                    Icon(
+                        item.libraryItem.filePath == source
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 16),
+                    const SizedBox(width: 6),
+                  ],
+                  Wrap(
+                    children: [
+                      Text(
+                        source,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.68),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
-        const SizedBox(height: 14),
-        OutlinedButton.icon(
-          onPressed: onManualScrape,
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => onUpdate(item.libraryItem),
           icon: const Icon(Icons.travel_explore),
           label: const Text('Manual scrape'),
         ),
@@ -164,7 +212,6 @@ class _LibraryMassImportCardInfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),

@@ -130,10 +130,15 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
-        Text(
-          item.sourceFile,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.68),
+        ...item.sourceFiles.map(
+          (source) => Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: Text(
+              source,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.68),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 14),

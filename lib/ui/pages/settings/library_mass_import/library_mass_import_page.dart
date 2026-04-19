@@ -41,12 +41,12 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   String _scanFolder = '';
   String _selectedConsole = '';
   List<LaunchboxRegistry> _launchboxRegistry = [];
-  List<LibraryMassImportPreviewItem> _previewItems = const [];
+  Map<String, LibraryMassImportPreviewItem> _previewItems = {};
   int _revealedItems = 0;
   bool _isInitialScrapeRunning = false;
 
   List<LibraryMassImportPreviewItem> get _visibleItems =>
-      _previewItems.take(_revealedItems).toList();
+      _previewItems.values.take(_revealedItems).toList();
 
   List<LibraryMassImportPreviewItem> get _validGames =>
       _visibleItems.where((item) => item.isValid).toList();
@@ -126,25 +126,36 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
     await GameImportService.scanForGames(_scanFolder, (payload) {
       var isValid = payload.currentRom.name != 'unknown' &&
           payload.currentRom.console != 'unknown';
+      var newPreviewItem = null;
+      if (_previewItems.containsKey(payload.currentRom.slug)) {
+        var existingItem = _previewItems[payload.currentRom.slug]!;
+        newPreviewItem = existingItem.copyWith(
+          sourceFiles: [...existingItem.sourceFiles, payload.currentFile],
+        );
+      } else {
+        newPreviewItem = LibraryMassImportPreviewItem(
+            sourceFiles: [payload.currentFile],
+            matchStatus: isValid
+                ? "Found name and console"
+                : "Name or console not found",
+            description: '',
+            confidenceLabel: isValid ? "High" : "Low",
+            isValid: isValid,
+            isScraped: false,
+            libraryItem: RomLibraryItem(
+                filePath: payload.currentFile,
+                isImported: true,
+                addedAt: DateTime.now(),
+                rom: payload.currentRom));
+      }
 
-      var newPreviewItem = LibraryMassImportPreviewItem(
-          sourceFile: payload.currentFile,
-          matchStatus:
-              isValid ? "Found name and console" : "Name or console not found",
-          description: '',
-          confidenceLabel: isValid ? "High" : "Low",
-          isValid: isValid,
-          isScraped: false,
-          libraryItem: RomLibraryItem(
-              filePath: payload.currentFile,
-              isImported: true,
-              addedAt: DateTime.now(),
-              rom: payload.currentRom));
-      _previewItems = [..._previewItems, newPreviewItem];
+      _previewItems[payload.currentRom.slug] = newPreviewItem;
       setState(() {
         _previewItems;
       });
-      handleAdditionalScrape(newPreviewItem);
+      if (isValid) {
+        handleAdditionalScrape(newPreviewItem);
+      }
     }, onProgress: (progress) {
       setState(() {
         _revealedItems = progress.totalFiles;
@@ -171,12 +182,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
       isValid: true,
       isScraped: true,
     );
-    _previewItems = _previewItems.map((item) {
-      if (item.sourceFile == newItem.sourceFile) {
-        return newItem;
-      }
-      return item;
-    }).toList();
+    _previewItems[item.libraryItem.rom.slug] = newItem;
     setState(() {
       _previewItems;
     });
@@ -188,7 +194,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
       _stage = _LibraryMassImportStage.setup;
       _isInitialScrapeRunning = false;
       _revealedItems = 0;
-      _previewItems = [];
+      _previewItems = {};
     });
   }
 

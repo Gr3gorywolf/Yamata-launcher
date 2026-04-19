@@ -2,7 +2,7 @@ import 'package:yamata_launcher/models/rom_library_item.dart';
 
 class LibraryMassImportPreviewItem {
   final RomLibraryItem libraryItem;
-  final String sourceFile;
+  final List<String> sourceFiles;
   final String matchStatus;
   final String description;
   final String confidenceLabel;
@@ -11,7 +11,7 @@ class LibraryMassImportPreviewItem {
 
   const LibraryMassImportPreviewItem({
     required this.libraryItem,
-    required this.sourceFile,
+    required this.sourceFiles,
     required this.matchStatus,
     required this.description,
     required this.confidenceLabel,
@@ -22,7 +22,7 @@ class LibraryMassImportPreviewItem {
   // implement a copywith method
   LibraryMassImportPreviewItem copyWith({
     RomLibraryItem? libraryItem,
-    String? sourceFile,
+    List<String>? sourceFiles,
     String? matchStatus,
     String? description,
     String? confidenceLabel,
@@ -31,7 +31,7 @@ class LibraryMassImportPreviewItem {
   }) {
     return LibraryMassImportPreviewItem(
       libraryItem: libraryItem ?? this.libraryItem,
-      sourceFile: sourceFile ?? this.sourceFile,
+      sourceFiles: List<String>.from(sourceFiles ?? this.sourceFiles),
       matchStatus: matchStatus ?? this.matchStatus,
       description: description ?? this.description,
       confidenceLabel: confidenceLabel ?? this.confidenceLabel,

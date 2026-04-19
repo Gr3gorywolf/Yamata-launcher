@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
+import 'package:yamata_launcher/constants/files_constants.dart';
 
 extension StringNormalize on String {
   String normalizeForSearch() {
@@ -135,7 +136,8 @@ class StringHelper {
     return input.replaceAll(invalidChars, '_');
   }
 
-  static String getTitleFromFile(String filePath) {
+  static String getTitleFromFile(String filePath,
+      {bool deleteNumerationPrefix = false}) {
     final segments = filePath.split(RegExp(r'[\\/]+'));
     final fileName = segments.isNotEmpty ? segments.last : filePath;
 
@@ -144,14 +146,32 @@ class StringHelper {
         dotIndex != -1 ? fileName.substring(0, dotIndex) : fileName;
 
     // Remove anything between (), [], {}
-    final cleaned = rawTitle
+    var cleaned = rawTitle
         .replaceAll(RegExp(r'\([^)]*\)'), '') // ( ... )
         .replaceAll(RegExp(r'\[[^\]]*\]'), '') // [ ... ]
         .replaceAll(RegExp(r'\{[^}]*\}'), '') // { ... }
         .replaceAll(RegExp(r'\s{2,}'), ' ')
         .trim();
 
+    for (var token in INVALID_TITLE_TOKENS) {
+      cleaned = cleaned.replaceAll(token, '');
+    }
+    if (deleteNumerationPrefix) {
+      return removeNumerationPrefix(cleaned);
+    }
+
     return cleaned;
+  }
+
+  static String removeNumerationPrefix(String input) {
+    final regex = RegExp(r'^\d{4}\s*-\s*(.+)$');
+    final match = regex.firstMatch(input);
+
+    if (match != null) {
+      return match.group(1)!;
+    }
+
+    return input;
   }
 
   static String getDomainName(String url) {
@@ -174,8 +194,11 @@ class StringHelper {
   static String hash20(String input) =>
       sha1.convert(utf8.encode(input)).toString().substring(0, 20);
 
-  static String hashSha(String input) =>
-      sha1.convert(utf8.encode(input)).toString();
+  static String hashSha(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha1.convert(bytes);
+    return digest.toString().toLowerCase();
+  }
 
   static String generateUUID() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;

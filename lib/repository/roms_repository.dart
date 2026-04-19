@@ -7,13 +7,16 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/library_dao.dart';
 import 'package:yamata_launcher/models/console.dart';
+import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
+import 'package:yamata_launcher/models/rom_metadata.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/utils/cached_fetch.dart';
 import 'package:yamata_launcher/utils/plain_text_search.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
 import '../providers/library_provider.dart';
 
@@ -116,7 +119,7 @@ class RomsRepository {
   }
 
   Future<List<String>> fetchWindowsExecutableNames() async {
-    const url =
+    var url =
         "https://raw.githubusercontent.com/Roblox-Thot/discord-activitys/refs/heads/main/json/executables.json";
     final result = await CachedFetch.withContentLengthSignature<List<String>>(
         key: "executables",
@@ -124,7 +127,7 @@ class RomsRepository {
         parser: (json) {
           List<String> executables = [];
           for (final item in json) {
-            if (REDIST_FILE_MATCHES
+            if ([...REDIST_FILE_MATCHES, ...ENGINE_FILE_MATCHES]
                 .where((match) => item.toLowerCase().contains(match))
                 .isNotEmpty) {
               continue;
@@ -137,5 +140,57 @@ class RomsRepository {
         },
         timeout: Duration(seconds: 10));
     return result ?? [];
+  }
+
+  Future<List<LaunchboxRegistry>> fetchLaunchboxRegistry() async {
+    var url = "${AppConstants.libretroMetadatasSite}/libretro-index.json";
+    final result =
+        await CachedFetch.withContentLengthSignature<List<LaunchboxRegistry>>(
+            key: "launchbox_registry",
+            url: url,
+            parser: (json) {
+              print("Parsing launchbox registry");
+              List<LaunchboxRegistry> registry = [];
+              for (final item in json) {
+                registry.add(LaunchboxRegistry.fromJson(item));
+              }
+              return registry;
+            },
+            timeout: Duration(seconds: 10));
+    return result ?? [];
+  }
+
+  Future<List<RomMetadata>?> fetchRomMetadata(
+      String value, RomMetadataLookups lookup) async {
+    var url =
+        "${AppConstants.libretroMetadatasSite}/${lookup.value}/${value.toLowerCase().trim()}.json";
+    final result =
+        await CachedFetch.withContentLengthSignature<List<RomMetadata>>(
+            key: "rom_metadata_${lookup.value}_$value",
+            url: url,
+            parser: (json) {
+              List<RomMetadata> metadatas = [];
+              if (lookup == RomMetadataLookups.SLUG) {
+                // for slugs, the libretro metadatas site returns a list of matching roms with their metadata, since multiple roms can share the same slug (for example, different versions of the same game)
+                var newMetadata = RomMetadata.fromJson(json);
+                if (json['releaseDate'] != null ||
+                    json['rating'] != null ||
+                    json['portraitUrl'] != null) {
+                  newMetadata.info = RomInfo.fromJson(json);
+                }
+                metadatas.add(newMetadata);
+              } else if (lookup != RomMetadataLookups.EXEC_NAME) {
+                for (final item in json) {
+                  metadatas.add(RomMetadata.fromJson(item));
+                }
+              } else {
+                // for executable names, we return a single metadata with the name as value, since the libretro metadatas site returns a list of executable names without any additional metadata
+                metadatas
+                    .add(RomMetadata(name: json['name'], console: "windows"));
+              }
+              return metadatas;
+            },
+            timeout: Duration(seconds: 10));
+    return result;
   }
 }

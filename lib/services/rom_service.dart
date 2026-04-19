@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:collection/collection.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:yamata_launcher/app_router.dart';
@@ -16,6 +17,7 @@ import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:crc/crc.dart';
 
 class RomService {
   static List<String> windowsGamesFileNames = [];
@@ -123,30 +125,27 @@ class RomService {
   static String normalizeRomTitle(String input, {bool deleteRunes = false}) {
     var cleaned =
         input.toLowerCase().replaceAll(RegExp(r'\(.*?\)|\[.*?\]'), '').trim();
-
-    cleaned = cleaned
-        .replaceAll(RegExp(r'[áàäâãåāăą]'), 'a')
-        .replaceAll(RegExp(r'[éèëêēĕėęě]'), 'e')
-        .replaceAll(RegExp(r'[íìïîĩīĭįı]'), 'i')
-        .replaceAll(RegExp(r'[óòöôõōŏőø]'), 'o')
-        .replaceAll(RegExp(r'[úùüûũūŭůűų]'), 'u')
-        .replaceAll(RegExp(r'[çćĉċč]'), 'c')
-        .replaceAll(RegExp(r'[ñńņň]'), 'n')
-        .replaceAll(RegExp(r'[ýÿŷ]'), 'y')
-        .replaceAll(RegExp(r'[śŝşš]'), 's')
-        .replaceAll(RegExp(r'[łĺļľŀ]'), 'l')
-        .replaceAll(RegExp(r'[žźż]'), 'z')
-        .replaceAll(RegExp(r'[ğĝġģ]'), 'g')
-        .replaceAll(RegExp(r'[řŕŗ]'), 'r')
-        .replaceAll(RegExp(r'[ťţŧ]'), 't')
-        .replaceAll(RegExp(r'[ďđ]'), 'd')
-        .replaceAll(RegExp(r'[þ]'), 'th')
-        .replaceAll(RegExp(r'[ß]'), 'ss')
-        .replaceAll(RegExp(r'[æ]'), 'ae')
-        .replaceAll(RegExp(r'[œ]'), 'oe');
-
-    if (deleteRunes) {
-      return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
+    if (!deleteRunes) {
+      cleaned = cleaned
+          .replaceAll(RegExp(r'[áàäâãåāăą]'), 'a')
+          .replaceAll(RegExp(r'[éèëêēĕėęě]'), 'e')
+          .replaceAll(RegExp(r'[íìïîĩīĭįı]'), 'i')
+          .replaceAll(RegExp(r'[óòöôõōŏőø]'), 'o')
+          .replaceAll(RegExp(r'[úùüûũūŭůűų]'), 'u')
+          .replaceAll(RegExp(r'[çćĉċč]'), 'c')
+          .replaceAll(RegExp(r'[ñńņň]'), 'n')
+          .replaceAll(RegExp(r'[ýÿŷ]'), 'y')
+          .replaceAll(RegExp(r'[śŝşš]'), 's')
+          .replaceAll(RegExp(r'[łĺļľŀ]'), 'l')
+          .replaceAll(RegExp(r'[žźż]'), 'z')
+          .replaceAll(RegExp(r'[ğĝġģ]'), 'g')
+          .replaceAll(RegExp(r'[řŕŗ]'), 'r')
+          .replaceAll(RegExp(r'[ťţŧ]'), 't')
+          .replaceAll(RegExp(r'[ďđ]'), 'd')
+          .replaceAll(RegExp(r'[þ]'), 'th')
+          .replaceAll(RegExp(r'[ß]'), 'ss')
+          .replaceAll(RegExp(r'[æ]'), 'ae')
+          .replaceAll(RegExp(r'[œ]'), 'oe');
     }
 
     return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
@@ -218,5 +217,21 @@ class RomService {
       return null;
     }
     return File(outputPath);
+  }
+
+  static Future<String> calculateCrc32(String path) async {
+    final file = File(path);
+
+    if (!await file.exists()) {
+      throw FileSystemException('File not found', path);
+    }
+
+    int crc = 0;
+
+    await for (final chunk in file.openRead()) {
+      crc = getCrc32(chunk, crc);
+    }
+
+    return crc.toUnsigned(32).toRadixString(16).padLeft(8, '0').toUpperCase();
   }
 }

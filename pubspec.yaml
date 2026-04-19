@@ -77,6 +77,8 @@ dependencies:
       ref: "main"
   encrypt: ^5.0.3
   intl: ^0.19.0
+  crc: ^0.0.2
+  archive: ^4.0.9
 
 
 

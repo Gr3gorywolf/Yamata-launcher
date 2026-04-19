@@ -15,6 +15,9 @@ class AppConstants {
   static String guideLink =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki";
 
+  static String libretroMetadatasSite =
+      "https://gr3gorywolf.github.io/libretro-metadatas";
+
   static String gameRunnersGuideEntry =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Game-runners";
 

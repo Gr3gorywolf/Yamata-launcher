@@ -1,3 +1,5 @@
+import 'package:yamata_launcher/constants/console_constants.dart';
+
 const SETUP_FILE_NAMES = [
   "setup.exe",
   "install.exe",
@@ -25,6 +27,10 @@ const REDIST_FILE_MATCHES = [
   "wmpappcompat",
   ".net"
 ];
+
+const ENGINE_FILE_MATCHES = ["unity", "sandfall"];
+// removes tokens that are not commonly found on game titles and interfere with the lookup
+const INVALID_TITLE_TOKENS = ['.nkit'];
 
 const VALID_EXECUTABLE_EXTENSIONS = [
   "exe",
@@ -81,71 +87,92 @@ const VALID_EXECUTABLE_EXTENSIONS = [
   "elf64"
 ];
 
-const VALID_ROM_EXTENSIONS = [
+final Map<String, List<CONSOLE_SLUGS>> CONSOLE_EXTENSIONS = {
   // Nintendo
-  'nes', // NES
-  'fds', // Famicom Disk System
-  'sfc', // SNES
-  'smc', // SNES
-  'n64', // Nintendo 64
-  'z64', // Nintendo 64
-  'v64', // Nintendo 64
-  'gb', // Game Boy
-  'gbc', // Game Boy Color
-  'gba', // Game Boy Advance
-  'nds', // Nintendo DS
-  '3ds', // Nintendo 3DS
-  'cia', // Nintendo 3DS
-  'wad', // Wii / Virtual Console
-  'iso', // GameCube / Wii
-  'gcm', // GameCube
-  'wbfs', // Wii
-  'wux', // Wii U
-  'wud', // Wii U
-  'nsp', // Nintendo Switch
-  'xci', // Nintendo Switch
-  'nsz', // Nintendo Switch
-  'xcz', // Nintendo Switch
-  'vb', // Virtual Boy
+  'nes': [CONSOLE_SLUGS.nes],
+  'fds': [CONSOLE_SLUGS.fds],
+  'sfc': [CONSOLE_SLUGS.snes],
+  'smc': [CONSOLE_SLUGS.snes],
+  'n64': [CONSOLE_SLUGS.n64],
+  'z64': [CONSOLE_SLUGS.n64],
+  'v64': [CONSOLE_SLUGS.n64],
+  'gb': [CONSOLE_SLUGS.gb],
+  'gbc': [CONSOLE_SLUGS.gbc],
+  'gba': [CONSOLE_SLUGS.gba],
+  'nds': [CONSOLE_SLUGS.nds],
+  '3ds': [CONSOLE_SLUGS.n3ds],
+  'cia': [CONSOLE_SLUGS.n3ds],
+  'wad': [CONSOLE_SLUGS.wii],
+  'gcm': [CONSOLE_SLUGS.gc],
+  'wbfs': [CONSOLE_SLUGS.wii],
+  'wux': [CONSOLE_SLUGS.wiiu],
+  'wud': [CONSOLE_SLUGS.wiiu],
+  'nsp': [CONSOLE_SLUGS.nSwitch],
+  'xci': [CONSOLE_SLUGS.nSwitch],
+  'nsz': [CONSOLE_SLUGS.nSwitch],
+  'xcz': [CONSOLE_SLUGS.nSwitch],
+  'vb': [CONSOLE_SLUGS.virtualboy],
+  'rvz': [CONSOLE_SLUGS.gc, CONSOLE_SLUGS.wii],
 
   // Sony
-  'psx', // PlayStation
-  'ps1', // PlayStation
-  'bin', // PlayStation / Sega CD
-  'cue', // PlayStation / Sega CD
-  'img', // PlayStation
-  'ccd', // PlayStation
-  'sub', // PlayStation
-  'mdf', // PlayStation
-  'pbp', // PSP / PS1 eboot
-  'iso', // PS2 / PSP / PS3
-  'cso', // PSP compressed ISO
-  'chd', // PS1 / PS2 / PSP
-  'pkg', // PS3
-  'elf', // PS3 / homebrew
+  'psx': [CONSOLE_SLUGS.psx],
+  'ps1': [CONSOLE_SLUGS.psx],
+  'img': [CONSOLE_SLUGS.psx],
+  'ccd': [CONSOLE_SLUGS.psx],
+  'sub': [CONSOLE_SLUGS.psx],
+  'mdf': [CONSOLE_SLUGS.psx],
+  'cso': [CONSOLE_SLUGS.psp],
+  'pkg': [CONSOLE_SLUGS.ps3, CONSOLE_SLUGS.psp, CONSOLE_SLUGS.vita],
+  'elf': [CONSOLE_SLUGS.ps3],
 
   // Sega
-  'sms', // Master System
-  'gg', // Game Gear
-  'sg', // SG-1000
-  'gen', // Genesis
-  'md', // Mega Drive
-  '32x', // Sega 32X
-  'cue', // Sega CD
-  'iso', // Sega CD
-  'cdi', // Dreamcast
-  'gdi', // Dreamcast
+  'sms': [CONSOLE_SLUGS.master],
+  'gg': [CONSOLE_SLUGS.gamegear],
+  'sg': [CONSOLE_SLUGS.sg1000],
+  'gen': [CONSOLE_SLUGS.genesis],
+  'md': [CONSOLE_SLUGS.genesis],
+  '32x': [CONSOLE_SLUGS.sega32x],
+  'gdi': [CONSOLE_SLUGS.dreamcast],
 
   // Arcade
-  'rom', // Arcade generic
+  'rom': [CONSOLE_SLUGS.arcade],
 
   // PC / OTHERS
-  'exe', // DOS / PC
-  'com', // DOS
-  'dsk', // Amstrad / Apple II
-  'chd',
-  'rvz',
-];
+  'exe': [CONSOLE_SLUGS.windows],
+  'com': [CONSOLE_SLUGS.dos],
+
+  // ==========================================
+  // Shared extensions
+  // ==========================================
+
+  'iso': [
+    CONSOLE_SLUGS.gc,
+    CONSOLE_SLUGS.wii,
+    CONSOLE_SLUGS.ps2,
+    CONSOLE_SLUGS.psp,
+    CONSOLE_SLUGS.ps3,
+    CONSOLE_SLUGS.segacd
+  ],
+
+  'bin': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.segacd],
+
+  'cue': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.segacd],
+
+  'chd': [
+    CONSOLE_SLUGS.psx,
+    CONSOLE_SLUGS.ps2,
+    CONSOLE_SLUGS.psp,
+    CONSOLE_SLUGS.arcade
+  ],
+
+  'cdi': [CONSOLE_SLUGS.dreamcast, CONSOLE_SLUGS.cdi],
+
+  'pbp': [CONSOLE_SLUGS.psp, CONSOLE_SLUGS.psx],
+
+  'dsk': [CONSOLE_SLUGS.appleii, CONSOLE_SLUGS.cpc],
+};
+
+final VALID_ROM_EXTENSIONS = CONSOLE_EXTENSIONS.keys.toList();
 
 const VALID_COMPRESSED_EXTENSIONS = [
   'zip',

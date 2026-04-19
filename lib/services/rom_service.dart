@@ -151,8 +151,14 @@ class RomService {
     return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
   }
 
-  static String getRomSlug(String consoleSlug, String romName) {
-    return consoleSlug + "-" + normalizeRomTitle(romName, deleteRunes: true);
+  static String getRomSlug(String consoleSlug, String romName,
+      {bool removeMisplacedWords = false}) {
+    var cleanRomName = removeMisplacedWords
+        ? StringHelper.removeMisplacedWords(romName)
+        : romName;
+    return consoleSlug +
+        "-" +
+        normalizeRomTitle(cleanRomName, deleteRunes: true);
   }
 
   static String getLastPlayedLabel(RomLibraryItem? downloadedRom) {

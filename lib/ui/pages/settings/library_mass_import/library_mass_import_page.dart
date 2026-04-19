@@ -11,10 +11,12 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/game_import_service.dart';
+import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_registry_sync_step.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_review_step.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_setup_step.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
 enum _LibraryMassImportStage {
   syncingRegistry,
@@ -39,7 +41,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   _LibraryMassImportStage _stage = _LibraryMassImportStage.syncingRegistry;
   String _scanFolder = '';
   String _selectedConsole = '';
-  List<LaunchboxRegistry> _launchboxRegistry = [];
+  Map<String, LaunchboxRegistry> _launchboxRegistry = {};
   Map<String, LibraryMassImportPreviewItem> _previewItems = {};
   int _revealedItems = 0;
   bool _isInitialScrapeRunning = false;
@@ -90,8 +92,21 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
   void _startRegistrySync() async {
     try {
       final registry = await RomsRepository().fetchLaunchboxRegistry();
+      var newRegistry = <String, LaunchboxRegistry>{};
+      for (var entry in registry) {
+        var normalizedName = RomService.normalizeRomTitle(
+            StringHelper.removeMisplacedWords(entry.name),
+            deleteRunes: true);
+        var normalizedSlug =
+            RomService.getRomSlug(entry.console, normalizedName);
+
+        if (normalizedSlug != entry.slug) {
+          newRegistry[entry.slug] = entry;
+        }
+        newRegistry[normalizedSlug] = entry;
+      }
       setState(() {
-        _launchboxRegistry = registry;
+        _launchboxRegistry = newRegistry;
         _stage = _LibraryMassImportStage.setup;
       });
     } catch (er) {
@@ -173,7 +188,9 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage>
       setState(() {
         _revealedItems = progress.totalFiles;
       });
-    }, consoleFilter: _selectedConsole.isEmpty ? null : _selectedConsole);
+    },
+        consoleFilter: _selectedConsole.isEmpty ? null : _selectedConsole,
+        launchboxRegistry: _launchboxRegistry);
 
     setState(() {
       _isInitialScrapeRunning = false;

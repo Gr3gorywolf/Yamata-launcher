@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
@@ -33,12 +34,11 @@ class GameImportService {
     GameImportScanCallback callback, {
     List<String>? filesToSkip,
     GameImportProgressCallback? onProgress,
+    Map<String, LaunchboxRegistry>? launchboxRegistry,
     String? consoleFilter,
-    Future<RomInfo> Function(String filePath)? completeRomInfoOverride,
   }) async {
     var discoveredFiles = 0;
     var processedFiles = 0;
-    final completeRomInfoFn = completeRomInfoOverride ?? completeRomInfo;
     final pendingLookups = <_PendingRomLookup>[];
     var batchQueue = Future<void>.value();
 
@@ -68,7 +68,7 @@ class GameImportService {
           batchQueue = batchQueue.then((_) async {
             await _flushPendingLookups(
               currentBatch,
-              completeRomInfoFn: completeRomInfoFn,
+              launchboxRegistry: launchboxRegistry,
               onResolved: (payload) {
                 callback(payload);
                 processedFiles += 1;
@@ -104,7 +104,7 @@ class GameImportService {
       batchQueue = batchQueue.then((_) async {
         await _flushPendingLookups(
           currentBatch,
-          completeRomInfoFn: completeRomInfoFn,
+          launchboxRegistry: launchboxRegistry,
           onResolved: (payload) {
             callback(payload);
             processedFiles += 1;
@@ -122,15 +122,16 @@ class GameImportService {
   }
 
   static Future<void> _flushPendingLookups(
-    List<_PendingRomLookup> pendingLookups,
-    {
-    required Future<RomInfo> Function(String filePath) completeRomInfoFn,
-    required void Function(GameImportScanCallbackPayload payload) onResolved,
-  }) async {
+      List<_PendingRomLookup> pendingLookups,
+      {required void Function(GameImportScanCallbackPayload payload) onResolved,
+      Map<String, LaunchboxRegistry>? launchboxRegistry,
+      String? consoleFilter}) async {
     final resolvedPayloads = await Future.wait(
       pendingLookups.map((lookup) async {
         try {
-          final rom = await completeRomInfoFn(lookup.filePath);
+          final rom = await completeRomInfo(lookup.filePath,
+              launchboxRegistry: launchboxRegistry,
+              consoleFilter: consoleFilter);
           return GameImportScanCallbackPayload(
             currentRom: rom,
             currentFile: lookup.filePath,
@@ -153,9 +154,15 @@ class GameImportService {
   }
 
   /// Tries to complete the rom info with multiple strategies, starting with the less expensive ones (filename-based) and going up to more expensive ones (crc-based).
-  static Future<RomInfo> completeRomInfo(String filePath) async {
+  static Future<RomInfo> completeRomInfo(String filePath,
+      {Map<String, LaunchboxRegistry>? launchboxRegistry,
+      String? consoleFilter}) async {
     final extension = p.extension(filePath).replaceFirst('.', '').toLowerCase();
-    final inferredConsoles = CONSOLE_EXTENSIONS[extension];
+    var inferredConsoles = CONSOLE_EXTENSIONS[extension];
+    if (consoleFilter != null && inferredConsoles != null) {
+      inferredConsoles =
+          inferredConsoles.where((c) => c.value == consoleFilter).toList();
+    }
     var filename = _extractRomName(filePath);
     RomMetadata? metadata;
     var foundSingleConsole =
@@ -189,6 +196,9 @@ class GameImportService {
     // Try a lookup by filename
     for (var console in inferredConsoles ?? [] as List<CONSOLE_SLUGS>) {
       var slug = RomService.getRomSlug(console.value, filename);
+      if (launchboxRegistry != null && !launchboxRegistry.containsKey(slug)) {
+        break;
+      }
       try {
         var foundMetadatas = await RomsRepository()
             .fetchRomMetadata(slug, RomMetadataLookups.SLUG);
@@ -197,6 +207,22 @@ class GameImportService {
           break;
         }
       } catch (e) {}
+    }
+    // Try a lookup by the title againgst the registry
+    if (metadata == null && launchboxRegistry != null) {
+      var normalizedFilename = RomService.normalizeRomTitle(
+          StringHelper.removeMisplacedWords(filename));
+
+      for (var console in inferredConsoles ?? [] as List<CONSOLE_SLUGS>) {
+        var normalizedSlug =
+            RomService.getRomSlug(console.value, normalizedFilename);
+        var registryEntry = launchboxRegistry[normalizedSlug];
+        if (registryEntry != null) {
+          metadata = RomMetadata(
+              name: registryEntry.name, console: registryEntry.console);
+          break;
+        }
+      }
     }
     // Try to scrape by serial
     if (metadata == null) {
@@ -231,13 +257,15 @@ class GameImportService {
         var foundMetadatas = await RomsRepository().fetchRomMetadata(
             fileSize.toString(), RomMetadataLookups.FILE_SIZE);
         if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.firstWhereOrNull((console) {
-            var matchedConsole = inferredConsoles
-                    ?.any((data) => data.value == console.console) ??
-                false;
-            var matchedName = RomService.normalizeRomTitle(console.name) ==
-                RomService.normalizeRomTitle(filename);
-            return matchedConsole || matchedName;
+          metadata = foundMetadatas?.firstWhereOrNull((dat) {
+            var matchedConsole =
+                inferredConsoles?.any((data) => data.value == dat.console) ??
+                    false;
+            var matchedName = RomService.normalizeRomTitle(
+                    StringHelper.removeMisplacedWords(filename))
+                .contains(RomService.normalizeRomTitle(
+                    StringHelper.removeMisplacedWords(dat.name)));
+            return matchedName && matchedConsole;
           });
         }
       } catch (e) {}
@@ -264,8 +292,12 @@ class GameImportService {
   }
 
   // Tries to scrape the information from the rom
-  static Future<RomInfo?> scrapeRomInfo(RomInfo rom) async {
+  static Future<RomInfo?> scrapeRomInfo(RomInfo rom,
+      {Map<String, LaunchboxRegistry>? launchboxRegistry}) async {
     RomInfo? scrapedInfo;
+    if (launchboxRegistry != null && !launchboxRegistry.containsKey(rom.slug)) {
+      return null;
+    }
     try {
       var foundMetadatas = await RomsRepository()
           .fetchRomMetadata(rom.slug, RomMetadataLookups.SLUG);

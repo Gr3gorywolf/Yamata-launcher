@@ -229,4 +229,23 @@ class StringHelper {
     final us = NumberFormat.decimalPattern('en_US');
     return us.format(number);
   }
+
+  /**
+ * Remove words that are commonly misplaced in titles to improve matching accuracy.
+ */
+  static String removeMisplacedWords(String input) {
+    var wordsToRemove = ["the", "and", "of", "a"];
+
+    var wordPattern = r'\b(' + wordsToRemove.join('|') + r')\b\s*';
+
+    var symbolPattern = r'\s*&\s*';
+
+    var pattern = RegExp('($wordPattern|$symbolPattern)', caseSensitive: false);
+
+    var result = input.replaceAll(pattern, ' ');
+
+    result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    return result;
+  }
 }

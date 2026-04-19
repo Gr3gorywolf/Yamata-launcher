@@ -11,6 +11,7 @@ import 'package:yamata_launcher/repository/download_sources_repository.dart';
 
 import 'package:yamata_launcher/services/download_sources_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/utils/string_helper.dart';
 
 class _CompilePayload {
   final List<RomInfo> roms;
@@ -60,28 +61,9 @@ bool _isRomMatch(
 
 String _prefix3(String s) => s.length <= 3 ? s : s.substring(0, 3);
 
-/**
- * Remove words that are commonly misplaced in titles to improve matching accuracy.
- */
-String _removeMisplacedWords(String input) {
-  var wordsToRemove = ["the", "and", "of", "a"];
-
-  var wordPattern = r'\b(' + wordsToRemove.join('|') + r')\b\s*';
-
-  var symbolPattern = r'\s*&\s*';
-
-  var pattern = RegExp('($wordPattern|$symbolPattern)', caseSensitive: false);
-
-  var result = input.replaceAll(pattern, ' ');
-
-  result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
-
-  return result;
-}
-
 String _normalizeTitleForMatching(String input) {
   return RomService.normalizeRomTitle(
-    _removeMisplacedWords(input),
+    StringHelper.removeMisplacedWords(input),
     deleteRunes: true,
   );
 }

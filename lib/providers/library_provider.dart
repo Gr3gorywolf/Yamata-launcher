@@ -141,8 +141,19 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateLibraryItem(RomLibraryItem item) async {
+  Future<void> updateLibraryItem(RomLibraryItem item,
+      {String? originalSlug}) async {
     if (db == null) {
+      return;
+    }
+    if (originalSlug != null && originalSlug != item.rom.slug) {
+      // If the slug has changed, we need to remove the old entry and add a new one
+      await LibraryDao(db!).delete(originalSlug);
+      _libraryItems.remove(originalSlug);
+      notifyListeners();
+      Future.microtask(() {
+        addLibraryItem(item);
+      });
       return;
     }
     await LibraryDao(db!).update(item);

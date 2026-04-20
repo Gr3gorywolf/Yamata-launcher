@@ -18,6 +18,7 @@ import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
 import 'package:yamata_launcher/ui/pages/rom_settings_dialog/rom_settings_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
@@ -29,6 +30,7 @@ enum RomLibraryActionSize { small, medium, large }
 
 enum _RomMenuAction {
   settings,
+  editMetadata,
   downloadExtra,
   extractRom,
   openRomFolder,
@@ -130,6 +132,16 @@ class RomLibraryActions extends StatelessWidget {
       });
     }
 
+    handleEditMetadata() async {
+      await LibraryImportDialog.show(context, (rom, newPath) {
+        if (libraryItem == null) return;
+        var originalSlug = libraryItem.rom.slug;
+        libraryItem.rom = rom;
+        libraryProvider.updateLibraryItem(libraryItem,
+            originalSlug: originalSlug);
+      }, libraryItem: libraryItem, canEditConsole: false, canEditPath: false);
+    }
+
     iconButtonStyle() {
       return IconButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.inverseSurface,
@@ -201,6 +213,9 @@ class RomLibraryActions extends StatelessWidget {
                 case _RomMenuAction.settings:
                   handleOpenConfigurations();
                   break;
+                case _RomMenuAction.editMetadata:
+                  handleEditMetadata();
+                  break;
                 case _RomMenuAction.downloadExtra:
                   handleDownloadExtraContent();
                   break;
@@ -222,6 +237,16 @@ class RomLibraryActions extends StatelessWidget {
                       Icon(Icons.tune, size: 20),
                       SizedBox(width: 10),
                       Text("Game settings"),
+                    ],
+                  )),
+              PopupMenuItem<_RomMenuAction>(
+                  value: _RomMenuAction.editMetadata,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.palette, size: 20),
+                      SizedBox(width: 10),
+                      Text("Edit metadata"),
                     ],
                   )),
               if (libraryItem.filePath != null &&

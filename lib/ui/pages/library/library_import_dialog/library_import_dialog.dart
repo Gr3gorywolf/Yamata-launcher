@@ -17,23 +17,28 @@ import 'package:yamata_launcher/utils/string_helper.dart';
 class LibraryImportDialog extends StatefulWidget {
   final RomLibraryItem? libraryItem;
   final bool canEditConsole;
+  final bool canEditPath;
   final Function(RomInfo info, String filePath) onPicked;
 
   LibraryImportDialog(
       {super.key,
       required this.onPicked,
       this.libraryItem,
-      this.canEditConsole = true});
+      this.canEditConsole = true,
+      this.canEditPath = true});
 
   static show(
       BuildContext context, Function(RomInfo info, String filePath) onPicked,
-      {RomLibraryItem? libraryItem, bool canEditConsole = true}) {
+      {RomLibraryItem? libraryItem,
+      bool canEditConsole = true,
+      bool canEditPath = true}) {
     showDialog(
       context: context,
       builder: (context) => LibraryImportDialog(
         onPicked: onPicked,
         libraryItem: libraryItem,
         canEditConsole: canEditConsole,
+        canEditPath: canEditPath,
       ),
     );
   }
@@ -189,44 +194,46 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
                     },
                   ),
                 ),
-                DialogSectionItem(
-                  title: "Console",
-                  icon: Icons.videogame_asset,
-                  actions: const [],
-                  content: ReactiveSearchableDropdownField<String>(
-                    formControlName: 'console',
-                    decoration: _inputDecoration(hintText: "Select console"),
-                    items: consoles
-                        .map(
-                          (c) => DropdownMenuItem<String>(
-                            value: c.slug,
-                            child: Text(c.name ?? ""),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-                DialogSectionItem(
-                  title: "Game Executable/File",
-                  icon: Icons.description,
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.folder_open),
-                      onPressed: _pickRomPath,
+                if (widget.canEditConsole)
+                  DialogSectionItem(
+                    title: "Console",
+                    icon: Icons.videogame_asset,
+                    actions: const [],
+                    content: ReactiveSearchableDropdownField<String>(
+                      formControlName: 'console',
+                      decoration: _inputDecoration(hintText: "Select console"),
+                      items: consoles
+                          .map(
+                            (c) => DropdownMenuItem<String>(
+                              value: c.slug,
+                              child: Text(c.name ?? ""),
+                            ),
+                          )
+                          .toList(),
                     ),
-                  ],
-                  content: ReactiveValueListenableBuilder<String>(
-                    formControlName: 'romPath',
-                    builder: (context, control, child) {
-                      final romPath = (control.value ?? '').trim();
-                      return Text(
-                        romPath.isEmpty ? "No file selected" : romPath,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      );
-                    },
                   ),
-                ),
+                if (widget.canEditPath)
+                  DialogSectionItem(
+                    title: "Game Executable/File",
+                    icon: Icons.description,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.folder_open),
+                        onPressed: _pickRomPath,
+                      ),
+                    ],
+                    content: ReactiveValueListenableBuilder<String>(
+                      formControlName: 'romPath',
+                      builder: (context, control, child) {
+                        final romPath = (control.value ?? '').trim();
+                        return Text(
+                          romPath.isEmpty ? "No file selected" : romPath,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
+                  ),
                 DialogSectionItem(
                   title: "Portrait (Optional)",
                   icon: Icons.image,

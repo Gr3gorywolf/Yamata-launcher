@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
@@ -45,6 +47,7 @@ class LibraryMassImportController extends ChangeNotifier {
   Map<String, LaunchboxRegistry> _launchboxRegistry = {};
   Map<String, LibraryMassImportPreviewItem> _previewItems = {};
   Set<String> _skippedResults = {};
+  Set<String> _librarySlugs = {};
   int _revealedItems = 0;
   bool _isInitialScrapeRunning = false;
 
@@ -55,6 +58,7 @@ class LibraryMassImportController extends ChangeNotifier {
   bool get isInitialScrapeRunning => _isInitialScrapeRunning;
   int get filesFound => _revealedItems;
   Set<String> get skippedResults => _skippedResults;
+  Set<String> get librarySlugs => _librarySlugs;
 
   set skippedResults(Set<String> slugs) {
     if (_skippedResults == slugs) {
@@ -100,7 +104,8 @@ class LibraryMassImportController extends ChangeNotifier {
   Future<void> syncRegistry() async {
     _stage = LibraryMassImportStage.syncingRegistry;
     _notifyListeners();
-
+    var libraryProvider =
+        Provider.of<LibraryProvider>(navigatorContext!, listen: false);
     final registry = await RomsRepository().fetchLaunchboxRegistry();
     final newRegistry = <String, LaunchboxRegistry>{};
 
@@ -118,8 +123,16 @@ class LibraryMassImportController extends ChangeNotifier {
       newRegistry[normalizedSlug] = entry;
     }
 
+    for (final libraryItem in libraryProvider.libraryItems) {
+      if (libraryItem.doesExists == true) {
+        _librarySlugs.add(libraryItem.rom.slug);
+      }
+    }
+
+    _skippedResults.addAll(_librarySlugs);
     _launchboxRegistry = newRegistry;
     _stage = LibraryMassImportStage.setup;
+
     _notifyListeners();
   }
 
@@ -227,7 +240,7 @@ class LibraryMassImportController extends ChangeNotifier {
   }
 
   void updatePreviewItem(RomLibraryItem item, String originalSlug) {
-    var status = item.rom.console == 'unknown' && item.rom.name == 'unknown'
+    var status = item.rom.console == 'unknown' || item.rom.name == 'unknown'
         ? LibraryImportPreviewStatus.NONE
         : LibraryImportPreviewStatus.PARTIAL;
 
@@ -235,39 +248,47 @@ class LibraryMassImportController extends ChangeNotifier {
       status = LibraryImportPreviewStatus.COMPLETE;
     }
 
-    final existingPreviewItem = _previewItems[originalSlug];
-    if (existingPreviewItem == null) {
-      return;
-    }
-
     var newPreviewItems =
         Map<String, LibraryMassImportPreviewItem>.from(_previewItems);
 
-    final existing = newPreviewItems.remove(originalSlug);
-    if (existing == null) {
+    // The existing preview item is the one that existed before the update with the original slug
+    final existingOriginalPreviewItem = _previewItems[originalSlug];
+    if (existingOriginalPreviewItem == null) {
       return;
     }
 
-    final entries = newPreviewItems.entries.toList();
-    var index = _previewItems.keys.toList().indexOf(originalSlug);
+    var slugChanged = originalSlug != item.rom.slug;
 
-    if (index < 0) {
-      index = entries.length;
+    LibraryMassImportPreviewItem? existingNewPreviewItem = null;
+    // if the slug changed to a one existing then the merge starts
+    if (slugChanged) {
+      newPreviewItems.remove(originalSlug);
+      existingNewPreviewItem = newPreviewItems[item.rom.slug];
     }
+    var isValid = [
+      LibraryImportPreviewStatus.PARTIAL,
+      LibraryImportPreviewStatus.COMPLETE
+    ].contains(status);
+    // If the slug changed but there is an existing item with the new slug and it's valid then we keep it as valid otherwise we use the status of the current item
+    var existingPreviewToUse =
+        existingNewPreviewItem ?? existingOriginalPreviewItem;
+    var sourceFiles = existingPreviewToUse.sourceFiles;
+    if (slugChanged) {
+      // Merges the source files from the original to the new existing one
+      sourceFiles = [...sourceFiles, item.filePath ?? ""].toSet().toList()
+        ..sort((a, b) => a.length.compareTo(b.length));
+      // If the slug changed but there is no existing item with the new slug then we just update the file path to the current one
+      if (existingNewPreviewItem != null) {
+        item.filePath = sourceFiles.first;
+      }
+    }
+    newPreviewItems[item.rom.slug] = existingPreviewToUse.copyWith(
+        libraryItem: item,
+        matchStatus: status,
+        isValid: isValid,
+        sourceFiles: sourceFiles);
 
-    entries.insert(
-      index,
-      MapEntry(
-        item.rom.slug,
-        existing.copyWith(
-          isScraped: item.rom.isScraped,
-          matchStatus: status,
-          libraryItem: item,
-        ),
-      ),
-    );
-
-    _previewItems = Map.fromEntries(entries);
+    _previewItems = newPreviewItems;
     _notifyListeners();
   }
 

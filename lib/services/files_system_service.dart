@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/main.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/native/aria2c_android_interface.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
@@ -215,8 +217,10 @@ class FileSystemService {
   * Shows a folder picker dialog and returns the selected folder path. Returns null if the user cancels the dialog or an error occurs.
   */
   static Future<String?> showFolderPicker() async {
+    var appProvider =
+        Provider.of<AppProvider>(navigatorContext!, listen: false);
     try {
-      if (isFullScreen) {
+      if (isFullScreen || appProvider.isUsingGamepad) {
         return await _openBuiltInFilePicker(FilesystemType.folder);
       }
       final selectedDirectory = await FilePicker.platform.getDirectoryPath();

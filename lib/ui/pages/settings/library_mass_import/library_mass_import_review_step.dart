@@ -30,138 +30,200 @@ class LibraryMassImportReviewStep extends StatelessWidget {
     final summaryLabel = isInitialScrapeRunning
         ? 'Initial scrape in progress'
         : 'Review matches before importing';
+
     double getScrapeProgressPercent() {
       final total =
           validGames.length + needsScrapeGames.length + invalidGames.length;
 
-      if (total == 0) return 0.0;
+      if (total == 0 || filesFound == 0) {
+        return 0.0;
+      }
 
-      return (total / controller.filesFound).clamp(0.0, 1.0);
+      return (total / filesFound).clamp(0.0, 1.0);
     }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          summaryLabel,
-                          style: theme.textTheme.titleMedium,
+    int getSkippedCount() {
+      var skippeableGames = [...needsScrapeGames, ...validGames]
+          .map((game) => game.libraryItem.rom.slug)
+          .toSet();
+      final skippedCount = controller.skippedResults
+          .toList()
+          .where((result) => skippeableGames.contains(result))
+          .length;
+      return skippedCount;
+    }
+
+    final tabs = [
+      _LibraryMassImportTabData(
+        id: 'valid',
+        title: 'Valid (${validGames.length})',
+        items: validGames,
+        emptyTitle: 'No valid matches yet',
+        emptyDescription:
+            'As the initial scrape resolves games they will appear here ready for import.',
+      ),
+      _LibraryMassImportTabData(
+        id: 'needs-scrape',
+        title: 'Needs Scrape (${needsScrapeGames.length})',
+        items: needsScrapeGames,
+        emptyTitle: 'No games need scraping',
+        emptyDescription:
+            'This tab will collect games that still need a manual scrape.',
+      ),
+      _LibraryMassImportTabData(
+        id: 'invalid',
+        title: 'Invalid (${invalidGames.length})',
+        items: invalidGames,
+        emptyTitle: 'No invalid games',
+        emptyDescription:
+            'This tab will collect files that still need a better match or a manual scrape.',
+      ),
+    ];
+
+    return DefaultTabController(
+      length: tabs.length,
+      child: Builder(
+        builder: (context) {
+          final tabController = DefaultTabController.of(context);
+          final tabBar = TabBar(
+            tabs: tabs.map((tab) => Tab(text: tab.title)).toList(),
+          );
+
+          return AnimatedBuilder(
+            animation: tabController,
+            builder: (context, _) {
+              final activeTab = tabs[tabController.index];
+
+              return CustomScrollView(
+                key: PageStorageKey(
+                  'library-mass-import-review-${activeTab.id}',
+                ),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+                    sliver: SliverToBoxAdapter(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      summaryLabel,
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: controller.backToSetup,
+                                    icon: const Icon(Icons.settings),
+                                    label: const Text('Back to setup'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 7),
+                              if (isInitialScrapeRunning)
+                                LinearProgressIndicator(
+                                  value: getScrapeProgressPercent(),
+                                ),
+                              if (isInitialScrapeRunning)
+                                const SizedBox(height: 14),
+                              Wrap(
+                                spacing: 0,
+                                runSpacing: 0,
+                                children: [
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.search,
+                                    label: '$filesFound files found',
+                                  ),
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.check_circle_outline,
+                                    label: '$validFilesCount valid game files',
+                                  ),
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.sync,
+                                    label:
+                                        '${needsScrapeGames.length} needs scraping',
+                                  ),
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.error_outline,
+                                    label:
+                                        '$invalidFilesCount invalid game files',
+                                  ),
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.redo,
+                                    label: "${getSkippedCount()} skipped",
+                                  ),
+                                  _LibraryMassImportReviewChip(
+                                    icon: Icons.videogame_asset,
+                                    label: selectedConsoleName,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Scan folder: ${scanFolder.isEmpty ? 'No folder selected' : scanFolder}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.72),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      TextButton.icon(
-                        onPressed: controller.backToSetup,
-                        icon: const Icon(Icons.settings),
-                        label: const Text('Back to setup'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 7),
-                  if (isInitialScrapeRunning)
-                    LinearProgressIndicator(value: getScrapeProgressPercent()),
-                  if (isInitialScrapeRunning) const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 0,
-                    runSpacing: 0,
-                    children: [
-                      _LibraryMassImportReviewChip(
-                        icon: Icons.search,
-                        label: '${filesFound} files found',
-                      ),
-                      _LibraryMassImportReviewChip(
-                        icon: Icons.check_circle_outline,
-                        label: '${validFilesCount} valid game files',
-                      ),
-                      _LibraryMassImportReviewChip(
-                        icon: Icons.error_outline,
-                        label: '${invalidFilesCount} invalid game files',
-                      ),
-                      _LibraryMassImportReviewChip(
-                        icon: Icons.sync,
-                        label: '${needsScrapeGames.length}  needs scraping',
-                      ),
-                      _LibraryMassImportReviewChip(
-                        icon: Icons.videogame_asset,
-                        label: selectedConsoleName,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Scan folder: ${scanFolder.isEmpty ? 'No folder selected' : scanFolder}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.72),
                     ),
                   ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _LibraryMassImportStickyTabBarDelegate(
+                      backgroundColor: theme.scaffoldBackgroundColor,
+                      tabBar: tabBar,
+                    ),
+                  ),
+                  _LibraryMassImportPreviewSliverList(
+                    storageKey: activeTab.id,
+                    items: activeTab.items,
+                    emptyTitle: activeTab.emptyTitle,
+                    emptyDescription: activeTab.emptyDescription,
+                  ),
                 ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          DefaultTabController(
-              length: 3,
-              child: Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TabBar(
-                        tabs: [
-                          Tab(text: 'Valid (${validGames.length})'),
-                          Tab(
-                              text:
-                                  'Needs Scrape (${needsScrapeGames.length})'),
-                          Tab(text: 'Invalid (${invalidGames.length})'),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _LibraryMassImportPreviewList(
-                              items: validGames,
-                              emptyTitle: 'No valid matches yet',
-                              emptyDescription:
-                                  'As the initial scrape resolves games they will appear here ready for import.',
-                            ),
-                            _LibraryMassImportPreviewList(
-                              items: needsScrapeGames,
-                              emptyTitle: 'No games need scraping',
-                              emptyDescription:
-                                  'This tab will collect games that still need a manual scrape.',
-                            ),
-                            _LibraryMassImportPreviewList(
-                              items: invalidGames,
-                              emptyTitle: 'No invalid games',
-                              emptyDescription:
-                                  'This tab will collect files that still need a better match or a manual scrape.',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ]),
-              )),
-        ],
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
-class _LibraryMassImportPreviewList extends StatelessWidget {
+class _LibraryMassImportTabData {
+  final String id;
+  final String title;
   final List<LibraryMassImportPreviewItem> items;
   final String emptyTitle;
   final String emptyDescription;
 
-  const _LibraryMassImportPreviewList({
+  const _LibraryMassImportTabData({
+    required this.id,
+    required this.title,
+    required this.items,
+    required this.emptyTitle,
+    required this.emptyDescription,
+  });
+}
+
+class _LibraryMassImportPreviewSliverList extends StatelessWidget {
+  final String storageKey;
+  final List<LibraryMassImportPreviewItem> items;
+  final String emptyTitle;
+  final String emptyDescription;
+
+  const _LibraryMassImportPreviewSliverList({
+    required this.storageKey,
     required this.items,
     required this.emptyTitle,
     required this.emptyDescription,
@@ -172,50 +234,107 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (items.isEmpty) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.inbox_outlined,
-                size: 44,
-                color: theme.colorScheme.onSurface.withOpacity(0.45),
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 18, 32, 110),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 44,
+                    color: theme.colorScheme.onSurface.withOpacity(0.45),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    emptyTitle,
+                    style: theme.textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    emptyDescription,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.72),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                emptyTitle,
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                emptyDescription,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.72),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 110),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final originalSlug = item.libraryItem.rom.slug;
-        return LibraryMassImportPreviewCard(
-          key: ValueKey(originalSlug),
-          item: item,
-        );
-      },
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 110),
+      sliver: SliverList(
+        key: PageStorageKey('library-mass-import-$storageKey'),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index.isOdd) {
+              return const SizedBox(height: 12);
+            }
+
+            final item = items[index ~/ 2];
+            final originalSlug = item.libraryItem.rom.slug;
+
+            return LibraryMassImportPreviewCard(
+              key: ValueKey(originalSlug),
+              item: item,
+            );
+          },
+          childCount: items.length * 2 - 1,
+        ),
+      ),
     );
+  }
+}
+
+class _LibraryMassImportStickyTabBarDelegate
+    extends SliverPersistentHeaderDelegate {
+  final Color backgroundColor;
+  final TabBar tabBar;
+
+  const _LibraryMassImportStickyTabBarDelegate({
+    required this.backgroundColor,
+    required this.tabBar,
+  });
+
+  @override
+  double get minExtent => tabBar.preferredSize.height + 10;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height + 10;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: backgroundColor,
+      elevation: overlapsContent ? 2 : 0,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: tabBar,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_LibraryMassImportStickyTabBarDelegate oldDelegate) {
+    return oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.tabBar != tabBar;
   }
 }
 

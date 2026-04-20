@@ -45,9 +45,11 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 16),
-                _LibraryMassImportPreviewCardContent(
-                  item: item,
-                  consoleName: consoleName,
+                Expanded(
+                  child: _LibraryMassImportPreviewCardContent(
+                    item: item,
+                    consoleName: consoleName,
+                  ),
                 )
               ],
             );
@@ -144,6 +146,10 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
       (controller) =>
           controller.skippedResults.contains(item.libraryItem.rom.slug),
     );
+    final isOnLibrary = context.select<LibraryMassImportController, bool>(
+      (controller) =>
+          controller.librarySlugs.contains(item.libraryItem.rom.slug),
+    );
     final canSkip = item.matchStatus != LibraryImportPreviewStatus.NONE;
 
     return Column(
@@ -163,6 +169,12 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
               text: dataByConfidence.label,
               type: statusColor,
             ),
+            if (isOnLibrary)
+              StatusTag(
+                size: StatusTagSize.sm,
+                text: "On library",
+                type: StatusTagType.warning,
+              ),
           ],
         ),
         const SizedBox(height: 3),
@@ -198,16 +210,16 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
                         size: 16),
                     const SizedBox(width: 6),
                   ],
-                  Wrap(
-                    children: [
-                      Text(
-                        source,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.68),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )
-                    ],
+                  Expanded(
+                    child: Text(
+                      source,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.68),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      maxLines: 2,
+                      softWrap: true,
+                    ),
                   ),
                 ],
               ),

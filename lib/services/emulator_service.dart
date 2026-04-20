@@ -306,7 +306,8 @@ class EmulatorService {
             } else {
               process = await Process.start(emulatorBinary, launchParams,
                   mode: ProcessStartMode.inheritStdio,
-                  workingDirectory: p.dirname(filePath));
+                  workingDirectory:
+                      p.dirname(filePath.isEmpty ? emulatorBinary : filePath));
             }
           }
         }

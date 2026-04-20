@@ -143,6 +143,11 @@ ThemeData appThemeDark = ThemeData(
         return Colors.grey;
       }),
     ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: primaryGreen,
+      circularTrackColor: mutedGreen,
+      linearTrackColor: mutedGreen,
+    ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
         elevation: WidgetStateProperty.all(0),

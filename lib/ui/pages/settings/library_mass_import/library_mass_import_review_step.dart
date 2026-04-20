@@ -1,56 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_controller.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_card.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
-import 'package:yamata_launcher/ui/widgets/rom_list_item/rom_list_item.dart';
 
 class LibraryMassImportReviewStep extends StatelessWidget {
-  final bool isInitialScrapeRunning;
-  final double scrapeProgress;
-  final int filesFound;
-  final List<LibraryMassImportPreviewItem> validGames;
-  final List<LibraryMassImportPreviewItem> needsScrapeGames;
-  final List<LibraryMassImportPreviewItem> invalidGames;
-  final String selectedConsoleName;
-  final String scanFolder;
-  final VoidCallback onBackToSetup;
-  final Function(RomLibraryItem, String) onUpdate;
-
-  LibraryMassImportReviewStep({
+  const LibraryMassImportReviewStep({
     super.key,
-    required this.isInitialScrapeRunning,
-    required this.scrapeProgress,
-    required this.validGames,
-    required this.filesFound,
-    required this.needsScrapeGames,
-    required this.invalidGames,
-    required this.selectedConsoleName,
-    required this.scanFolder,
-    required this.onBackToSetup,
-    required this.onUpdate,
   });
-  int get validFilesCount {
-    var count = 0;
-    for (var validGame in validGames) {
-      count += validGame.sourceFiles.length;
-    }
-    return count;
-  }
-
-  int get invalidFilesCount {
-    var count = 0;
-    for (var invalidGame in invalidGames) {
-      count += invalidGame.sourceFiles.length;
-    }
-    return count;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final controller = LibraryMassImportController.of(context);
+    final isInitialScrapeRunning = controller.isInitialScrapeRunning;
+    final filesFound = controller.filesFound;
+    final validGames = controller.validGames;
+    final needsScrapeGames = controller.needsScrapeGames;
+    final invalidGames = controller.invalidGames;
+    final selectedConsoleName = controller.selectedConsoleName;
+    final scanFolder = controller.scanFolder;
+    final validFilesCount = validGames.fold<int>(
+      0,
+      (count, validGame) => count + validGame.sourceFiles.length,
+    );
+    final invalidFilesCount = invalidGames.fold<int>(
+      0,
+      (count, invalidGame) => count + invalidGame.sourceFiles.length,
+    );
     final summaryLabel = isInitialScrapeRunning
         ? 'Initial scrape in progress'
         : 'Review matches before importing';
+    double getScrapeProgressPercent() {
+      final total =
+          validGames.length + needsScrapeGames.length + invalidGames.length;
+
+      if (total == 0) return 0.0;
+
+      return (total / controller.filesFound).clamp(0.0, 1.0);
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
@@ -69,11 +56,11 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                       Expanded(
                         child: Text(
                           summaryLabel,
-                          style: theme.textTheme.titleLarge,
+                          style: theme.textTheme.titleMedium,
                         ),
                       ),
                       TextButton.icon(
-                        onPressed: onBackToSetup,
+                        onPressed: controller.backToSetup,
                         icon: const Icon(Icons.settings),
                         label: const Text('Back to setup'),
                       ),
@@ -81,7 +68,7 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                   ),
                   const SizedBox(height: 7),
                   if (isInitialScrapeRunning)
-                    LinearProgressIndicator(value: scrapeProgress),
+                    LinearProgressIndicator(value: getScrapeProgressPercent()),
                   if (isInitialScrapeRunning) const SizedBox(height: 14),
                   Wrap(
                     spacing: 0,
@@ -145,21 +132,18 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                               emptyTitle: 'No valid matches yet',
                               emptyDescription:
                                   'As the initial scrape resolves games they will appear here ready for import.',
-                              onUpdate: onUpdate,
                             ),
                             _LibraryMassImportPreviewList(
                               items: needsScrapeGames,
                               emptyTitle: 'No games need scraping',
                               emptyDescription:
                                   'This tab will collect games that still need a manual scrape.',
-                              onUpdate: onUpdate,
                             ),
                             _LibraryMassImportPreviewList(
                               items: invalidGames,
                               emptyTitle: 'No invalid games',
                               emptyDescription:
                                   'This tab will collect files that still need a better match or a manual scrape.',
-                              onUpdate: onUpdate,
                             ),
                           ],
                         ),
@@ -176,13 +160,11 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
   final List<LibraryMassImportPreviewItem> items;
   final String emptyTitle;
   final String emptyDescription;
-  final Function(RomLibraryItem, String) onUpdate;
 
   const _LibraryMassImportPreviewList({
     required this.items,
     required this.emptyTitle,
     required this.emptyDescription,
-    required this.onUpdate,
   });
 
   @override
@@ -231,7 +213,6 @@ class _LibraryMassImportPreviewList extends StatelessWidget {
         return LibraryMassImportPreviewCard(
           key: ValueKey(originalSlug),
           item: item,
-          onUpdate: (updatedItem) => onUpdate(updatedItem, originalSlug),
         );
       },
     );

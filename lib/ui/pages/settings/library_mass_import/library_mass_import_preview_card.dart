@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:provider/provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
+import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_controller.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 
 class LibraryMassImportPreviewCard extends StatelessWidget {
   final LibraryMassImportPreviewItem item;
-  final Function(RomLibraryItem) onUpdate;
 
   const LibraryMassImportPreviewCard({
     super.key,
     required this.item,
-    required this.onUpdate,
   });
 
   @override
@@ -28,9 +26,7 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 620;
-
+          builder: (context, _) {
             return Flex(
               direction: Axis.horizontal,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +48,6 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
                 _LibraryMassImportPreviewCardContent(
                   item: item,
                   consoleName: consoleName,
-                  onUpdate: onUpdate,
                 )
               ],
             );
@@ -92,12 +87,10 @@ class _LibraryMassImportPreviewItemStatus {
 class _LibraryMassImportPreviewCardContent extends StatelessWidget {
   final LibraryMassImportPreviewItem item;
   final String consoleName;
-  final Function(RomLibraryItem) onUpdate;
 
   _LibraryMassImportPreviewCardContent({
     required this.item,
     required this.consoleName,
-    required this.onUpdate,
   });
 
   late final _LibraryMassImportPreviewItemStatus dataByConfidence =
@@ -113,24 +106,45 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
     }
   }
 
-  void selectItemSourceFile(String source) {
+  void selectItemSourceFile(BuildContext context, String source) {
+    final controller = LibraryMassImportController.of(context, listen: false);
     final updatedLibraryItem = item.libraryItem;
     updatedLibraryItem.filePath = source;
-    onUpdate(updatedLibraryItem);
+    controller.updatePreviewItem(updatedLibraryItem, item.libraryItem.rom.slug);
   }
 
   void handleUpdate(BuildContext context) async {
-    var dialog = await LibraryImportDialog.show(context, (info, path) {
+    final controller = LibraryMassImportController.of(context, listen: false);
+    final originalSlug = item.libraryItem.rom.slug;
+    await LibraryImportDialog.show(context, (info, path) {
       final updatedItem = item.libraryItem;
       updatedItem.rom = info;
       updatedItem.filePath = path;
-      onUpdate(updatedItem);
+      controller.updatePreviewItem(updatedItem, originalSlug);
     }, libraryItem: item.libraryItem, canEditConsole: false);
+  }
+
+  void handleSkip(BuildContext context, bool value) {
+    final controller = LibraryMassImportController.of(context, listen: false);
+    if (value) {
+      controller.skippedResults = {
+        ...controller.skippedResults,
+        item.libraryItem.rom.slug
+      };
+    } else {
+      controller.skippedResults = {...controller.skippedResults}
+        ..remove(item.libraryItem.rom.slug);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isSkipped = context.select<LibraryMassImportController, bool>(
+      (controller) =>
+          controller.skippedResults.contains(item.libraryItem.rom.slug),
+    );
+    final canSkip = item.matchStatus != LibraryImportPreviewStatus.NONE;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +186,7 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
               onTap: item.sourceFiles.length > 1
-                  ? () => selectItemSourceFile(source)
+                  ? () => selectItemSourceFile(context, source)
                   : null,
               child: Row(
                 children: [
@@ -201,10 +215,27 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextButton.icon(
-          onPressed: () => handleUpdate(context),
-          icon: const Icon(Icons.travel_explore),
-          label: const Text('Manual scrape'),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton.icon(
+              onPressed: () => handleUpdate(context),
+              icon: const Icon(Icons.travel_explore),
+              label: const Text('Manual scrape'),
+            ),
+            SizedBox(width: 12),
+            if (canSkip)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Checkbox(
+                    value: isSkipped,
+                    onChanged: (value) => handleSkip(context, value ?? false),
+                  ),
+                  const Text("Skip this result"),
+                ],
+              )
+          ],
         ),
       ],
     );
@@ -234,31 +265,6 @@ class _LibraryMassImportCardInfoChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(label),
         ],
-      ),
-    );
-  }
-}
-
-class _LibraryMassImportStatusBadge extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LibraryMassImportStatusBadge({
-    required this.color,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
       ),
     );
   }

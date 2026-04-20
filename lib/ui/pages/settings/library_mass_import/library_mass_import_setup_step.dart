@@ -1,31 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/models/console.dart';
+import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_controller.dart';
 import 'package:yamata_launcher/ui/widgets/hint_banner.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
 
 class LibraryMassImportSetupStep extends StatelessWidget {
-  final List<Console> availableConsoles;
-  final String scanFolder;
-  final String selectedConsole;
-  final String selectedConsoleName;
-  final VoidCallback onSelectFolder;
-  final ValueChanged<String?> onSelectConsole;
-  final VoidCallback onStartInitialScrape;
-
   const LibraryMassImportSetupStep({
     super.key,
-    required this.availableConsoles,
-    required this.scanFolder,
-    required this.selectedConsole,
-    required this.selectedConsoleName,
-    required this.onSelectFolder,
-    required this.onSelectConsole,
-    required this.onStartInitialScrape,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final controller = LibraryMassImportController.of(context);
+    final List<Console> availableConsoles = controller.availableConsoles;
+    final scanFolder = controller.scanFolder;
+    final selectedConsole = controller.selectedConsole;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -72,7 +62,7 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                         ),
                       ),
                       trailing: IconButton(
-                          onPressed: onSelectFolder,
+                          onPressed: controller.selectFolder,
                           icon: Icon(Icons.file_open)),
                     ),
                     const SizedBox(height: 22),
@@ -98,7 +88,7 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                             )
                             .toList()
                       ],
-                      onChanged: onSelectConsole,
+                      onChanged: controller.selectConsole,
                       decoration: InputDecoration(
                         hintText: 'All consoles',
                         filled: true,
@@ -120,8 +110,9 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
-                        onPressed:
-                            scanFolder.isEmpty ? null : onStartInitialScrape,
+                        onPressed: scanFolder.isEmpty
+                            ? null
+                            : controller.startInitialScrape,
                         icon: const Icon(Icons.travel_explore),
                         label: const Text('Start initial scrape'),
                       ),
@@ -130,47 +121,6 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LibraryMassImportSummaryTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _LibraryMassImportSummaryTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: theme.colorScheme.primary),
-              const SizedBox(height: 12),
-              Text(title, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.75),
-                ),
-              ),
-            ],
           ),
         ),
       ),

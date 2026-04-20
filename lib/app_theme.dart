@@ -139,6 +139,11 @@ ThemeData appThemeLight = ThemeData(
     largeSize: 26,
     smallSize: 20,
   ),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: primaryGreen,
+    circularTrackColor: mutedGreenLight,
+    linearTrackColor: mutedGreenLight,
+  ),
   segmentedButtonTheme: SegmentedButtonThemeData(
     style: ButtonStyle(
       elevation: WidgetStateProperty.all(0),

@@ -25,8 +25,12 @@ class ToolBarSortByElement<T> {
   String label;
   String field;
   ToolBarSortByType value;
+  ToolBarSortByType? defaultSort;
   ToolBarSortByElement(
-      {required this.label, required this.field, required this.value});
+      {required this.label,
+      required this.field,
+      required this.value,
+      this.defaultSort});
 }
 
 class ToolBarFilterGroup<T> {

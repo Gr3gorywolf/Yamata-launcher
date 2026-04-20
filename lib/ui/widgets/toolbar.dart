@@ -108,7 +108,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
       onSelected: (value) {
         setState(() {
           if (sortBy?.label == value) {
-            if (sortBy?.value == ToolBarSortByType.descending) {
+            if (sortBy?.value == ToolBarSortByType.ascending) {
               sortBy = null;
               _notifyChange();
               return;
@@ -126,7 +126,7 @@ class ToolbarState<T> extends State<Toolbar<T>> {
             sortBy = ToolBarSortByElement(
               label: foundSort.label,
               field: foundSort.field,
-              value: ToolBarSortByType.ascending,
+              value: foundSort.defaultSort ?? ToolBarSortByType.descending,
             );
           }
         });

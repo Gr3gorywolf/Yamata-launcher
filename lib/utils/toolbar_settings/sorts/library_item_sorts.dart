@@ -4,7 +4,7 @@ class LibraryItemSorts {
   static var addedDateSort = ToolBarSortByElement(
       label: 'Added Date',
       field: 'addedAt',
-      value: ToolBarSortByType.descending);
+      value: ToolBarSortByType.ascending);
 
   static var romNameSort = ToolBarSortByElement(
       label: 'Name', field: 'rom.name', value: ToolBarSortByType.ascending);
@@ -12,5 +12,10 @@ class LibraryItemSorts {
   static var playedTimeSort = ToolBarSortByElement(
       label: 'Played time',
       field: 'playTimeMins',
+      value: ToolBarSortByType.ascending);
+
+  static var lastPlayedSort = ToolBarSortByElement(
+      label: 'Last Played',
+      field: 'lastPlayedAt',
       value: ToolBarSortByType.ascending);
 }

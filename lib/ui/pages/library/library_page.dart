@@ -147,6 +147,7 @@ class _LibraryPageState extends State<LibraryPage> {
             LibraryItemSorts.romNameSort,
             LibraryItemSorts.addedDateSort,
             LibraryItemSorts.playedTimeSort,
+            LibraryItemSorts.lastPlayedSort
           ],
         ),
         initialValues: filterValues,

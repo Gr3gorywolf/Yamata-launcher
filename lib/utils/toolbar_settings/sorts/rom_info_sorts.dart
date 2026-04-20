@@ -10,5 +10,7 @@ class RomInfoSorts {
       value: ToolBarSortByType.ascending);
 
   static var popularitySort = ToolBarSortByElement(
-      label: 'Popularity', field: 'rating', value: ToolBarSortByType.ascending);
+      label: 'Popularity',
+      field: 'rating',
+      value: ToolBarSortByType.descending);
 }

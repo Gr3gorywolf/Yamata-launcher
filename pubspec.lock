@@ -34,13 +34,13 @@ packages:
     source: hosted
     version: "1.12.32"
   archive:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: archive
-      sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
+      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.9"
+    version: "4.0.7"
   args:
     dependency: transitive
     description:
@@ -121,14 +121,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
-  crc:
-    dependency: "direct main"
-    description:
-      name: crc
-      sha256: ee9d8749aa7bb0fd95ef4e3292806249a9090740bdb24fa78ae6381334eb7db2
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.2"
   cross_file:
     dependency: transitive
     description:

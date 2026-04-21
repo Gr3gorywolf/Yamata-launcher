@@ -17,7 +17,6 @@ import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:crc/crc.dart';
 
 class RomService {
   static List<String> windowsGamesFileNames = [];

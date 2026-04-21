@@ -6,9 +6,11 @@ import 'package:dio/dio.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
+import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 
 class GameMetadataRepository {
@@ -67,7 +69,8 @@ class GameMetadataRepository {
       }
       try {
         await ExtractionService.extractWithArchive(
-            inputFile, Directory(FileSystemService.metadatasPath));
+            inputFile, Directory(FileSystemService.metadatasPath),
+            deleteArchive: true);
       } catch (e) {
         print("Error while accessing downloaded metadata build: $e");
         return false;
@@ -95,5 +98,108 @@ class GameMetadataRepository {
       registries.add(LaunchboxRegistry.fromJson(item));
     }
     return registries;
+  }
+
+  static Future<Map<String, List<RomMetadata>>> retrieveMetadataIndexByType(
+      RomMetadataLookups lookup) async {
+    Map<String, List<RomMetadata>> metadatas = {};
+    var filesByLookups = <RomMetadataLookups, String>{
+      RomMetadataLookups.FILE_SIZE: "all-sizes.json",
+      RomMetadataLookups.EXEC_NAME: "all-execs.json",
+      RomMetadataLookups.SERIAL: "all-serials.json",
+      RomMetadataLookups.SLUG: "libretro-full-database.json",
+    };
+
+    var fileName = filesByLookups[lookup];
+    if (fileName == null) {
+      throw Exception(
+          "No metadata index file defined for lookup type ${lookup.value}");
+    }
+
+    var registryFile = File(FileSystemService.metadatasPath + "/${fileName}");
+    if (!registryFile.existsSync()) {
+      throw Exception(
+          "Metadata index file not found for lookup type ${lookup.value}");
+    }
+    var content = jsonDecode(registryFile.readAsStringSync());
+    // For execs registries
+    if (lookup == RomMetadataLookups.EXEC_NAME) {
+      for (var exec in content) {
+        var execName = exec["exec"];
+        if (execName == null) {
+          continue;
+        }
+        var execParts = [execName];
+        if (execName.contains("/")) {
+          execParts.add(execName.split("/").last);
+        }
+        for (var part in execParts) {
+          if (!metadatas.containsKey(part)) {
+            metadatas[part] = [];
+          }
+          metadatas[part]
+              ?.add(RomMetadata(name: exec['name'], console: "windows"));
+        }
+      }
+    }
+    if ([RomMetadataLookups.SERIAL, RomMetadataLookups.FILE_SIZE]
+        .contains(lookup)) {
+      content.forEach((key, value) {
+        final list = value as List;
+
+        metadatas[key] = List<RomMetadata>.generate(
+          list.length,
+          (i) {
+            var item = list[i];
+            if (RomMetadataLookups.SLUG == lookup) {
+              var newMetadata = RomMetadata(
+                  name: item['name'],
+                  console: item['console'],
+                  info: RomInfo.fromJson(item));
+              return newMetadata;
+            }
+            return RomMetadata.fromJson(item);
+          },
+          growable: false,
+        );
+      });
+    }
+
+    if (lookup == RomMetadataLookups.SLUG) {
+      content.forEach((_, value) {
+        final list = value as List;
+
+        for (var i = 0; i < list.length; i++) {
+          final itemJson = list[i];
+
+          final rom = RomMetadata(
+              name: itemJson['name'],
+              console: itemJson['console'],
+              info: RomInfo.fromJson(itemJson));
+          final slug = rom.info?.slug;
+          if (slug == null) {
+            continue;
+          }
+          var composedSlug = RomService.getRomSlug(
+              itemJson['console'], itemJson['name'],
+              removeMisplacedWords: true);
+
+          var slugsToInsert = [slug];
+          if (composedSlug != slug) {
+            slugsToInsert.add(composedSlug);
+          }
+          for (var slugToInsert in slugsToInsert) {
+            final existing = metadatas[slugToInsert];
+            if (existing != null) {
+              existing.add(rom);
+            } else {
+              metadatas[slugToInsert] = [rom];
+            }
+          }
+        }
+      });
+    }
+
+    return metadatas;
   }
 }

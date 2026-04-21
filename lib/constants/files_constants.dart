@@ -154,9 +154,9 @@ final Map<String, List<CONSOLE_SLUGS>> CONSOLE_EXTENSIONS = {
     CONSOLE_SLUGS.segacd
   ],
 
-  'bin': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.segacd],
+  'bin': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.ps2, CONSOLE_SLUGS.segacd],
 
-  'cue': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.segacd],
+  'cue': [CONSOLE_SLUGS.psx, CONSOLE_SLUGS.ps2, CONSOLE_SLUGS.segacd],
 
   'chd': [
     CONSOLE_SLUGS.psx,

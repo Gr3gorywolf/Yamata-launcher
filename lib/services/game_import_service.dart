@@ -7,6 +7,7 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
+import 'package:yamata_launcher/repository/game_metadata_repository.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -23,7 +24,11 @@ typedef GameImportProgressCallback = void Function(
 class GameImportService {
   // 70mb
   static final double _MAX_ALLOWED_TO_READ = 7e+7;
-  static const int _completeRomInfoBatchSize = 15;
+  static const int _completeRomInfoBatchSize = 100;
+  static Map<String, List<RomMetadata>>? _fullMetadataCache;
+  static Map<String, List<RomMetadata>>? _sizeCache;
+  static Map<String, List<RomMetadata>>? _serialCache;
+  static Map<String, List<RomMetadata>>? _execCache;
 
   /// Performs a single-pass recursive scan over the selected folder.
   ///
@@ -41,13 +46,19 @@ class GameImportService {
     var processedFiles = 0;
     final pendingLookups = <_PendingRomLookup>[];
     var batchQueue = Future<void>.value();
-
     _notifyProgress(
       onProgress,
       totalFiles: discoveredFiles,
       processedFiles: processedFiles,
+      isPreparing: true,
     );
-
+    await _loadMetadataCache();
+    _notifyProgress(
+      onProgress,
+      totalFiles: discoveredFiles,
+      processedFiles: processedFiles,
+      isPreparing: false,
+    );
     await for (final filePath in _scanFilesRecursively(
       folderPath,
       filesToSkip: filesToSkip,
@@ -119,6 +130,7 @@ class GameImportService {
     }
 
     await batchQueue;
+    await _clearMetadataCache();
   }
 
   static Future<void> _flushPendingLookups(
@@ -129,7 +141,7 @@ class GameImportService {
     final resolvedPayloads = await Future.wait(
       pendingLookups.map((lookup) async {
         try {
-          final rom = await completeRomInfo(lookup.filePath,
+          final rom = await _completeRomInfo(lookup.filePath,
               launchboxRegistry: launchboxRegistry,
               consoleFilter: consoleFilter);
           return GameImportScanCallbackPayload(
@@ -153,8 +165,32 @@ class GameImportService {
     }
   }
 
+  static Future<void> _loadMetadataCache() async {
+    try {
+      _fullMetadataCache =
+          await GameMetadataRepository.retrieveMetadataIndexByType(
+              RomMetadataLookups.SLUG);
+      _sizeCache = await GameMetadataRepository.retrieveMetadataIndexByType(
+          RomMetadataLookups.FILE_SIZE);
+      _serialCache = await GameMetadataRepository.retrieveMetadataIndexByType(
+          RomMetadataLookups.SERIAL);
+      _execCache = await GameMetadataRepository.retrieveMetadataIndexByType(
+          RomMetadataLookups.EXEC_NAME);
+    } on Exception catch (e, st) {
+      print("Error loading metadata cache: $e $st");
+      return;
+    }
+  }
+
+  static Future<void> _clearMetadataCache() async {
+    _fullMetadataCache = null;
+    _sizeCache = null;
+    _serialCache = null;
+    _execCache = null;
+  }
+
   /// Tries to complete the rom info with multiple strategies, starting with the less expensive ones (filename-based) and going up to more expensive ones (crc-based).
-  static Future<RomInfo> completeRomInfo(String filePath,
+  static Future<RomInfo> _completeRomInfo(String filePath,
       {Map<String, LaunchboxRegistry>? launchboxRegistry,
       String? consoleFilter}) async {
     final extension = p.extension(filePath).replaceFirst('.', '').toLowerCase();
@@ -177,15 +213,11 @@ class GameImportService {
         execWithParentPath,
         execName,
       ]) {
-        var nameVariantHash = StringHelper.hashSha(nameVariant);
-        try {
-          var foundMetadatas = await RomsRepository()
-              .fetchRomMetadata(nameVariantHash, RomMetadataLookups.EXEC_NAME);
-          if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-            metadata = foundMetadatas?.first;
-            break;
-          }
-        } catch (e) {}
+        var foundMetadatas = _execCache?[nameVariant];
+        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
+          metadata = foundMetadatas?.first;
+          break;
+        }
       }
 
       if (metadata == null) {
@@ -209,49 +241,43 @@ class GameImportService {
     }
     // Try to scrape by serial
     if (metadata == null) {
-      try {
-        var foundMetadatas = await RomsRepository()
-            .fetchRomMetadata(filename, RomMetadataLookups.SERIAL);
-        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.firstWhereOrNull(
-            (data) =>
-                inferredConsoles?.any((c) => c.value == data.console) ?? false,
-          );
-        }
-      } catch (e) {}
+      var foundMetadatas = _serialCache?[filename.toLowerCase()];
+      if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
+        metadata = foundMetadatas?.firstWhereOrNull(
+          (data) =>
+              inferredConsoles?.any((c) => c.value == data.console) ?? false,
+        );
+      }
     }
     var fileSize = await File(filePath).length();
 
-    // try with crc
-    if (metadata == null && fileSize <= _MAX_ALLOWED_TO_READ) {
-      var crc = await RomService.calculateCrc32(filePath);
-      try {
-        var foundMetadatas = await RomsRepository()
-            .fetchRomMetadata(crc, RomMetadataLookups.CRC);
-        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.first;
-        }
-      } catch (e) {}
-    }
+    // try with crc wont
+    // if (metadata == null && fileSize <= _MAX_ALLOWED_TO_READ) {
+    //   var crc = await RomService.calculateCrc32(filePath);
+    //   try {
+    //     var foundMetadatas = await RomsRepository()
+    //         .fetchRomMetadata(crc, RomMetadataLookups.CRC);
+    //     if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
+    //       metadata = foundMetadatas?.first;
+    //     }
+    //   } catch (e) {}
+    // }
 
     // try with fileSize
     if (metadata == null) {
-      try {
-        var foundMetadatas = await RomsRepository().fetchRomMetadata(
-            fileSize.toString(), RomMetadataLookups.FILE_SIZE);
-        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.firstWhereOrNull((dat) {
-            var matchedConsole = inferredConsoles
-                ?.firstWhereOrNull((data) => data.value == dat.console);
-            var datSlug = RomService.getRomSlug(dat.console, dat.name,
-                removeMisplacedWords: true);
-            var fileSlug = RomService.getRomSlug(
-                matchedConsole?.value ?? '', filename,
-                removeMisplacedWords: true);
-            return matchedConsole != null && datSlug == fileSlug;
-          });
-        }
-      } catch (e) {}
+      var foundMetadatas = _sizeCache?[fileSize.toString()];
+      if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
+        metadata = foundMetadatas?.firstWhereOrNull((dat) {
+          var matchedConsole = inferredConsoles
+              ?.firstWhereOrNull((data) => data.value == dat.console);
+          var datSlug = RomService.getRomSlug(dat.console, dat.name,
+              removeMisplacedWords: true);
+          var fileSlug = RomService.getRomSlug(
+              matchedConsole?.value ?? '', filename,
+              removeMisplacedWords: true);
+          return datSlug == fileSlug;
+        });
+      }
     }
 
     if (metadata != null) {
@@ -279,7 +305,7 @@ class GameImportService {
       {Map<String, LaunchboxRegistry>? launchboxRegistry}) async {
     RomInfo? scrapedInfo;
     if (launchboxRegistry != null && !launchboxRegistry.containsKey(rom.slug)) {
-      var normalizedSlug = RomService.getRomSlug(rom.name, rom.console,
+      var normalizedSlug = RomService.getRomSlug(rom.console, rom.name,
           removeMisplacedWords: true);
       if (!launchboxRegistry.containsKey(normalizedSlug)) {
         return null;
@@ -287,12 +313,16 @@ class GameImportService {
       rom.slug = launchboxRegistry[normalizedSlug]!.slug;
     }
     try {
-      var foundMetadatas = await RomsRepository()
-          .fetchRomMetadata(rom.slug, RomMetadataLookups.SLUG);
+      var foundMetadatas = _fullMetadataCache != null
+          ? _fullMetadataCache![rom.slug]
+          : await RomsRepository()
+              .fetchRomMetadata(rom.slug, RomMetadataLookups.SLUG);
       if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
         scrapedInfo = foundMetadatas?.first?.info;
       }
-    } catch (e) {}
+    } catch (e) {
+      print("Error scraping rom info for ${rom.name} (${rom.console}): $e");
+    }
     return scrapedInfo;
   }
 
@@ -405,6 +435,7 @@ class GameImportService {
     GameImportProgressCallback? onProgress, {
     required int totalFiles,
     required int processedFiles,
+    bool isPreparing = false,
   }) {
     if (onProgress == null) return;
 
@@ -412,6 +443,7 @@ class GameImportService {
       GameImportProgressPayload(
         totalFiles: totalFiles,
         processedFiles: processedFiles,
+        isPreparing: isPreparing,
       ),
     );
   }
@@ -422,10 +454,12 @@ class GameImportProgressPayload {
   /// discovered so far, not a precomputed final total.
   final int totalFiles;
   final int processedFiles;
+  final bool isPreparing;
 
   GameImportProgressPayload({
     required this.totalFiles,
     required this.processedFiles,
+    this.isPreparing = false,
   });
 }
 

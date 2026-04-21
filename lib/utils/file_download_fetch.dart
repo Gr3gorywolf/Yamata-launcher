@@ -55,6 +55,7 @@ class FileDownloadFetch {
       },
       cancelOnError: true,
     );
+    await _subscription?.asFuture();
   }
 
   Future<void> cancel({bool deletePartialFile = true}) async {

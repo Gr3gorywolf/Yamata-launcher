@@ -106,6 +106,10 @@ class FileSystemService {
     return cachePath + "/updates";
   }
 
+  static get metadatasPath {
+    return _appSupportPath + "/metadatas";
+  }
+
   static get webFilesPath {
     return cachePath + "/web";
   }
@@ -504,6 +508,7 @@ class FileSystemService {
       notificationImagesPath,
       updatesPath,
       webFilesPath,
+      metadatasPath,
     ];
     for (var path in paths) {
       if (!await Directory(path).exists()) {

@@ -7,6 +7,7 @@ import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/repository/game_metadata_repository.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
@@ -106,10 +107,13 @@ class LibraryMassImportController extends ChangeNotifier {
     _notifyListeners();
     var libraryProvider =
         Provider.of<LibraryProvider>(navigatorContext!, listen: false);
-    final registry = await RomsRepository().fetchLaunchboxRegistry();
+    final registry = await GameMetadataRepository.prepareMetadataBuild();
+    if (!registry) {
+      throw Exception('Failed to fetch launchbox registry');
+    }
     final newRegistry = <String, LaunchboxRegistry>{};
-
-    for (final entry in registry) {
+    var launchboxRegistry = await GameMetadataRepository.fetchLaunchboxIndex();
+    for (final entry in launchboxRegistry) {
       final normalizedName = RomService.normalizeRomTitle(
         StringHelper.removeMisplacedWords(entry.name),
         deleteRunes: true,
@@ -122,7 +126,6 @@ class LibraryMassImportController extends ChangeNotifier {
       }
       newRegistry[normalizedSlug] = entry;
     }
-
     for (final libraryItem in libraryProvider.libraryItems) {
       if (libraryItem.doesExists == true) {
         _librarySlugs.add(libraryItem.rom.slug);

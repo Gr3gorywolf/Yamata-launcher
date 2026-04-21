@@ -18,6 +18,9 @@ class AppConstants {
   static String libretroMetadatasSite =
       "https://gr3gorywolf.github.io/libretro-metadatas";
 
+  static String libretroMetadatasReleaseBuild =
+      "https://github.com/Gr3gorywolf/libretro-metadatas/releases/latest/download/build.zip";
+
   static String gameRunnersGuideEntry =
       "https://github.com/Gr3gorywolf/Yamata-launcher/wiki/Game-runners";
 

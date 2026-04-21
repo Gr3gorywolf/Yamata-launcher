@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
@@ -210,6 +211,22 @@ class ExtractionService {
     }
 
     return (progressController.stream, cancel);
+  }
+
+  // Uses flutter archive native library to extract without needing an isolate. This is used for the metadata build which is relatively small and should extract quickly without blocking the UI.
+  static Future<void> extractWithArchive(File zipFile, Directory output) async {
+    final bytes = await zipFile.readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
+    for (final file in archive) {
+      final filename = path.join(output.path, file.name);
+      if (file.isFile) {
+        final outFile = File(filename);
+        outFile.createSync(recursive: true);
+        outFile.writeAsBytesSync(file.content as List<int>);
+      } else {
+        Directory(filename).createSync(recursive: true);
+      }
+    }
   }
 
   /// Cancels a queued or running extraction.

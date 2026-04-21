@@ -199,3 +199,11 @@ const PLATFORMS_WITH_DIRECTORY_TYPE_GAMES = [
 const DOWNLOAD_MARK_FILENAME = ".yldownload";
 
 const COMMON_ZIP_PASSWORDS = ["online-fix.me", "steamrip.com"];
+
+const METADATA_REQUIRED_FILES = [
+  "all-execs.json",
+  "all-serials.json",
+  "all-sizes.json",
+  "libretro-full-database.json",
+  "libretro-index.json"
+];

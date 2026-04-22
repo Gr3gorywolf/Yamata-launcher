@@ -72,6 +72,9 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
       if (_controller.skippedResults.contains(item.libraryItem.rom.slug)) {
         continue;
       }
+      if (!item.libraryItem.rom.isValid) {
+        continue;
+      }
       await libraryProvider.addLibraryItem(item.libraryItem);
     }
     loading.close();

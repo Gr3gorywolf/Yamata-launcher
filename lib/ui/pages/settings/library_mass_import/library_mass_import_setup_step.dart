@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:yamata_launcher/models/console.dart';
+import 'package:yamata_launcher/services/files_system_service.dart';
+import 'package:yamata_launcher/services/os_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_controller.dart';
 import 'package:yamata_launcher/ui/widgets/hint_banner.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
@@ -20,7 +22,9 @@ class LibraryMassImportSetupStep extends StatelessWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height - 90,
+        height: FileSystemService.isDesktop
+            ? MediaQuery.of(context).size.height - 90
+            : null,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 840),
@@ -32,17 +36,10 @@ class LibraryMassImportSetupStep extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Importer setup',
+                      'Import setup',
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Point the importer to a folder, optionally narrow it down to a single console, and then kick off the initial scrape preview.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.75),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
                     ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 0,

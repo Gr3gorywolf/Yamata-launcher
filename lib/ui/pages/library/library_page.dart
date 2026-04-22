@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
@@ -7,6 +8,7 @@ import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
@@ -58,6 +60,7 @@ class _LibraryPageState extends State<LibraryPage> {
         ),
       ];
 
+  @override
   initState() {
     Future.microtask(() {
       var libraryProvider =
@@ -66,8 +69,17 @@ class _LibraryPageState extends State<LibraryPage> {
           .compileRomDownloadSources(
               libraryProvider.libraryItems.map((e) => e.rom).toList());
     }).then((value) => null);
-
+    handleSetDefaultFilters();
     super.initState();
+  }
+
+  handleSetDefaultFilters() async {
+    var defaultSort = Provider.of<AppProvider>(context, listen: false)
+            .sortByLastPlayedByDefault
+        ? LibraryItemSorts.lastPlayedSort
+        : LibraryItemSorts.addedDateSort;
+    filterValues = ToolbarValue<RomLibraryItem>(
+        filters: [], search: '', sortBy: defaultSort);
   }
 
   handleQuickFilterChanged(quickFiltersTypes filter) {

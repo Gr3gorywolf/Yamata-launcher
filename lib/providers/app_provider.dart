@@ -18,6 +18,7 @@ class AppProvider extends ChangeNotifier {
   bool _isUsingGamepad = false;
   bool _isAppLoaded = false;
   bool _showGamepadGuide = true;
+  bool _sortByLastPlayedByDefault = true;
   bool get isAppLoaded => _isAppLoaded;
   UpdateInfo? _updateInfo;
   ThemeMode _theme = ThemeMode.system;
@@ -25,11 +26,13 @@ class AppProvider extends ChangeNotifier {
   UpdateInfo? get updateInfo => _updateInfo;
   bool get isUsingGamepad => _isUsingGamepad;
   bool get showGamepadGuide => _showGamepadGuide;
+  bool get sortByLastPlayedByDefault => _sortByLastPlayedByDefault;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
   StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
 
   setAppLoaded(bool val) {
     _isAppLoaded = val;
+    syncSettings();
     SettingsService()
         .get<String>(SettingsKeys.ROM_LIST_ITEM_TYPE)
         .then((value) {
@@ -52,6 +55,12 @@ class AppProvider extends ChangeNotifier {
 
       notifyListeners();
     });
+    notifyListeners();
+  }
+
+  syncSettings() async {
+    _sortByLastPlayedByDefault = await SettingsService()
+        .get<bool>(SettingsKeys.SORT_BY_LAST_PLAYED_BY_DEFAULT);
     notifyListeners();
   }
 

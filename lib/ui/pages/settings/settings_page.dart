@@ -43,6 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _useBuiltInLinkExtractor = false;
   bool _showGamepadGuide = false;
   bool _selectFirstDebrider = false;
+  bool _sortByLastPlayedByDefault = false;
 
   @override
   void initState() {
@@ -80,6 +81,8 @@ class _SettingsPageState extends State<SettingsPage> {
       _useBuiltInLinkExtractor = await SettingsService()
           .get<bool>(SettingsKeys.USE_BUILT_IN_LINK_EXTRACTOR);
     }
+    _sortByLastPlayedByDefault = await SettingsService()
+        .get<bool>(SettingsKeys.SORT_BY_LAST_PLAYED_BY_DEFAULT);
     setState(() {});
   }
 
@@ -117,6 +120,10 @@ class _SettingsPageState extends State<SettingsPage> {
           break;
         case SettingsKeys.SELECT_FIRST_DEBRIDER:
           _selectFirstDebrider = value as bool;
+          break;
+        case SettingsKeys.SORT_BY_LAST_PLAYED_BY_DEFAULT:
+          _sortByLastPlayedByDefault = value as bool;
+          break;
         default:
           break;
       }
@@ -125,6 +132,8 @@ class _SettingsPageState extends State<SettingsPage> {
     if (key == SettingsKeys.DOWNLOAD_PATH) {
       await FileSystemService.setupDownloadsPath();
     }
+    var appProvider = Provider.of<AppProvider>(context, listen: false);
+    await appProvider.syncSettings();
   }
 
   Future<void> _pickDownloadPath() async {
@@ -247,9 +256,9 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _NavigationTile(
               icon: Icons.import_export,
-              title: 'Game importer',
+              title: 'Library mass import',
               subtitle:
-                  'Import existing games from your system to the launcher, this will scan the default download path for rom files and add them to the library, it will also try to match the games with the configured platforms and get their metadata.',
+                  'Import a big batch of games to your library at once, the importer will try to automatically match the games and scrape missing metadata, you can review the results before completing the import.',
               onTap: () => context.push("/settings/game-importer"),
             ),
             const _SectionHeader(title: 'Sources'),
@@ -395,6 +404,17 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _extractRomsAfterDownload,
               onChanged: (v) => _setSetting(SettingsKeys.ENABLE_EXTRACTION, v),
             ),
+            _SwitchTile(
+              icon: Icons.sort,
+              title: 'Sort Library by last played by default',
+              subtitle:
+                  'Automatically sort games by last played date on the library page',
+              value: _sortByLastPlayedByDefault,
+              onChanged: (v) =>
+                  _setSetting(SettingsKeys.SORT_BY_LAST_PLAYED_BY_DEFAULT, v),
+            ),
+
+            // Cache management section
             const _SectionHeader(title: 'Cache Management'),
             _SwitchTile(
               icon: Icons.image,
@@ -412,6 +432,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   opacity: 0.7, child: const Text('Delete all cached files')),
               onTap: _clearCache,
             ),
+
             // About section
             const _SectionHeader(title: 'About'),
             _NavigationTile(

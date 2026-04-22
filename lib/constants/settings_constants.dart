@@ -22,7 +22,8 @@ enum SettingsKeys {
   COOKIE_SITE_URLS,
   ROM_LIST_ITEM_TYPE,
   SHOW_CONTROLLER_GUIDE,
-  SELECT_FIRST_DEBRIDER
+  SELECT_FIRST_DEBRIDER,
+  SORT_BY_LAST_PLAYED_BY_DEFAULT;
 }
 
 final _systemIsDarkThemed =
@@ -110,5 +111,10 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'select_first_debrider',
     type: SettingType.bool,
     defaultValue: true,
+  ),
+  SettingsKeys.SORT_BY_LAST_PLAYED_BY_DEFAULT: Setting<bool>(
+    key: 'sort_by_last_played_by_default',
+    type: SettingType.bool,
+    defaultValue: false,
   ),
 };

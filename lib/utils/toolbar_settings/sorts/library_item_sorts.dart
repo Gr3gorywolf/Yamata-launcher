@@ -4,18 +4,24 @@ class LibraryItemSorts {
   static var addedDateSort = ToolBarSortByElement(
       label: 'Added Date',
       field: 'addedAt',
-      value: ToolBarSortByType.ascending);
+      defaultSort: ToolBarSortByType.descending,
+      value: ToolBarSortByType.descending);
 
   static var romNameSort = ToolBarSortByElement(
-      label: 'Name', field: 'rom.name', value: ToolBarSortByType.ascending);
+      label: 'Name',
+      field: 'rom.name',
+      defaultSort: ToolBarSortByType.ascending,
+      value: ToolBarSortByType.ascending);
 
   static var playedTimeSort = ToolBarSortByElement(
       label: 'Played time',
       field: 'playTimeMins',
-      value: ToolBarSortByType.ascending);
+      defaultSort: ToolBarSortByType.descending,
+      value: ToolBarSortByType.descending);
 
   static var lastPlayedSort = ToolBarSortByElement(
       label: 'Last Played',
       field: 'lastPlayedAt',
-      value: ToolBarSortByType.ascending);
+      defaultSort: ToolBarSortByType.descending,
+      value: ToolBarSortByType.descending);
 }

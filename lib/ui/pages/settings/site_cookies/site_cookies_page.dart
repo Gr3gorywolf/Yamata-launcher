@@ -10,6 +10,7 @@ import 'package:yamata_launcher/models/site_cookies.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/cookies_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/ui/widgets/cookie_extractor_webview.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
@@ -32,6 +33,18 @@ class _SiteCookiesPageState extends State<SiteCookiesPage> {
 
   bool _siteExists(String site) {
     return _cookieSites.contains(site.trim());
+  }
+
+  Future<String?> handleGetCookiesFromBrowser(String url) async {
+    var cookies = await Navigator.of(navigatorContext!).push<String?>(
+      MaterialPageRoute(
+        builder: (_) => CookieExtractorWebview(
+          url: url,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    return cookies;
   }
 
   void handleSetSite({String? existingSite}) async {
@@ -68,7 +81,25 @@ class _SiteCookiesPageState extends State<SiteCookiesPage> {
           DialogSectionItem(
             title: "Site URL",
             icon: Icons.web,
-            actions: [],
+            actions: [
+              if (!Platform.isLinux)
+                IconButton(
+                  icon: const Icon(Icons.travel_explore),
+                  onPressed: () async {
+                    var extractedCookies =
+                        await handleGetCookiesFromBrowser(siteController.text);
+                    if (extractedCookies != null) {
+                      cookiesController.text = extractedCookies;
+                      cookies = extractedCookies;
+                      AlertsService.showSnackbar(
+                          "Cookies extracted successfully");
+                    } else {
+                      AlertsService.showErrorSnackbar(
+                          "Failed to extract cookies");
+                    }
+                  },
+                )
+            ],
             content: TextField(
               controller: siteController,
               decoration: const InputDecoration(

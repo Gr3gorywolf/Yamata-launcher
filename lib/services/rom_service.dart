@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:collection/collection.dart';
+import 'package:diacritic/diacritic.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
@@ -16,6 +17,7 @@ import 'package:yamata_launcher/ui/widgets/extraction_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
+import 'package:characters/characters.dart';
 import 'package:path/path.dart' as p;
 
 class RomService {
@@ -125,39 +127,36 @@ class RomService {
     var cleaned =
         input.toLowerCase().replaceAll(RegExp(r'\(.*?\)|\[.*?\]'), '').trim();
     if (!deleteRunes) {
-      cleaned = cleaned
-          .replaceAll(RegExp(r'[áàäâãåāăą]'), 'a')
-          .replaceAll(RegExp(r'[éèëêēĕėęě]'), 'e')
-          .replaceAll(RegExp(r'[íìïîĩīĭįı]'), 'i')
-          .replaceAll(RegExp(r'[óòöôõōŏőø]'), 'o')
-          .replaceAll(RegExp(r'[úùüûũūŭůűų]'), 'u')
-          .replaceAll(RegExp(r'[çćĉċč]'), 'c')
-          .replaceAll(RegExp(r'[ñńņň]'), 'n')
-          .replaceAll(RegExp(r'[ýÿŷ]'), 'y')
-          .replaceAll(RegExp(r'[śŝşš]'), 's')
-          .replaceAll(RegExp(r'[łĺļľŀ]'), 'l')
-          .replaceAll(RegExp(r'[žźż]'), 'z')
-          .replaceAll(RegExp(r'[ğĝġģ]'), 'g')
-          .replaceAll(RegExp(r'[řŕŗ]'), 'r')
-          .replaceAll(RegExp(r'[ťţŧ]'), 't')
-          .replaceAll(RegExp(r'[ďđ]'), 'd')
-          .replaceAll(RegExp(r'[þ]'), 'th')
-          .replaceAll(RegExp(r'[ß]'), 'ss')
-          .replaceAll(RegExp(r'[æ]'), 'ae')
-          .replaceAll(RegExp(r'[œ]'), 'oe');
+      cleaned = removeDiacritics(cleaned);
     }
 
     return cleaned.replaceAll(RegExp(r'[^a-z0-9]+'), '').trim();
   }
 
   static String getRomSlug(String consoleSlug, String romName,
-      {bool removeMisplacedWords = false}) {
+      {bool removeMisplacedWords = false, bool removeDiacritics = true}) {
     var cleanRomName = removeMisplacedWords
         ? StringHelper.removeMisplacedWords(romName)
         : romName;
     return consoleSlug +
         "-" +
-        normalizeRomTitle(cleanRomName, deleteRunes: true);
+        normalizeRomTitle(cleanRomName, deleteRunes: removeDiacritics);
+  }
+
+  // Generate different slug variants to increase the chances of matching with scraped data
+  static List<String> getSlugVariants(
+      String consoleSlug, String romName, String originalSlug) {
+    return [
+      originalSlug,
+      RomService.getRomSlug(consoleSlug, romName,
+          removeMisplacedWords: true, removeDiacritics: true),
+      RomService.getRomSlug(consoleSlug, romName,
+          removeMisplacedWords: false, removeDiacritics: true),
+      RomService.getRomSlug(consoleSlug, romName,
+          removeMisplacedWords: true, removeDiacritics: true),
+      RomService.getRomSlug(consoleSlug, romName,
+          removeMisplacedWords: false, removeDiacritics: false)
+    ].toSet().toList();
   }
 
   static String getLastPlayedLabel(RomLibraryItem? downloadedRom) {

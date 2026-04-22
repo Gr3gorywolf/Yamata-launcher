@@ -211,6 +211,10 @@ class ConsoleService {
         element.altName == name ||
         element.name == name ||
         element.slug == name);
+
+    if (name == "unknown") {
+      return Console(name: "Unknown", slug: "unknown");
+    }
     if (results.isEmpty) {
       return null;
     } else {

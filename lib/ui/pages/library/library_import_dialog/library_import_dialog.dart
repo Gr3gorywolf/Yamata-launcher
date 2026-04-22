@@ -117,7 +117,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
 
   void _onScrape(RomInfo info) {
     form.control('title').value = info.name;
-    if (widget.canEditConsole) {
+    if (widget.canEditConsole || !widget.libraryItem!.rom.isValid) {
       form.control('console').value = info.console;
     }
     form.control('portraitUrl').value = info.portrait ?? '';

@@ -36,12 +36,21 @@ class RomInfo implements JsonSerializable {
     required this.console,
   });
 
-  bool get isScraped => [
+  bool get isValid =>
+      this.name.isNotEmpty &&
+      this.console.isNotEmpty &&
+      this.slug.isNotEmpty &&
+      this.console.toLowerCase() != 'unknown' &&
+      this.name.toLowerCase() != 'unknown';
+
+  bool get isScraped =>
+      [
         this.detailsUrl,
         this.releaseDate,
         this.rating,
-        this.portrait
-      ].any((element) => element != null && element.toString().isNotEmpty);
+        this.portrait,
+      ].any((element) => element != null && element.toString().isNotEmpty) &&
+      this.isValid;
 
   RomInfo.fromJson(Map<String, dynamic> json) {
     name = json['name'];

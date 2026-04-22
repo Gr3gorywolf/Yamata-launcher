@@ -304,19 +304,21 @@ class GameImportService {
   static Future<RomInfo?> scrapeRomInfo(RomInfo rom,
       {Map<String, LaunchboxRegistry>? launchboxRegistry}) async {
     RomInfo? scrapedInfo;
-    if (launchboxRegistry != null && !launchboxRegistry.containsKey(rom.slug)) {
-      var normalizedSlug = RomService.getRomSlug(rom.console, rom.name,
-          removeMisplacedWords: true);
-      if (!launchboxRegistry.containsKey(normalizedSlug)) {
-        return null;
+    var slug = rom.slug;
+    var keysToMatch =
+        RomService.getSlugVariants(rom.console, rom.name, rom.slug);
+    if (launchboxRegistry != null) {
+      var foundKey = keysToMatch
+          .firstWhereOrNull((key) => launchboxRegistry.containsKey(key));
+      if (foundKey != null) {
+        slug = launchboxRegistry[foundKey]!.slug;
       }
-      rom.slug = launchboxRegistry[normalizedSlug]!.slug;
     }
     try {
       var foundMetadatas = _fullMetadataCache != null
-          ? _fullMetadataCache![rom.slug]
+          ? _fullMetadataCache![slug]
           : await RomsRepository()
-              .fetchRomMetadata(rom.slug, RomMetadataLookups.SLUG);
+              .fetchRomMetadata(slug, RomMetadataLookups.SLUG);
       if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
         scrapedInfo = foundMetadatas?.first?.info;
       }

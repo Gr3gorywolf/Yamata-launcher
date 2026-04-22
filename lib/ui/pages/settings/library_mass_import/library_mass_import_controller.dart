@@ -114,17 +114,17 @@ class LibraryMassImportController extends ChangeNotifier {
     final newRegistry = <String, LaunchboxRegistry>{};
     var launchboxRegistry = await GameMetadataRepository.fetchLaunchboxIndex();
     for (final entry in launchboxRegistry) {
-      final normalizedName = RomService.normalizeRomTitle(
-        StringHelper.removeMisplacedWords(entry.name),
-        deleteRunes: true,
-      );
-      final normalizedSlug =
-          RomService.getRomSlug(entry.console, normalizedName);
-
-      if (normalizedSlug != entry.slug) {
-        newRegistry[entry.slug] = entry;
+      var slugsVariants =
+          RomService.getSlugVariants(entry.console, entry.name, entry.slug);
+      if (entry.slug.contains("3ds-pokmonalphasapphire")) {
+        print(slugsVariants);
       }
-      newRegistry[normalizedSlug] = entry;
+      for (var slug in slugsVariants) {
+        if (newRegistry.containsKey(slug)) {
+          continue;
+        }
+        newRegistry[slug] = entry;
+      }
     }
     for (final libraryItem in libraryProvider.libraryItems) {
       if (libraryItem.doesExists == true) {
@@ -299,27 +299,32 @@ class LibraryMassImportController extends ChangeNotifier {
     LibraryMassImportPreviewItem item,
     int sessionId,
   ) async {
-    final updatedInfo =
-        await GameImportService.scrapeRomInfo(item.libraryItem.rom);
+    final updatedInfo = await GameImportService.scrapeRomInfo(
+        item.libraryItem.rom,
+        launchboxRegistry: _launchboxRegistry);
 
     if (updatedInfo == null || _shouldIgnoreSession(sessionId)) {
       return;
     }
+    final originalSlug = item.libraryItem.rom.slug;
+    final updatedSlug = updatedInfo.slug;
+    final updatedItem = _previewItems[originalSlug];
 
-    final updatedItem = _previewItems[item.libraryItem.rom.slug];
     if (updatedItem == null) {
       return;
     }
-
     final libraryItem = updatedItem.libraryItem;
     libraryItem.rom = updatedInfo;
 
-    _previewItems[item.libraryItem.rom.slug] = updatedItem.copyWith(
+    _previewItems[updatedInfo.slug] = updatedItem.copyWith(
       libraryItem: libraryItem,
       matchStatus: LibraryImportPreviewStatus.COMPLETE,
       isValid: true,
       isScraped: true,
     );
+    if (originalSlug != updatedSlug) {
+      _previewItems.remove(originalSlug);
+    }
     _notifyListeners();
   }
 

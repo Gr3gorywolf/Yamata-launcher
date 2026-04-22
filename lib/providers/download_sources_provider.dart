@@ -64,7 +64,7 @@ String _prefix3(String s) => s.length <= 3 ? s : s.substring(0, 3);
 String _normalizeTitleForMatching(String input) {
   return RomService.normalizeRomTitle(
     StringHelper.removeMisplacedWords(input),
-    deleteRunes: true,
+    deleteRunes: false,
   );
 }
 

@@ -79,7 +79,7 @@ class RomListItemListVariant extends StatelessWidget {
                                 ],
                                 if (props.showActionButton) ...[
                                   SizedBox(
-                                    height: 5,
+                                    height: 8,
                                   ),
                                   RomActionButton(
                                     props.romItem,

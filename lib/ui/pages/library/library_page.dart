@@ -39,7 +39,11 @@ class _LibraryPageState extends State<LibraryPage> {
       [
         ToolBarFilterGroup(
           groupName: 'Consoles',
-          filters: roms.map((e) => e.rom.console).toSet().map((console) {
+          filters: roms
+              .where((e) => e.rom.console != null)
+              .map((e) => e.rom.console)
+              .toSet()
+              .map((console) {
             return LibraryItemFilters.consoleFilter(
                 ConsoleService.getConsoleFromName(console)!);
           }).toList(),

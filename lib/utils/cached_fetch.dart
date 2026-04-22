@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'package:http/http.dart';
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
 import 'package:yamata_launcher/services/cache_service.dart';
@@ -9,6 +11,10 @@ typedef FromRawJson<T> = T Function(dynamic json);
 class CachedFetch {
   static _getFullkey(String key) {
     return "fetch-cache/" + key;
+  }
+
+  static Future<R?> _runInIsolate<R>(FutureOr<R?> Function() fn) {
+    return Isolate.run(fn);
   }
 
   static Future<T?> withContentLengthSignature<T>({
@@ -26,10 +32,13 @@ class CachedFetch {
 
     try {
       final signature = await CacheService.getCacheSignature(fullKey);
+
       if (forceCache && signature != null) {
         final cached = await CacheService.retrieveCacheFile(fullKey);
         if (cached != null) {
-          return parser(jsonDecode(cached));
+          return _runInIsolate(() {
+            return parser(jsonDecode(cached));
+          });
         }
       }
 
@@ -42,7 +51,9 @@ class CachedFetch {
         if (remoteSignature != null && remoteSignature == signature) {
           final cached = await CacheService.retrieveCacheFile(fullKey);
           if (cached != null) {
-            return parser(jsonDecode(cached));
+            return _runInIsolate(() {
+              return parser(jsonDecode(cached));
+            });
           }
         }
       }
@@ -50,6 +61,7 @@ class CachedFetch {
       final res = await client
           .get(Uri.parse(url))
           .timeout(timeout ?? Duration(seconds: 25));
+
       if (res.statusCode != 200) return null;
 
       await CacheService.writeCacheFile(fullKey, res.body, ttl: ttl);
@@ -60,7 +72,9 @@ class CachedFetch {
         await CacheService.setCacheSignature(fullKey, newSignature);
       }
 
-      return parser(jsonDecode(res.body));
+      return _runInIsolate(() {
+        return parser(jsonDecode(res.body));
+      });
     } catch (e, st) {
       print('CachedFetch<json> [$key]: $e');
       print(st);
@@ -68,7 +82,9 @@ class CachedFetch {
       final cached = await CacheService.retrieveCacheFile(fullKey);
       if (cached != null) {
         try {
-          return parser(jsonDecode(cached));
+          return _runInIsolate(() {
+            return parser(jsonDecode(cached));
+          });
         } catch (_) {}
       }
 
@@ -85,8 +101,11 @@ class CachedFetch {
   }) async {
     try {
       final cached = await CacheService.retrieveCacheFile(_getFullkey(key));
+
       if (cached != null) {
-        return fromJson(json.decode(cached));
+        return _runInIsolate(() {
+          return fromJson(json.decode(cached));
+        });
       }
 
       final result = await fetcher();
@@ -115,9 +134,15 @@ class CachedFetch {
   }) async {
     try {
       final cached = await CacheService.retrieveCacheFile(_getFullkey(key));
+
       if (cached != null) {
-        final decoded = json.decode(cached) as List;
-        return decoded.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+        return (await _runInIsolate(() {
+              final decoded = json.decode(cached) as List;
+              return decoded
+                  .map((e) => fromJson(e as Map<String, dynamic>))
+                  .toList();
+            })) ??
+            [];
       }
 
       final result = await fetcher();

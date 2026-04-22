@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
@@ -89,17 +90,25 @@ class GameMetadataRepository {
   }
 
   static Future<List<LaunchboxRegistry>> fetchLaunchboxIndex() async {
-    var registryFile =
-        File(FileSystemService.metadatasPath + "/libretro-index.json");
-    if (!registryFile.existsSync()) {
-      throw Exception("Metadata registry file not found.");
-    }
-    var content = jsonDecode(registryFile.readAsStringSync());
-    List<LaunchboxRegistry> registries = [];
-    for (final item in content) {
-      registries.add(LaunchboxRegistry.fromJson(item));
-    }
-    return registries;
+    final path = FileSystemService.metadatasPath + "/libretro-index.json";
+
+    return await Isolate.run(() async {
+      final file = File(path);
+
+      if (!file.existsSync()) {
+        throw Exception("Metadata registry file not found.");
+      }
+
+      final content = jsonDecode(await file.readAsString());
+
+      final List<LaunchboxRegistry> registries = [];
+
+      for (final item in content) {
+        registries.add(LaunchboxRegistry.fromJson(item));
+      }
+
+      return registries;
+    });
   }
 
   static Future<Map<String, List<RomMetadata>>> retrieveMetadataIndexByType(

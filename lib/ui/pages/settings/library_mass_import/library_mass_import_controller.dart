@@ -118,9 +118,6 @@ class LibraryMassImportController extends ChangeNotifier {
     for (final entry in launchboxRegistry) {
       var slugsVariants =
           RomService.getSlugVariants(entry.console, entry.name, entry.slug);
-      if (entry.slug.contains("3ds-pokmonalphasapphire")) {
-        print(slugsVariants);
-      }
       for (var slug in slugsVariants) {
         if (newRegistry.containsKey(slug)) {
           continue;

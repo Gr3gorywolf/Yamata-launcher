@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -146,6 +148,11 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
     super.dispose();
   }
 
+  var gestureRecognizers = <Factory<OneSequenceGestureRecognizer>>[
+    Factory<OneSequenceGestureRecognizer>(
+      () => EagerGestureRecognizer(),
+    ),
+  ].toSet();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,6 +176,7 @@ class _AdBlockedWebViewState extends State<AdBlockedWebView> {
               ),
               initialUserScripts: UnmodifiableListView(_initialUserScripts),
               initialUrlRequest: URLRequest(url: WebUri(widget.rawLink)),
+              gestureRecognizers: gestureRecognizers,
               onWebViewCreated: (controller) {
                 _controller = controller;
                 _registerJavascriptHandlers(controller);

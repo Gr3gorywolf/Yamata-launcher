@@ -13,6 +13,35 @@ const SETUP_FILE_NAMES = [
   "install.app",
 ];
 
+const UNINSTS_FILE_NAMES = [
+  "uninstall.exe",
+  "uninst.exe",
+  "uninstall.msi",
+  "uninst.msi",
+  "uninstall.pkg",
+  "uninst.pkg",
+  "uninstall.sh",
+  "uninst.sh",
+  "uninstall.app",
+  "uninst.app",
+  "unins000.exe"
+];
+
+const GENERIC_EXECS = [
+  "game.exe",
+  "start.exe",
+  "launch.exe",
+  "play.exe",
+  "run.exe",
+  "love.exe",
+  "launcher.exe",
+  "starter.exe",
+  "start_protected_game.exe",
+  "client.exe",
+  "gameclient.exe",
+  "thankyouverycool.exe"
+];
+
 const REDIST_FILE_MATCHES = [
   "unitycrashhandler",
   "redist",

@@ -207,19 +207,39 @@ class GameImportService {
     // if its windows try to make a direct lookup
     if (foundSingleConsole == CONSOLE_SLUGS.windows) {
       var execName = p.basename(filePath).toLowerCase();
+      var isGenericExec = GENERIC_EXECS.contains(execName);
       var execWithParentPath =
           p.join(p.basename(p.dirname(filePath)), execName).toLowerCase();
-      for (var nameVariant in [
-        execWithParentPath,
-        execName,
-      ]) {
-        var foundMetadatas = _execCache?[nameVariant];
-        if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
-          metadata = foundMetadatas?.first;
-          break;
+      if (!isGenericExec) {
+        for (var nameVariant in [
+          execWithParentPath,
+          execName,
+        ]) {
+          var foundMetadatas = _execCache?[nameVariant];
+          if (foundMetadatas != null &&
+              foundMetadatas.isNotEmpty &&
+              !GENERIC_EXECS.contains(execName)) {
+            metadata = foundMetadatas?.first;
+            break;
+          }
         }
       }
 
+      var execFolderName = p.basename(p.dirname(filePath)).toLowerCase();
+      var gameSlug =
+          RomService.getRomSlug(CONSOLE_SLUGS.windows.value, execFolderName);
+      // Try to lookup by folder name if the exec name is generic
+      if (metadata == null &&
+          launchboxRegistry?[gameSlug] != null &&
+          isGenericExec) {
+        var foundRegistrySlug = launchboxRegistry?[gameSlug]!.slug;
+        if (foundRegistrySlug != null) {
+          var foundMetadatas = _fullMetadataCache?[foundRegistrySlug];
+          if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
+            metadata = foundMetadatas?.first;
+          }
+        }
+      }
       if (metadata == null) {
         return RomInfo(
           slug: RomService.getRomSlug(CONSOLE_SLUGS.windows.value, filename),
@@ -378,6 +398,7 @@ class GameImportService {
         ...SETUP_FILE_NAMES,
         ...REDIST_FILE_MATCHES,
         ...ENGINE_FILE_MATCHES,
+        ...UNINSTS_FILE_NAMES
       ]
           .where((match) => entity.path.toLowerCase().contains(match))
           .isNotEmpty) {

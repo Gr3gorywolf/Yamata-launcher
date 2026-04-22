@@ -68,6 +68,7 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
       if (!skipUncompleted) ..._controller.needsScrapeGames
     ];
     var libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
+    var gamesCount = 0;
     for (var item in itemsToAdd) {
       if (_controller.skippedResults.contains(item.libraryItem.rom.slug)) {
         continue;
@@ -76,11 +77,12 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
         continue;
       }
       await libraryProvider.addLibraryItem(item.libraryItem);
+      gamesCount++;
     }
     loading.close();
     Future.microtask(() {
       AlertsService.showSnackbar(
-        'Import completed with ${_controller.validGames.length} games imported${!skipUncompleted && _controller.needsScrapeGames.length > 0 ? " and ${_controller.needsScrapeGames.length} games pending scrape" : ""}.',
+        'Import completed with $gamesCount games imported${!skipUncompleted && _controller.needsScrapeGames.length > 0 ? " and ${_controller.needsScrapeGames.length} games pending scrape" : ""}.',
       );
       _controller.backToSetup();
     });
@@ -97,19 +99,22 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
             !_controller.skippedResults.contains(game.libraryItem.rom.slug))
         .toList();
     if (needsScrapeGamesWithoutSkip.length > 0) {
-      AlertsService.showAlert(navigatorContext!, 'Scraping required',
-          'There are ${needsScrapeGamesWithoutSkip.length} games that have missing fields and needs to be scraped, do you want to add them to the library anyway?, you can always scrape them later on the game settings page.',
-          acceptTitle: 'Proceed with missing scrapes',
-          cancelable: true,
-          additionalAction: TextButton(
-              onPressed: () {
-                Navigator.of(navigatorContext!).pop();
-                _completeImport(true);
-              },
-              child: const Text('Proceed and skip pending scrapes')),
-          callback: () {
-        _completeImport(false);
-      });
+      AlertsService.showAlert(
+        navigatorContext!,
+        'Scraping required',
+        'There are ${needsScrapeGamesWithoutSkip.length} games that have missing fields and needs to be scraped, do you want to add them to the library anyway?, you can always scrape them later on the game settings page.',
+        acceptTitle: 'Proceed and skip pending scrapes',
+        callback: () {
+          _completeImport(true);
+        },
+        cancelable: true,
+        additionalAction: TextButton(
+            onPressed: () {
+              Navigator.of(navigatorContext!).pop();
+              _completeImport(false);
+            },
+            child: const Text('Proceed with missing scrapes')),
+      );
       return;
     }
 

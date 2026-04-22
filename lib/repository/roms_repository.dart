@@ -24,7 +24,8 @@ class RomsRepository {
   Future<List<RomInfo>> fetchRoms(Console console,
       {bool forceCache = false}) async {
     Map<String, RomInfo> roms = {};
-    final url = "${AppConstants.apiBasePath}/Data/Roms/${console.slug}.json";
+    final url =
+        "${AppConstants.libretroMetadatasLastRelease}/${console.slug}.json";
     var externalConsoles = ConsoleService.externalPlatformCatalogs;
     var foundExternalSources =
         externalConsoles.where((c) => c.console.slug == console.slug).toList();
@@ -119,17 +120,19 @@ class RomsRepository {
   }
 
   Future<List<String>> fetchWindowsExecutableNames() async {
-    var url =
-        "https://raw.githubusercontent.com/Roblox-Thot/discord-activitys/refs/heads/main/json/executables.json";
+    var url = "${AppConstants.libretroMetadatasLastRelease}/all-execs-raw.json";
     final result = await CachedFetch.withContentLengthSignature<List<String>>(
         key: "executables",
         url: url,
         parser: (json) {
           List<String> executables = [];
           for (final item in json) {
-            if ([...REDIST_FILE_MATCHES, ...ENGINE_FILE_MATCHES]
-                .where((match) => item.toLowerCase().contains(match))
-                .isNotEmpty) {
+            if ([
+              ...SETUP_FILE_NAMES,
+              ...REDIST_FILE_MATCHES,
+              ...ENGINE_FILE_MATCHES,
+              ...UNINSTS_FILE_NAMES
+            ].where((match) => item.toLowerCase().contains(match)).isNotEmpty) {
               continue;
             }
             var executableName =

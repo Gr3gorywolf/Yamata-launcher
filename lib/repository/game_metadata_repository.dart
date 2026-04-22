@@ -22,7 +22,8 @@ class GameMetadataRepository {
         File(FileSystemService.metadatasPath + "/${DOWNLOAD_MARK_FILENAME}");
     int? contentLength = null;
     try {
-      var res = await Dio().head(AppConstants.libretroMetadatasReleaseBuild);
+      var res = await Dio()
+          .head(AppConstants.libretroMetadatasLastRelease + "/build.zip");
       contentLength = res.headers.value("content-length") != null
           ? int.tryParse(res.headers.value("content-length")!)
           : null;
@@ -48,7 +49,8 @@ class GameMetadataRepository {
     try {
       var hasError = false;
       await FileDownloadFetch(
-          url: Uri.parse(AppConstants.libretroMetadatasReleaseBuild),
+          url: Uri.parse(
+              AppConstants.libretroMetadatasLastRelease + "/build.zip"),
           savePath: FileSystemService.metadatasPath + "/build.zip",
           onCancelled: () {
             print("Metadata build download cancelled.");

@@ -103,7 +103,7 @@ class GameMetadataRepository {
   }
 
   static Future<Map<String, List<RomMetadata>>> retrieveMetadataIndexByType(
-      RomMetadataLookups lookup) async {
+      RomMetadataLookups lookup, String metadatasPath) async {
     Map<String, List<RomMetadata>> metadatas = {};
     var filesByLookups = <RomMetadataLookups, String>{
       RomMetadataLookups.FILE_SIZE: "all-sizes.json",
@@ -118,7 +118,7 @@ class GameMetadataRepository {
           "No metadata index file defined for lookup type ${lookup.value}");
     }
 
-    var registryFile = File(FileSystemService.metadatasPath + "/${fileName}");
+    var registryFile = File(metadatasPath + "/${fileName}");
     if (!registryFile.existsSync()) {
       throw Exception(
           "Metadata index file not found for lookup type ${lookup.value}");

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
@@ -167,19 +168,39 @@ class GameImportService {
 
   static Future<void> _loadMetadataCache() async {
     try {
-      _fullMetadataCache =
-          await GameMetadataRepository.retrieveMetadataIndexByType(
-              RomMetadataLookups.SLUG);
-      _sizeCache = await GameMetadataRepository.retrieveMetadataIndexByType(
-          RomMetadataLookups.FILE_SIZE);
-      _serialCache = await GameMetadataRepository.retrieveMetadataIndexByType(
-          RomMetadataLookups.SERIAL);
-      _execCache = await GameMetadataRepository.retrieveMetadataIndexByType(
-          RomMetadataLookups.EXEC_NAME);
-    } on Exception catch (e, st) {
+      String metadatasPath = FileSystemService.metadatasPath;
+
+      final result = await compute(_loadMetadataCacheIsolate, metadatasPath);
+
+      _fullMetadataCache = result.full;
+      _sizeCache = result.size;
+      _serialCache = result.serial;
+      _execCache = result.exec;
+    } catch (e, st) {
       print("Error loading metadata cache: $e $st");
-      return;
     }
+  }
+
+  static Future<_MetadataCacheResult> _loadMetadataCacheIsolate(
+      String path) async {
+    final full = await GameMetadataRepository.retrieveMetadataIndexByType(
+        RomMetadataLookups.SLUG, path);
+
+    final size = await GameMetadataRepository.retrieveMetadataIndexByType(
+        RomMetadataLookups.FILE_SIZE, path);
+
+    final serial = await GameMetadataRepository.retrieveMetadataIndexByType(
+        RomMetadataLookups.SERIAL, path);
+
+    final exec = await GameMetadataRepository.retrieveMetadataIndexByType(
+        RomMetadataLookups.EXEC_NAME, path);
+
+    return _MetadataCacheResult(
+      full: full,
+      size: size,
+      serial: serial,
+      exec: exec,
+    );
   }
 
   static Future<void> _clearMetadataCache() async {
@@ -503,5 +524,19 @@ class _PendingRomLookup {
   _PendingRomLookup({
     required this.filePath,
     required this.fallbackRom,
+  });
+}
+
+class _MetadataCacheResult {
+  final Map<String, List<RomMetadata>> full;
+  final Map<String, List<RomMetadata>> size;
+  final Map<String, List<RomMetadata>> serial;
+  final Map<String, List<RomMetadata>> exec;
+
+  _MetadataCacheResult({
+    required this.full,
+    required this.size,
+    required this.serial,
+    required this.exec,
   });
 }

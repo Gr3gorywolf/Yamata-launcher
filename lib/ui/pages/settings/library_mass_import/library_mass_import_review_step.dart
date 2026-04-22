@@ -124,9 +124,12 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 5),
                               if (isInitialScrapeRunning)
                                 LinearProgressIndicator(
-                                  value: getScrapeProgressPercent(),
+                                  value: controller.isPreparingScrape
+                                      ? null
+                                      : getScrapeProgressPercent(),
                                 ),
                               if (isInitialScrapeRunning)
                                 const SizedBox(height: 14),

@@ -51,9 +51,11 @@ class LibraryMassImportController extends ChangeNotifier {
   Set<String> _librarySlugs = {};
   int _revealedItems = 0;
   bool _isInitialScrapeRunning = false;
+  bool _isPreparingScrape = false;
 
   List<Console> get availableConsoles => _availableConsoles;
   LibraryMassImportStage get stage => _stage;
+  bool get isPreparingScrape => _isPreparingScrape;
   String get scanFolder => _scanFolder;
   String get selectedConsole => _selectedConsole;
   bool get isInitialScrapeRunning => _isInitialScrapeRunning;
@@ -217,7 +219,7 @@ class LibraryMassImportController extends ChangeNotifier {
         if (_shouldIgnoreSession(sessionId)) {
           return;
         }
-
+        _isPreparingScrape = progress.isPreparing == true;
         _revealedItems = progress.totalFiles;
         _notifyListeners();
       },

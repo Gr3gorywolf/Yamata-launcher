@@ -28,8 +28,8 @@ class LibraryMassImportReviewStep extends StatelessWidget {
       (count, invalidGame) => count + invalidGame.sourceFiles.length,
     );
     final summaryLabel = isInitialScrapeRunning
-        ? 'Initial scrape in progress'
-        : 'Review matches before importing';
+        ? 'Scanning in progress...'
+        : 'Review matches before completing import';
 
     double getScrapeProgressPercent() {
       final total =
@@ -124,7 +124,6 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 7),
                               if (isInitialScrapeRunning)
                                 LinearProgressIndicator(
                                   value: getScrapeProgressPercent(),
@@ -137,25 +136,24 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                                 children: [
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.search,
-                                    label: '$filesFound files found',
+                                    label: '$filesFound Found',
                                   ),
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.check_circle_outline,
-                                    label: '$validFilesCount valid game files',
+                                    label: '$validFilesCount Valid',
                                   ),
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.sync,
                                     label:
-                                        '${needsScrapeGames.length} needs scraping',
+                                        '${needsScrapeGames.length} Incomplete',
                                   ),
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.error_outline,
-                                    label:
-                                        '$invalidFilesCount invalid game files',
+                                    label: '$invalidFilesCount Invalid',
                                   ),
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.redo,
-                                    label: "${getSkippedCount()} skipped",
+                                    label: "${getSkippedCount()} Skipped",
                                   ),
                                   _LibraryMassImportReviewChip(
                                     icon: Icons.videogame_asset,
@@ -163,7 +161,7 @@ class LibraryMassImportReviewStep extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 5),
                               Text(
                                 'Scan folder: ${scanFolder.isEmpty ? 'No folder selected' : scanFolder}',
                                 style: theme.textTheme.bodySmall?.copyWith(

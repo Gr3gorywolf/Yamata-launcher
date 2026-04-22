@@ -223,6 +223,11 @@ class FileSystemService {
   static Future<String?> showFolderPicker() async {
     var appProvider =
         Provider.of<AppProvider>(navigatorContext!, listen: false);
+    if (Platform.isAndroid) {
+      if (!await Permission.manageExternalStorage.isGranted) {
+        await Permission.manageExternalStorage.request();
+      }
+    }
     try {
       if (isFullScreen || appProvider.isUsingGamepad) {
         return await _openBuiltInFilePicker(FilesystemType.folder);

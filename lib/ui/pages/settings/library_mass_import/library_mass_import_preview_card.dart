@@ -21,38 +21,136 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
     final consoleName =
         ConsoleService.getConsoleFromName(item.libraryItem.rom.console)?.name ??
             item.libraryItem.rom.console.toUpperCase();
+    final isSkipped = context.select<LibraryMassImportController, bool>(
+      (controller) =>
+          controller.skippedResults.contains(item.libraryItem.rom.slug),
+    );
+    final canSkip = item.matchStatus != LibraryImportPreviewStatus.NONE;
+    void selectItemSourceFile(BuildContext context, String source) {
+      final controller = LibraryMassImportController.of(context, listen: false);
+      final updatedLibraryItem = item.libraryItem;
+      updatedLibraryItem.filePath = source;
+      controller.updatePreviewItem(
+          updatedLibraryItem, item.libraryItem.rom.slug);
+    }
+
+    void handleUpdate(BuildContext context) async {
+      final controller = LibraryMassImportController.of(context, listen: false);
+      final originalSlug = item.libraryItem.rom.slug;
+      await LibraryImportDialog.show(context, (info, path) {
+        final updatedItem = item.libraryItem;
+        updatedItem.rom = info;
+        updatedItem.filePath = path;
+        controller.updatePreviewItem(updatedItem, originalSlug);
+      }, libraryItem: item.libraryItem, canEditConsole: false);
+    }
+
+    void handleSkip(BuildContext context, bool value) {
+      final controller = LibraryMassImportController.of(context, listen: false);
+      if (value) {
+        controller.skippedResults = {
+          ...controller.skippedResults,
+          item.libraryItem.rom.slug
+        };
+      } else {
+        controller.skippedResults = {...controller.skippedResults}
+          ..remove(item.libraryItem.rom.slug);
+      }
+    }
 
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: LayoutBuilder(
           builder: (context, _) {
-            return Flex(
-              direction: Axis.horizontal,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: RomThumbnail(
-                      item.libraryItem.rom,
-                      height: 96,
-                      width: 96,
+            return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flex(
+                    direction: Axis.horizontal,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 65,
+                          height: 65,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: RomThumbnail(
+                            item.libraryItem.rom,
+                            height: 65,
+                            width: 65,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: _LibraryMassImportPreviewCardContent(
+                          item: item,
+                          consoleName: consoleName,
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...item.sourceFiles.map(
+                    (source) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: InkWell(
+                        onTap: item.sourceFiles.length > 1
+                            ? () => selectItemSourceFile(context, source)
+                            : null,
+                        child: Row(
+                          children: [
+                            if (item.sourceFiles.length > 1) ...[
+                              Icon(
+                                  item.libraryItem.filePath == source
+                                      ? Icons.radio_button_checked
+                                      : Icons.radio_button_unchecked,
+                                  size: 16),
+                              const SizedBox(width: 6),
+                            ],
+                            Expanded(
+                              child: Text(
+                                source,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.68),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                maxLines: 2,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _LibraryMassImportPreviewCardContent(
-                    item: item,
-                    consoleName: consoleName,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => handleUpdate(context),
+                        icon: const Icon(Icons.travel_explore),
+                        label: const Text('Manual scrape'),
+                      ),
+                      SizedBox(width: 12),
+                      if (canSkip)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: isSkipped,
+                              onChanged: (value) =>
+                                  handleSkip(context, value ?? false),
+                            ),
+                            const Text("Skip this result"),
+                          ],
+                        )
+                    ],
                   ),
-                )
-              ],
-            );
+                ]);
           },
         ),
       ),
@@ -108,52 +206,18 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
     }
   }
 
-  void selectItemSourceFile(BuildContext context, String source) {
-    final controller = LibraryMassImportController.of(context, listen: false);
-    final updatedLibraryItem = item.libraryItem;
-    updatedLibraryItem.filePath = source;
-    controller.updatePreviewItem(updatedLibraryItem, item.libraryItem.rom.slug);
-  }
-
-  void handleUpdate(BuildContext context) async {
-    final controller = LibraryMassImportController.of(context, listen: false);
-    final originalSlug = item.libraryItem.rom.slug;
-    await LibraryImportDialog.show(context, (info, path) {
-      final updatedItem = item.libraryItem;
-      updatedItem.rom = info;
-      updatedItem.filePath = path;
-      controller.updatePreviewItem(updatedItem, originalSlug);
-    }, libraryItem: item.libraryItem, canEditConsole: false);
-  }
-
-  void handleSkip(BuildContext context, bool value) {
-    final controller = LibraryMassImportController.of(context, listen: false);
-    if (value) {
-      controller.skippedResults = {
-        ...controller.skippedResults,
-        item.libraryItem.rom.slug
-      };
-    } else {
-      controller.skippedResults = {...controller.skippedResults}
-        ..remove(item.libraryItem.rom.slug);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isSkipped = context.select<LibraryMassImportController, bool>(
-      (controller) =>
-          controller.skippedResults.contains(item.libraryItem.rom.slug),
-    );
+
     final isOnLibrary = context.select<LibraryMassImportController, bool>(
       (controller) =>
           controller.librarySlugs.contains(item.libraryItem.rom.slug),
     );
-    final canSkip = item.matchStatus != LibraryImportPreviewStatus.NONE;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Wrap(
           spacing: 10,
@@ -190,63 +254,6 @@ class _LibraryMassImportPreviewCardContent extends StatelessWidget {
               icon: Icons.analytics_outlined,
               label: dataByConfidence.confidenceLabel,
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ...item.sourceFiles.map(
-          (source) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              onTap: item.sourceFiles.length > 1
-                  ? () => selectItemSourceFile(context, source)
-                  : null,
-              child: Row(
-                children: [
-                  if (item.sourceFiles.length > 1) ...[
-                    Icon(
-                        item.libraryItem.filePath == source
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        size: 16),
-                    const SizedBox(width: 6),
-                  ],
-                  Expanded(
-                    child: Text(
-                      source,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.68),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      maxLines: 2,
-                      softWrap: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextButton.icon(
-              onPressed: () => handleUpdate(context),
-              icon: const Icon(Icons.travel_explore),
-              label: const Text('Manual scrape'),
-            ),
-            SizedBox(width: 12),
-            if (canSkip)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: isSkipped,
-                    onChanged: (value) => handleSkip(context, value ?? false),
-                  ),
-                  const Text("Skip this result"),
-                ],
-              )
           ],
         ),
       ],

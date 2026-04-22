@@ -230,12 +230,13 @@ class DownloadListItem extends StatelessWidget {
                                     downloadStatus: downloadStatus,
                                   )
                                 ],
+                                SizedBox(height: 10),
                               ],
                             ),
                             if (_trailingLabel != null)
                               Positioned(
                                 right: 0,
-                                bottom: 10,
+                                bottom: 0,
                                 child: RomListItemTrailingLabel(
                                   label: _trailingLabel,
                                 ),

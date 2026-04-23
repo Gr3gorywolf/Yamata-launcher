@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/ui/pages/console_roms/console_roms_page.dart';
 import 'package:yamata_launcher/ui/pages/explore/search_results/search_results_page.dart';
+import 'package:yamata_launcher/ui/pages/settings/artwork_scrapers_settings/artwork_scraper_settings.dart';
 import 'package:yamata_launcher/ui/pages/settings/debriders_settings/debrider_settings_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/game_runners_settings/game_runners_settings_page.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_page.dart';
@@ -110,6 +111,10 @@ final router = GoRouter(
             GoRoute(
               path: 'game-importer',
               builder: (context, state) => LibraryMassImportPage(),
+            ),
+            GoRoute(
+              path: 'artwork-scraper-settings',
+              builder: (context, state) => ArtworkScraperSettingsPage(),
             ),
           ],
         ),

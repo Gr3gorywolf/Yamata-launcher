@@ -368,6 +368,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Debrid services are premium services that allow you to download files from file hosting services at high speed and without waiting times.',
               onTap: () => context.push("/settings/debrider-settings"),
             ),
+            _NavigationTile(
+              icon: Icons.color_lens,
+              title: 'Artwork scrapers',
+              subtitle: 'Manage your artwork scrapers and their credentials.',
+              onTap: () => context.push("/settings/artwork-scraper-settings"),
+            ),
             // _NavigationTile(
             //   icon: Icons.rocket_launch,
             //   title: 'Game runners',

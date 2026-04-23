@@ -1,17 +1,20 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:html/parser.dart';
 import 'package:yamata_launcher/models/hltb.dart';
 
 class HltbScraper {
   static const String _baseUrl = 'https://howlongtobeat.com';
   static const String _imageUrl = '$_baseUrl/games/';
+  static const String _searchEndpoint = '/api/find';
 
   String? _authToken;
+  String? _hpKey;
+  String? _hpVal;
   DateTime? _authTokenFetchedAt;
 
-  static String currentUa = "";
+  static String currentUa =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0";
 
   final List<String> _ua = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
@@ -61,19 +64,28 @@ class HltbScraper {
     };
 
     Future<http.Response> doSearch() {
+      final payload = Map<String, dynamic>.from(body);
+      final headers = <String, String>{
+        ..._baseHeaders,
+        if (_authToken?.isNotEmpty == true) 'x-auth-token': _authToken!,
+        if (_hpKey?.isNotEmpty == true) 'x-hp-key': _hpKey!,
+        if (_hpVal?.isNotEmpty == true) 'x-hp-val': _hpVal!,
+      };
+
+      if (_hpKey?.isNotEmpty == true && _hpVal?.isNotEmpty == true) {
+        payload[_hpKey!] = _hpVal;
+      }
+
       return http.post(
-        Uri.parse('$_baseUrl/api/finder'),
-        headers: {
-          ..._baseHeaders,
-          'x-auth-token': _authToken!,
-        },
-        body: jsonEncode(body),
+        Uri.parse('$_baseUrl$_searchEndpoint'),
+        headers: headers,
+        body: jsonEncode(payload),
       );
     }
 
     var res = await doSearch();
 
-    if (res.statusCode == 403) {
+    if (res.statusCode == 401 || res.statusCode == 403) {
       await _refreshAuthToken();
       res = await doSearch();
     }
@@ -83,7 +95,13 @@ class HltbScraper {
     }
 
     final data = jsonDecode(res.body);
-    final results = List<Map<String, dynamic>>.from(data['data']);
+    final rawResults = data is Map<String, dynamic> ? data['data'] : null;
+    final results = rawResults is List
+        ? rawResults
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList()
+        : <Map<String, dynamic>>[];
 
     final List<HltbEntry> entries = [];
 
@@ -98,9 +116,9 @@ class HltbScraper {
           description: '',
           platforms: [],
           imageUrl: '$_imageUrl${item['game_image']}',
-          gameplayMain: ((item['comp_main'] ?? 0) / 3600).round(),
-          gameplayMainExtra: ((item['comp_plus'] ?? 0) / 3600).round(),
-          gameplayCompletionist: ((item['comp_100'] ?? 0) / 3600).round(),
+          gameplayMain: _secondsToHours(item['comp_main']),
+          gameplayMainExtra: _secondsToHours(item['comp_plus']),
+          gameplayCompletionist: _secondsToHours(item['comp_100']),
           similarity: 1.0,
           searchTerm: query,
         ),
@@ -136,9 +154,9 @@ class HltbScraper {
       imageUrl: gameData['game_image'] != null
           ? '$_imageUrl${gameData['game_image']}'
           : '',
-      gameplayMain: ((gameData['comp_main'] ?? 0) / 3600).round(),
-      gameplayMainExtra: ((gameData['comp_plus'] ?? 0) / 3600).round(),
-      gameplayCompletionist: ((gameData['comp_100'] ?? 0) / 3600).round(),
+      gameplayMain: _secondsToHours(gameData['comp_main']),
+      gameplayMainExtra: _secondsToHours(gameData['comp_plus']),
+      gameplayCompletionist: _secondsToHours(gameData['comp_100']),
       similarity: 1.0,
       searchTerm: gameData['game_name'] ?? '',
     );
@@ -162,7 +180,7 @@ class HltbScraper {
 
     final res = await http.get(
       Uri.parse(
-          '$_baseUrl/api/finder/init?t=${DateTime.now().millisecondsSinceEpoch}'),
+          '$_baseUrl$_searchEndpoint/init?t=${DateTime.now().millisecondsSinceEpoch}'),
       headers: _baseHeaders,
     );
 
@@ -171,7 +189,13 @@ class HltbScraper {
     }
 
     final data = jsonDecode(res.body);
-    _authToken = data['token'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid HLTB token response');
+    }
+
+    _authToken = data['token']?.toString();
+    _hpKey = data['hpKey']?.toString();
+    _hpVal = data['hpVal']?.toString();
     _authTokenFetchedAt = DateTime.now();
   }
 
@@ -180,20 +204,20 @@ class HltbScraper {
     await Future.delayed(Duration(milliseconds: Random().nextInt(100)));
 
     final res = await http.get(
-      Uri.parse('$_baseUrl/game/$gameId'),
+      Uri.parse('$_baseUrl/game?id=$gameId'),
       headers: _baseHeaders,
     );
 
     if (res.statusCode != 200) return null;
 
-    final doc = parse(res.body);
-    final script = doc.getElementById('__NEXT_DATA__');
-
-    if (script == null) return null;
-
     try {
-      final jsonData = jsonDecode(script.text);
-      final game = jsonData?['props']?['pageProps']?['game']?['data']?['game'];
+      final jsonText = _extractNextDataJson(res.body);
+      if (jsonText == null || jsonText.isEmpty) return null;
+
+      final jsonData = jsonDecode(jsonText);
+      if (jsonData is! Map<String, dynamic>) return null;
+
+      final game = jsonData['props']?['pageProps']?['game']?['data']?['game'];
 
       if (game is List && game.isNotEmpty) {
         return Map<String, dynamic>.from(game[0]);
@@ -201,5 +225,22 @@ class HltbScraper {
     } catch (_) {}
 
     return null;
+  }
+
+  int _secondsToHours(dynamic value) {
+    final seconds =
+        value is num ? value : num.tryParse(value?.toString() ?? '');
+    if (seconds == null || seconds <= 0) return 0;
+    return (seconds / 3600).round();
+  }
+
+  String? _extractNextDataJson(String html) {
+    final match = RegExp(
+      r'<script[^>]*id=["' ']__NEXT_DATA__["' '][^>]*>(.*?)<\/script>',
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(html);
+
+    return match?.group(1);
   }
 }

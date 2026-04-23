@@ -111,7 +111,10 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 500;
 
-    final thumbnail = RomThumbnail(widget.rom);
+    final thumbnail = RomThumbnail(
+      widget.rom,
+      fit: BoxFit.contain,
+    );
     var gameplayThumbnail = RomThumbnail(
       widget.rom!,
       customUrl: widget.rom!.gameplayCovers != null &&

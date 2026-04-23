@@ -40,7 +40,7 @@ class RomListItemCardVariant extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: double.infinity,
-                        height: 260,
+                        height: 280,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: props.thumbnail,

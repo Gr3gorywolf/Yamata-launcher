@@ -15,6 +15,7 @@ class RomThumbnail extends StatelessWidget {
   final double height;
   final double width;
   final String? customUrl;
+  final BoxFit? fit;
   final Duration? timeout;
 
   const RomThumbnail(
@@ -23,6 +24,7 @@ class RomThumbnail extends StatelessWidget {
     this.height = 50,
     this.width = 50,
     this.customUrl,
+    this.fit = BoxFit.cover,
     this.timeout,
   });
 
@@ -38,11 +40,10 @@ class RomThumbnail extends StatelessWidget {
         cachedFile,
         height: height,
         width: width,
-        fit: BoxFit.cover,
+        fit: fit,
         gaplessPlayback: true,
-        cacheWidth: width.toInt() * 4,
-        cacheHeight: height.toInt() * 4,
-        filterQuality: FilterQuality.low,
+        cacheWidth: width.toInt() * 8,
+        cacheHeight: height.toInt() * 8,
       );
     }
 
@@ -53,24 +54,26 @@ class RomThumbnail extends StatelessWidget {
       );
     }
 
-    return Image.network(
-      url,
+    return SizedBox(
       height: height,
       width: width,
-      fit: BoxFit.cover,
-      gaplessPlayback: true,
-      cacheWidth: width.toInt() * 4,
-      cacheHeight: height.toInt() * 4,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const _ThumbnailSkeleton();
-      },
-      errorBuilder: (context, error, stack) {
-        return AssetsService.getConsoleIcon(
-          info.console,
-          size: width,
-        );
-      },
+      child: Image.network(
+        url,
+        fit: fit,
+        gaplessPlayback: true,
+        cacheWidth: width.toInt() * 8,
+        cacheHeight: height.toInt() * 8,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const _ThumbnailSkeleton();
+        },
+        errorBuilder: (context, error, stack) {
+          return AssetsService.getConsoleIcon(
+            info.console,
+            size: width,
+          );
+        },
+      ),
     );
   }
 }

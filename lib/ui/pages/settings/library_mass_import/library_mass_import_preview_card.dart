@@ -42,7 +42,10 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
         updatedItem.rom = info;
         updatedItem.filePath = path;
         controller.updatePreviewItem(updatedItem, originalSlug);
-      }, libraryItem: item.libraryItem, canEditConsole: false);
+      },
+          libraryItem: item.libraryItem,
+          canEditConsole: true,
+          canEditPath: false);
     }
 
     void handleSkip(BuildContext context, bool value) {

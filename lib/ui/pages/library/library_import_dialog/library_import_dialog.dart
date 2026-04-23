@@ -75,7 +75,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     ),
     'romPath': FormControl<String>(
       value: '',
-      validators: [Validators.required],
+      validators: [if (widget.canEditPath) Validators.required],
     ),
     'portraitUrl': FormControl<String>(
       value: '',
@@ -148,7 +148,10 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
 
     final title = (form.control('title').value as String).trim();
     final console = (form.control('console').value as String).trim();
-    final romPath = (form.control('romPath').value as String).trim();
+    String romPath = '';
+    if (widget.canEditPath) {
+      romPath = (form.control('romPath').value as String).trim();
+    }
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
     final romSlug = RomService.getRomSlug(console.toLowerCase(), title);
@@ -263,9 +266,11 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
                 DialogSectionItem(
                   title: "Game Title",
                   icon: Icons.title,
+                  helperText:
+                      "Use the 'Search' icon or submit the title to look for metadata and artworks on the game database.",
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.search),
+                      icon: Icon(Icons.travel_explore),
                       onPressed: () {
                         final title =
                             (form.control('title').value as String?) ?? '';

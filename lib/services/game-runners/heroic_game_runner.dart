@@ -147,7 +147,9 @@ class HeroicGameRunner implements GameRunner {
         File(p.join(dataFolder, 'sideload_apps', 'library.json'));
     final gamesConfigDir = Directory(p.join(dataFolder, 'GamesConfig'));
     final configFile = File(p.join(dataFolder, 'config.json'));
-
+    if (await configFile.exists() == false) {
+      throw Exception('You must configure Heroic defaults first to run games.');
+    }
     var gameExecutablePath = rom.filePath ?? "";
     final folderPath = p.dirname(gameExecutablePath);
 

@@ -31,12 +31,6 @@ class _ArtworkScraperSettingsPageState
         refUrl: "https://www.steamgriddb.com",
         icon: "https://avatars.githubusercontent.com/u/48405094",
         type: ArtworkProviders.SGDB),
-    ArtworkScraper(
-        name: "ScreenScraper",
-        requiresAuth: true,
-        refUrl: "https://www.screenscraper.fr",
-        icon: "https://www.screenscraper.fr/favicon.ico",
-        type: ArtworkProviders.SCREENSCRAPER)
   ];
   @override
   void initState() {
@@ -80,59 +74,59 @@ class _ArtworkScraperSettingsPageState
     });
   }
 
-  void handleConfigureScreenScraper() {
-    var artworkScraper = ArtworkProviders.SCREENSCRAPER;
-    var initialValue = artworkCredentials.containsKey(artworkScraper.name)
-        ? artworkCredentials[artworkScraper.name]
-        : "";
-    var creds = {
-      "username": "",
-      "password": "",
-    };
+  // void handleConfigureScreenScraper() {
+  //   var artworkScraper = ArtworkProviders.SCREENSCRAPER;
+  //   var initialValue = artworkCredentials.containsKey(artworkScraper.name)
+  //       ? artworkCredentials[artworkScraper.name]
+  //       : "";
+  //   var creds = {
+  //     "username": "",
+  //     "password": "",
+  //   };
 
-    if (initialValue != null && initialValue.isNotEmpty) {
-      try {
-        creds = Map<String, String>.from(jsonDecode(initialValue));
-      } catch (e) {
-        print("Error parsing ScreenScraper credentials: $e");
-      }
-    }
-    var passwordController =
-        TextEditingController(text: creds["password"] ?? "");
-    AlertsService.showPrompt(
-      context,
-      "Enter your ScreenScraper credentials",
-      inputPlaceholder: "Username",
-      inputType: TextInputType.name,
-      lines: 1,
-      initialValue: creds["username"] ?? "",
-      extraContent: TextField(
-        controller: passwordController,
-        keyboardType: TextInputType.visiblePassword,
-        decoration: InputDecoration(
-          hintText: "Password",
-        ),
-        obscureText: true,
-        onChanged: (text) {
-          passwordController.text = text;
-        },
-      ),
-    ).then((value) {
-      if (value != null) {
-        var newCreds = {
-          "username": value,
-          "password": passwordController.text,
-        };
-        handleSaveCredentials(artworkScraper, jsonEncode(newCreds));
-      }
-    });
-  }
+  //   if (initialValue != null && initialValue.isNotEmpty) {
+  //     try {
+  //       creds = Map<String, String>.from(jsonDecode(initialValue));
+  //     } catch (e) {
+  //       print("Error parsing ScreenScraper credentials: $e");
+  //     }
+  //   }
+  //   var passwordController =
+  //       TextEditingController(text: creds["password"] ?? "");
+  //   AlertsService.showPrompt(
+  //     context,
+  //     "Enter your ScreenScraper credentials",
+  //     inputPlaceholder: "Username",
+  //     inputType: TextInputType.name,
+  //     lines: 1,
+  //     initialValue: creds["username"] ?? "",
+  //     extraContent: TextField(
+  //       controller: passwordController,
+  //       keyboardType: TextInputType.visiblePassword,
+  //       decoration: InputDecoration(
+  //         hintText: "Password",
+  //       ),
+  //       obscureText: true,
+  //       onChanged: (text) {
+  //         passwordController.text = text;
+  //       },
+  //     ),
+  //   ).then((value) {
+  //     if (value != null) {
+  //       var newCreds = {
+  //         "username": value,
+  //         "password": passwordController.text,
+  //       };
+  //       handleSaveCredentials(artworkScraper, jsonEncode(newCreds));
+  //     }
+  //   });
+  // }
 
   void handleConfigureCredentials(ArtworkScraper artworkScraper) {
-    if (artworkScraper.type == ArtworkProviders.SCREENSCRAPER) {
-      handleConfigureScreenScraper();
-      return;
-    }
+    // if (artworkScraper.type == ArtworkProviders.SCREENSCRAPER) {
+    //   handleConfigureScreenScraper();
+    //   return;
+    // }
     var initialValue = artworkCredentials.containsKey(artworkScraper.type.name)
         ? artworkCredentials[artworkScraper.type.name]
         : "";

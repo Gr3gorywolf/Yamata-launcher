@@ -7,14 +7,17 @@ import 'package:dio/dio.dart';
 import 'package:yamata_launcher/constants/app_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/artwork_scraper.dart';
+import 'package:yamata_launcher/models/contracts/credential_storage.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
 import 'package:yamata_launcher/models/tgdb.dart';
+import 'package:yamata_launcher/services/credentials_service.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/scrapers/metadata/launchbox_scraper.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/screenscraper_scraper.dart';
 import 'package:yamata_launcher/services/scrapers/metadata/steamgrid_scraper.dart';
 import 'package:yamata_launcher/services/scrapers/metadata/tgdb_scraper.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
@@ -54,25 +57,18 @@ class GameMetadataRepository {
           }
           return artworkTypeMap[artType]?.call(results) ?? [];
         }
-      case ArtworkProviders.SCREENSCRAPER:
-        {
-          var artworkTypeMap = {
-            ArtType.portrait: SteamGridArtType.grids,
-            ArtType.gameplay: SteamGridArtType.heroes,
-          };
-          throw Exception("No api key provided for ScreenScraper");
-          var res = await SteamGridScraper(apiKey: "")
-              .search(gameName, artworkTypeMap[artType]!);
-          return res.map((art) => art.url).toList();
-        }
       case ArtworkProviders.SGDB:
         {
           var artworkTypeMap = {
             ArtType.portrait: SteamGridArtType.grids,
             ArtType.gameplay: SteamGridArtType.heroes,
           };
-          throw Exception("No api key provided for SteamGridDB");
-          var res = await SteamGridScraper(apiKey: "")
+          var creds = await CredentialsService.getCredentials(provider.name);
+          if (creds == null) {
+            throw Exception(
+                "No api key provided. You must setup your credentials in the settings.");
+          }
+          var res = await SteamGridScraper(apiKey: creds)
               .search(gameName, artworkTypeMap[artType]!);
           return res.map((art) => art.url).toList();
         }

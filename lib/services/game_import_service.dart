@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
@@ -12,6 +13,7 @@ import 'package:yamata_launcher/repository/game_metadata_repository.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/rom_download_sources_dialog/rom_download_sources_dialog_confirm_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
@@ -362,6 +364,11 @@ class GameImportService {
               .fetchRomMetadata(slug, RomMetadataLookups.SLUG);
       if (foundMetadatas != null && foundMetadatas.isNotEmpty) {
         scrapedInfo = foundMetadatas?.first?.info;
+      }
+      if (scrapedInfo != null &&
+          await SettingsService()
+              .get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
+        await RomService.catchRomPortrait(scrapedInfo);
       }
     } catch (e) {
       print("Error scraping rom info for ${rom.name} (${rom.console}): $e");

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
-import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/rom_metadata_form.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_controller.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_preview_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';

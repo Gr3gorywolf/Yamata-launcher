@@ -18,7 +18,7 @@ import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
-import 'package:yamata_launcher/ui/pages/library/library_import_dialog/library_import_dialog.dart';
+import 'package:yamata_launcher/ui/widgets/rom_metadata_form.dart';
 import 'package:yamata_launcher/ui/pages/rom_settings_dialog/rom_settings_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;

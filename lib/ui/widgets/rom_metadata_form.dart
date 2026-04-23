@@ -342,7 +342,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
                   content: _buildImageFormField('portraitUrl'),
                 ),
                 DialogSectionItem(
-                  title: "Gameplay Cover (Optional)",
+                  title: "Cover (Optional)",
                   icon: Icons.collections,
                   actions: [
                     IconButton(

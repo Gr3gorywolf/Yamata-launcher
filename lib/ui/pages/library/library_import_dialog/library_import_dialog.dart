@@ -2,12 +2,22 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:reactive_forms/reactive_forms.dart';
+import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/repository/game_metadata_repository.dart';
+import 'package:yamata_launcher/repository/game_metadata_repository.dart';
+import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/assets_service.dart';
+import 'package:yamata_launcher/services/cache_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/steamgrid_scraper.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/ui/widgets/art_picker.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/rom_scrape_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
@@ -116,6 +126,10 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
   }
 
   void _onScrape(RomInfo info) {
+    var portraitChanged = form.control('portraitUrl').value != info.portrait;
+    if (portraitChanged) {
+      updatePortraitCache(info, shouldRegenerate: true);
+    }
     form.control('title').value = info.name;
     if (widget.canEditConsole || !widget.libraryItem!.rom.isValid) {
       form.control('console').value = info.console;
@@ -128,30 +142,105 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     detailsUrl = info.detailsUrl ?? '';
   }
 
-  void _onImport() {
-    form.markAllAsTouched();
-    if (!form.valid) return;
+  (RomInfo, String)? _buildRomInfo() {
+    if (!form.valid) return null;
 
     final title = (form.control('title').value as String).trim();
     final console = (form.control('console').value as String).trim();
     final romPath = (form.control('romPath').value as String).trim();
-
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
-
     final romSlug = RomService.getRomSlug(console.toLowerCase(), title);
-
-    final romInfo = RomInfo(
-      slug: romSlug,
-      name: title,
-      portrait: portrait.isEmpty ? null : portrait,
-      gameplayCovers: gameplay.isEmpty ? null : [gameplay],
-      console: console.toLowerCase(),
-      detailsUrl: detailsUrl.trim(),
+    return (
+      RomInfo(
+        slug: romSlug,
+        name: title,
+        portrait: portrait.isEmpty ? null : portrait,
+        gameplayCovers: gameplay.isEmpty ? null : [gameplay],
+        console: console.toLowerCase(),
+        detailsUrl: detailsUrl.trim(),
+      ),
+      romPath
     );
+  }
 
+  void _onImport() {
+    form.markAllAsTouched();
+    var result = _buildRomInfo();
+    if (result == null) {
+      return;
+    }
+    var (romInfo, romPath) = result;
+    updatePortraitCache(romInfo, shouldRegenerate: true);
     widget.onPicked(romInfo, romPath);
     Navigator.of(context).pop();
+  }
+
+  void updatePortraitCache(RomInfo romInfo,
+      {bool shouldRegenerate = false}) async {
+    if (shouldRegenerate) {
+      await RomService.deleteRomPortraitCache(romInfo);
+    }
+    if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
+      await RomService.catchRomPortrait(romInfo,
+          shouldRegenerate: shouldRegenerate);
+    }
+  }
+
+  void handlePickArtType(ArtType type) async {
+    var artworkTypeMap = {
+      ArtType.portrait: SteamGridArtType.grids,
+      ArtType.gameplay: SteamGridArtType.heroes,
+    };
+    var loading = AlertsService.showLoadingAlert(
+        navigatorContext!, "Looking for artworks", "Please wait...");
+    var pickedProvider = await AlertsService.showPicker(
+        context,
+        "Select Artwork Provider",
+        ArtworkProviders.values
+            .map((p) => PickerOption(label: p.value, value: p))
+            .toList());
+
+    if (pickedProvider == null) {
+      loading.close();
+      return;
+    }
+    List<String> arts = [];
+    try {
+      var res = await GameMetadataRepository.fetchArtworkFromProvider(
+          pickedProvider.value, type, form.control('title').value ?? '');
+      if (res != null) {
+        arts = res;
+      }
+    } catch (e) {
+      print("Error picking artwork provider: $e");
+      loading.close();
+      Future.microtask(() => AlertsService.showErrorSnackbar(
+          "Failed to fetch artworks from the selected provider. Please try again. $e"));
+      return;
+    }
+    loading.close();
+    if (arts.isEmpty) {
+      Future.microtask(() => AlertsService.showSnackbar(
+          "No artworks found for the current game title."));
+      return;
+    }
+
+    var result = await ArtPicker.show(context, arts: arts);
+    if (result != null) {
+      form
+          .control(type == ArtType.portrait ? 'portraitUrl' : 'gameplayUrl')
+          .value = result;
+
+      if (artworkTypeMap[type] == SteamGridArtType.grids) {
+        var result = _buildRomInfo();
+        if (result == null) {
+          return;
+        }
+        var (romInfo, romPath) = result;
+        RomService.catchRomPortrait(romInfo, shouldRegenerate: true);
+      }
+    }
   }
 
   @override
@@ -237,13 +326,25 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
                 DialogSectionItem(
                   title: "Portrait (Optional)",
                   icon: Icons.image,
-                  actions: const [],
+                  actions: [
+                    IconButton(
+                        onPressed: () {
+                          handlePickArtType(ArtType.portrait);
+                        },
+                        icon: Icon(Icons.travel_explore))
+                  ],
                   content: _buildImageFormField('portraitUrl'),
                 ),
                 DialogSectionItem(
                   title: "Gameplay Cover (Optional)",
                   icon: Icons.collections,
-                  actions: const [],
+                  actions: [
+                    IconButton(
+                        onPressed: () {
+                          handlePickArtType(ArtType.gameplay);
+                        },
+                        icon: Icon(Icons.travel_explore))
+                  ],
                   content: _buildImageFormField('gameplayUrl'),
                 ),
               ],

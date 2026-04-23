@@ -8,7 +8,6 @@ import 'package:yamata_launcher/models/download_info.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
-import 'package:http/http.dart' as http;
 import 'package:yamata_launcher/repository/download_sources_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
@@ -108,15 +107,5 @@ class DownloadService {
             contentTitle: contentTitle,
             isExtraContent: isExtraContent,
             shouldExtract: shouldExtract);
-  }
-
-  static void catchRomPortrait(RomInfo romInfo) async {
-    var portraitName = '${FileSystemService.portraitsPath}/${romInfo.slug}.png';
-    var portraitUrl = romInfo.portrait ?? '';
-    if (!File(portraitName).existsSync() && portraitUrl.isNotEmpty) {
-      http.get(Uri.parse(romInfo.portrait ?? '')).then((response) {
-        new File(portraitName).writeAsBytes(response.bodyBytes);
-      });
-    }
   }
 }

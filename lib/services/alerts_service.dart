@@ -234,8 +234,9 @@ class AlertsService {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(text,
-                          style: TextStyle(color: textColor ?? Colors.green)),
+                      if (text.isNotEmpty)
+                        Text(text,
+                            style: TextStyle(color: textColor ?? Colors.green)),
                       if (extraContent != null) ...[
                         SizedBox(height: 10),
                         extraContent,

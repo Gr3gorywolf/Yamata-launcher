@@ -7,11 +7,13 @@ import 'package:media_scanner/media_scanner.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
+import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/roms_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
+import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/extraction_dialog.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -19,6 +21,7 @@ import 'package:yamata_launcher/utils/time_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:characters/characters.dart';
 import 'package:path/path.dart' as p;
+import 'package:http/http.dart' as http;
 
 class RomService {
   static List<String> windowsGamesFileNames = [];
@@ -221,6 +224,29 @@ class RomService {
       return null;
     }
     return File(outputPath);
+  }
+
+  static Future catchRomPortrait(RomInfo romInfo,
+      {bool shouldRegenerate = false}) async {
+    var portraitName = '${FileSystemService.portraitsPath}/${romInfo.slug}.png';
+    var portraitUrl = romInfo.portrait ?? '';
+    if ((!File(portraitName).existsSync() || shouldRegenerate) &&
+        portraitUrl.isNotEmpty) {
+      try {
+        var res = await http.get(Uri.parse(romInfo.portrait ?? ''));
+        await File(portraitName).writeAsBytes(res.bodyBytes);
+      } catch (e) {
+        print("Error fetching portrait: ${e.toString()}");
+        return;
+      }
+    }
+  }
+
+  static Future deleteRomPortraitCache(RomInfo romInfo) async {
+    var portraitName = '${FileSystemService.portraitsPath}/${romInfo.slug}.png';
+    if (File(portraitName).existsSync()) {
+      File(portraitName).deleteSync();
+    }
   }
 
   static Future<String> calculateCrc32(String path) async {

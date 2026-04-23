@@ -10,6 +10,7 @@ import 'package:yamata_launcher/database/daos/library_dao.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/services/download_service.dart';
+import 'package:yamata_launcher/services/rom_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/view_mode_toggle.dart';
 import 'package:provider/provider.dart';
@@ -128,7 +129,7 @@ class LibraryProvider extends ChangeNotifier {
     _libraryItems[item.rom.slug] = item;
     notifyListeners();
     if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
-      DownloadService.catchRomPortrait(item.rom);
+      RomService.catchRomPortrait(item.rom);
     }
   }
 

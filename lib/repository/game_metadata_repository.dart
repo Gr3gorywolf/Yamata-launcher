@@ -9,12 +9,74 @@ import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/launchbox_registry.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_metadata.dart';
+import 'package:yamata_launcher/models/tgdb.dart';
 import 'package:yamata_launcher/services/extraction_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/launchbox_scraper.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/steamgrid_scraper.dart';
+import 'package:yamata_launcher/services/scrapers/metadata/tgdb_scraper.dart';
 import 'package:yamata_launcher/utils/file_download_fetch.dart';
 
+enum ArtworkProviders {
+  LAUNCHBOX("Launchbox gamedb"),
+  TGDB("TheGamesDB"),
+  SGDB("Steam GridDB (Needs API key)");
+
+  final String value;
+  const ArtworkProviders(this.value);
+}
+
+enum ArtType {
+  portrait,
+  gameplay,
+}
+
 class GameMetadataRepository {
+  static Future<List<String>?> fetchArtworkFromProvider(
+      ArtworkProviders provider, ArtType artType, String gameName) async {
+    switch (provider) {
+      case ArtworkProviders.LAUNCHBOX:
+        {
+          var results = await LaunchboxScraper().search(gameName);
+          var artworkTypeMap = {
+            ArtType.portrait: (List<RomInfo> details) =>
+                details.map((e) => e.portrait).whereType<String>().toList(),
+            ArtType.gameplay: (List<RomInfo> details) => details
+                .map((e) => e.gameplayCovers)
+                .whereType<String>()
+                .toList(),
+          };
+          return artworkTypeMap[artType]?.call(results) ?? [];
+        }
+
+      case ArtworkProviders.TGDB:
+        {
+          var results = await TheGamesDbScraper().search(gameName, null);
+          var artworkTypeMap = {
+            ArtType.portrait: (List<TgdbSearchResult> details) =>
+                details.map((e) => e.thumbnail).whereType<String>().toList(),
+          };
+          if (!artworkTypeMap.containsKey(artType)) {
+            return [];
+          }
+          return artworkTypeMap[artType]?.call(results) ?? [];
+        }
+        ;
+      case ArtworkProviders.SGDB:
+        {
+          var artworkTypeMap = {
+            ArtType.portrait: SteamGridArtType.grids,
+            ArtType.gameplay: SteamGridArtType.heroes,
+          };
+          throw Exception("No api key provided for SteamGridDB");
+          var res = await SteamGridScraper(apiKey: "")
+              .search(gameName, artworkTypeMap[artType]!);
+          return res.map((art) => art.url).toList();
+        }
+    }
+  }
+
   // This method checks if the metadata build is already downloaded and up to date by comparing the content length of the remote file with the local registry file.
   //If the local files are missing or outdated, it downloads the new build, extracts it, and prepares the metadata for use. It returns true if the metadata is ready to use,
   //or false if there was an error during the process.

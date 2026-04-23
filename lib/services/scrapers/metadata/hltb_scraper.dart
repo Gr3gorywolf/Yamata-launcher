@@ -199,7 +199,6 @@ class HltbScraper {
     _authTokenFetchedAt = DateTime.now();
   }
 
-  /// Extrae datos desde __NEXT_DATA__ (igual que el script JS)
   Future<Map<String, dynamic>?> _fetchGameFromPage(int gameId) async {
     await Future.delayed(Duration(milliseconds: Random().nextInt(100)));
 

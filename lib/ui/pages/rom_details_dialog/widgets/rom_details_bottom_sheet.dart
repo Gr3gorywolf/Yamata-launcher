@@ -324,11 +324,13 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
               widget.rom,
               size: RomActionButtonSize.medium,
             ),
-            const SizedBox(width: 6),
-            RomLibraryActions(
-              rom: widget.rom,
-              size: RomLibraryActionSize.large,
-            ),
+            if (downloadInfo == null) ...[
+              const SizedBox(width: 6),
+              RomLibraryActions(
+                rom: widget.rom,
+                size: RomLibraryActionSize.large,
+              ),
+            ],
             const SizedBox(width: 12),
           ],
         ),

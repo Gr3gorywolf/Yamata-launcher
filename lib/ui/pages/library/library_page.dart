@@ -144,8 +144,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-          onPressed: () =>
-              {LibraryImportDialog.show(context, handleAddToLibrary)},
+          onPressed: () => {RomMetadataForm.show(context, handleAddToLibrary)},
           label: Text('Import Game'),
           icon: Icon(Icons.add)),
       appBar: Toolbar<RomLibraryItem>(

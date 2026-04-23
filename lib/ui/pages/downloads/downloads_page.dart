@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:yamata_launcher/models/toolbar_elements.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
+import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/ui/widgets/download_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/new_download_form.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 
 class DownloadsPage extends StatefulWidget {
@@ -24,6 +29,19 @@ class _DownloadsPageState extends State<DownloadsPage> {
   void initState() {
     super.initState();
     Future.microtask(compileDownloadedRoms);
+    handleIncomingDownloadUrl();
+  }
+
+  void handleIncomingDownloadUrl() {
+    if (Platform.isAndroid) {
+      IntentsAndroidInterface.getIncomingIntentUrl().then((url) {
+        if (url != null && url.isNotEmpty) {
+          openDownloadForm(url);
+          Provider.of<AppProvider>(context, listen: false)
+              .setIncomingDownloadUrl(null);
+        }
+      });
+    }
   }
 
   void compileDownloadedRoms() {
@@ -38,6 +56,15 @@ class _DownloadsPageState extends State<DownloadsPage> {
     );
   }
 
+  void openDownloadForm(String? url) {
+    showDialog(
+      context: context,
+      builder: (_) => NewDownloadForm(
+        initialUrl: url,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,6 +74,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
         },
         initialValues: ToolbarValue(filters: [], search: ''),
         settings: ToolbarSettings(title: "Downloads", disableSearch: true),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => openDownloadForm(null),
+        icon: const Icon(Icons.add),
+        label: const Text("Add download"),
       ),
       body: Consumer<DownloadProvider>(
         builder: (context, downloadProvider, _) {

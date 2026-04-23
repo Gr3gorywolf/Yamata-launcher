@@ -18,6 +18,7 @@ class AppProvider extends ChangeNotifier {
   bool _isUsingGamepad = false;
   bool _isAppLoaded = false;
   bool _showGamepadGuide = true;
+  String? _incomingDownloadUrl = null;
   bool _sortByLastPlayedByDefault = true;
   bool get isAppLoaded => _isAppLoaded;
   UpdateInfo? _updateInfo;
@@ -27,9 +28,11 @@ class AppProvider extends ChangeNotifier {
   bool get isUsingGamepad => _isUsingGamepad;
   bool get showGamepadGuide => _showGamepadGuide;
   bool get sortByLastPlayedByDefault => _sortByLastPlayedByDefault;
+  String? get incomingDownloadUrl => _incomingDownloadUrl;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
   StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
-
+  StreamController<String?> onUrlIncoming =
+      StreamController<String?>.broadcast();
   setAppLoaded(bool val) {
     _isAppLoaded = val;
     syncSettings();
@@ -82,6 +85,14 @@ class AppProvider extends ChangeNotifier {
   setConsoleRomsItemType(ViewModeToggleMode type) {
     romListItemType = type;
     SettingsService().set<String>(SettingsKeys.ROM_LIST_ITEM_TYPE, type.name);
+    notifyListeners();
+  }
+
+  setIncomingDownloadUrl(String? url) {
+    _incomingDownloadUrl = url;
+    if (url != null && url.isNotEmpty) {
+      onUrlIncoming.add(url);
+    }
     notifyListeners();
   }
 

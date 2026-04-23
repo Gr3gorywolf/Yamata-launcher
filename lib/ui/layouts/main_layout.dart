@@ -41,6 +41,7 @@ class _MainLayoutState extends State<MainLayout>
   late final FocusScopeNode _navScopeNode;
   late final FocusScopeNode _contentScopeNode;
   Stream<bool?>? changeTabStream;
+  Stream<String?>? urlIncomingStream;
 
   int _locationToIndex(String location) {
     return MainLayout._routes.indexWhere((e) => location.startsWith(e));
@@ -51,13 +52,25 @@ class _MainLayoutState extends State<MainLayout>
     super.initState();
     _navScopeNode = FocusScopeNode(debugLabel: 'NavScope');
     _contentScopeNode = FocusScopeNode(debugLabel: 'ContentScope');
-    changeTabStream =
-        Provider.of<AppProvider>(context, listen: false).onChangeTab.stream;
-
+    var appProvider = Provider.of<AppProvider>(context, listen: false);
+    changeTabStream = appProvider.onChangeTab.stream;
+    urlIncomingStream = appProvider.onUrlIncoming.stream;
     changeTabStream?.listen((event) {
       handleOnChangeTabs(event);
     });
+    if (appProvider.incomingDownloadUrl != null) {
+      handleDownloadUrlIncoming(appProvider.incomingDownloadUrl);
+    }
+    urlIncomingStream?.listen((url) {
+      handleDownloadUrlIncoming(url);
+    });
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  void handleDownloadUrlIncoming(String? url) {
+    if (url != null && url.isNotEmpty) {
+      context.go('/downloads');
+    }
   }
 
   @override
@@ -67,6 +80,7 @@ class _MainLayoutState extends State<MainLayout>
     super.dispose();
     WidgetsBinding.instance.removeObserver(this);
     changeTabStream = null;
+    urlIncomingStream = null;
   }
 
   @override

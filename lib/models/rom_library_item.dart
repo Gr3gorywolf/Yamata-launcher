@@ -1,4 +1,5 @@
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
+import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 
 class RomLibraryItem extends JsonSerializable {
@@ -12,6 +13,7 @@ class RomLibraryItem extends JsonSerializable {
   String? openParams;
   String? overrideEmulator;
   bool? doesExists = false;
+  DownloadSourceRom? manualDownload;
   bool isImported = false;
   RomLibraryItem(
       {required this.rom,
@@ -24,6 +26,7 @@ class RomLibraryItem extends JsonSerializable {
       this.downloadedAt,
       this.openParams,
       this.overrideEmulator,
+      this.manualDownload,
       this.isImported = false});
 
   // implement copyWith method
@@ -42,7 +45,10 @@ class RomLibraryItem extends JsonSerializable {
             : null,
         openParams = json['openParams'],
         overrideEmulator = json['overrideEmulator'],
-        isImported = json['isImported'] ?? false;
+        isImported = json['isImported'] ?? false,
+        manualDownload = json['manualDownload'] != null
+            ? DownloadSourceRom.fromJson(json['manualDownload'])
+            : null;
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
@@ -56,6 +62,9 @@ class RomLibraryItem extends JsonSerializable {
     data['openParams'] = this.openParams;
     data['overrideEmulator'] = this.overrideEmulator;
     data['isImported'] = this.isImported;
+    if (this.manualDownload != null) {
+      data['manualDownload'] = this.manualDownload!.toJson();
+    }
     return data;
   }
 }

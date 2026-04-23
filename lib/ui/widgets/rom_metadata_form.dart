@@ -25,13 +25,13 @@ import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
 import 'package:yamata_launcher/utils/custom_validators.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
 
-class LibraryImportDialog extends StatefulWidget {
+class RomMetadataForm extends StatefulWidget {
   final RomLibraryItem? libraryItem;
   final bool canEditConsole;
   final bool canEditPath;
   final Function(RomInfo info, String filePath) onPicked;
 
-  LibraryImportDialog(
+  RomMetadataForm(
       {super.key,
       required this.onPicked,
       this.libraryItem,
@@ -45,7 +45,7 @@ class LibraryImportDialog extends StatefulWidget {
       bool canEditPath = true}) {
     showDialog(
       context: context,
-      builder: (context) => LibraryImportDialog(
+      builder: (context) => RomMetadataForm(
         onPicked: onPicked,
         libraryItem: libraryItem,
         canEditConsole: canEditConsole,
@@ -55,10 +55,10 @@ class LibraryImportDialog extends StatefulWidget {
   }
 
   @override
-  State<LibraryImportDialog> createState() => _LibraryImportDialogState();
+  State<RomMetadataForm> createState() => _RomMetadataFormState();
 }
 
-class _LibraryImportDialogState extends State<LibraryImportDialog> {
+class _RomMetadataFormState extends State<RomMetadataForm> {
   late final List<Console> consoles;
   String detailsUrl = "";
   bool isFetchingMetadata = false;
@@ -252,7 +252,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
     return ReactiveForm(
       formGroup: form,
       child: AlertDialog(
-        title: Text(isEditing ? 'Edit Game Metadata' : 'Import Game'),
+        title: Text(isEditing ? 'Edit Game Metadata' : 'Add game metadata'),
         insetPadding:
             const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
         contentPadding: const EdgeInsets.all(10.0),
@@ -366,7 +366,7 @@ class _LibraryImportDialogState extends State<LibraryImportDialog> {
             builder: (context, form, _) {
               return TextButton(
                 onPressed: form.valid ? _onImport : null,
-                child: Text(isEditing ? 'Save' : 'Import'),
+                child: Text(isEditing ? 'Save' : 'Done'),
               );
             },
           ),

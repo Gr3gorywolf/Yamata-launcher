@@ -194,15 +194,17 @@ class DownloadListItem extends StatelessWidget {
                                 ),
                                 Row(
                                   children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 0),
-                                      child: Text(
-                                        romItem.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(right: 40),
+                                        child: Text(
+                                          romItem.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
+                                        ),
                                       ),
                                     ),
                                   ],

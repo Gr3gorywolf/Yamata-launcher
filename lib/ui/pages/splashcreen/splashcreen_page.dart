@@ -10,6 +10,7 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/emulator_service.dart';
+import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/native/seven_zip_android_interface.dart';
 import 'package:yamata_launcher/services/native/aria2c_android_interface.dart';
 import 'package:yamata_launcher/services/console_service.dart';
@@ -48,6 +49,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     await ConsoleService.loadConsoleSources();
 
     if (Platform.isAndroid) {
+      await IntentsAndroidInterface.init();
       await FileSystemService.setupAndroidIntents();
       await EmulatorService.loadEmulatorIntents();
       await requestAndroidPermissions();

@@ -124,12 +124,24 @@ class LibraryProvider extends ChangeNotifier {
     if (db == null) {
       return;
     }
-    await LibraryDao(db!).insert(item);
+    var foundLibraryItem = _libraryItems[item.rom.slug];
+    if (foundLibraryItem != null) {
+      foundLibraryItem.rom = item.rom;
+      foundLibraryItem.isImported = item.isImported;
+      foundLibraryItem.manualDownload = item.manualDownload;
+      item = foundLibraryItem;
+      await LibraryDao(db!).update(item);
+      return;
+    } else {
+      await LibraryDao(db!).insert(item);
+    }
+
     item.doesExists = await File(item.filePath ?? '').exists();
     _libraryItems[item.rom.slug] = item;
     notifyListeners();
     if (await SettingsService().get<bool>(SettingsKeys.ENABLE_IMAGE_CACHING)) {
-      RomService.catchRomPortrait(item.rom);
+      RomService.catchRomPortrait(item.rom,
+          shouldRegenerate: foundLibraryItem != null);
     }
   }
 

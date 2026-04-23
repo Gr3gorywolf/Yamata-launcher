@@ -16,12 +16,16 @@ import com.gr3gorywolf.yamata_launcher.services.DownloadForegroundService
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
+import android.webkit.URLUtil
+import android.widget.Toast
+import java.util.regex.Pattern
 
 class MainActivity : FlutterActivity() {
 
     private val CHANNEL = "yamata.launcher/methods"
     private val TAG = "METHOD_CHANNEL"
-
+     private var engine: FlutterEngine? = null;
+      private var IntentUrl:String? = null;
     private var initialized = false
     private var baseName = "yamata"
     private var aria2cDirName = "aria2c"
@@ -31,8 +35,17 @@ class MainActivity : FlutterActivity() {
     private var certFileName = "libutils.so/yamata_launcher.pem"
     private var certKeyFileName = "libutils.so/yamata_launcher.key"
     private val extractTasks = mutableMapOf<String, Boolean>()
-    
-
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent);
+        sendNewIntent();
+    }
+    private  fun sendNewIntent(){
+        val eng = this.engine;
+        if(this.IntentUrl != null && eng != null){
+            MethodChannel(eng.dartExecutor.binaryMessenger, CHANNEL).invokeMethod("newIntent",IntentUrl)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -45,6 +58,10 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
         )
+
+        this.engine = flutterEngine;
+        handleIntent(this.intent);
+        sendNewIntent();
         channel.setMethodCallHandler { call, result ->
 
             when (call.method) {
@@ -129,6 +146,10 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "getIncomingIntentUrl" -> {
+                    result.success(this.IntentUrl);
+                    this.IntentUrl = null;
+                }
                 "grantUriPermission" -> {
                     try {
                         val uriString = call.argument<String>("uri")
@@ -233,6 +254,41 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+    }
+    
+    private fun handleIntent(intent: Intent) {
+
+        if (Intent.ACTION_SEND == intent.action) {
+            intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+                val cleanUrl = cleanUrl(it)
+                if (!URLUtil.isValidUrl(cleanUrl)) {
+                    Toast.makeText(applicationContext, "Invalid URL", Toast.LENGTH_SHORT)
+                            .show()
+                    return
+                }
+                IntentUrl = cleanUrl
+            }
+        }
+    }
+
+    private fun extractUrls(text: String): List<String> {
+        val containedUrls: MutableList<String> = ArrayList()
+        val urlRegex =
+                "((https?|http|magnet):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?+-=\\\\.&]*)"
+        val pattern = Pattern.compile(urlRegex, Pattern.CASE_INSENSITIVE)
+        val urlMatcher = pattern.matcher(text)
+        while (urlMatcher.find()) {
+            containedUrls.add(text.substring(urlMatcher.start(0), urlMatcher.end(0)))
+        }
+        return containedUrls
+    }
+
+    private fun cleanUrl(url: String): String {
+        val extractedUrls = extractUrls(url)
+        for (link in extractedUrls) {
+            return link
+        }
+        return url
     }
 
     /**

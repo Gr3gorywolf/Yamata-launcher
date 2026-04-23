@@ -46,11 +46,20 @@ class _RomDownloadSourcesDialogState extends State<RomDownloadSourcesDialog> {
   }
 
   fetchSources() {
+    var libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
     var provider = Provider.of<DownloadSourcesProvider>(context, listen: false);
     List<DownloadSourceWithDownloads> sourcesWithDownloads =
         provider.findRomSourcesWithDownloads(widget.rom);
+    var manualDownload =
+        libraryProvider.getLibraryItem(widget.rom.slug)?.manualDownload;
 
     final List<RomDownloadSourceItem> filteredResults = [];
+    if (manualDownload != null) {
+      filteredResults.add(RomDownloadSourceItem(
+        rom: manualDownload,
+        sourceTitle: "Manual Download URL",
+      ));
+    }
 
     for (final source in sourcesWithDownloads) {
       for (final sourceDownload in source.downloads!) {

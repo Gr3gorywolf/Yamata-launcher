@@ -68,7 +68,8 @@ class _RomActionButtonState extends State<RomActionButton> {
     final isPlaying = libraryProvider.isGameRunning(rom.slug);
     final isReadyToPlay = libraryProvider.isRomReadyToPlay(rom.slug);
     final hasDownloadSources =
-        downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty;
+        downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty ||
+            libraryItem?.manualDownload != null;
     final downloadInfo = provider.getDownloadInfo(rom);
     final isPaused = downloadInfo?.isPaused == true;
     final isExtracting = downloadInfo?.isExtracting == true;

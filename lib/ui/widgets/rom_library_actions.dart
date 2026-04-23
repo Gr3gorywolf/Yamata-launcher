@@ -133,7 +133,7 @@ class RomLibraryActions extends StatelessWidget {
     }
 
     handleEditMetadata() async {
-      await LibraryImportDialog.show(context, (rom, newPath) {
+      await RomMetadataForm.show(context, (rom, newPath) {
         if (libraryItem == null) return;
         var originalSlug = libraryItem.rom.slug;
         libraryItem.rom = rom;
@@ -251,7 +251,8 @@ class RomLibraryActions extends StatelessWidget {
                   )),
               if (libraryItem.filePath != null &&
                   libraryItem.filePath!.isNotEmpty &&
-                  downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty)
+                  (downloadSourcesProvider.getRomSources(rom.slug).isNotEmpty ||
+                      libraryItem.manualDownload != null))
                 PopupMenuItem<_RomMenuAction>(
                   value: _RomMenuAction.downloadExtra,
                   enabled: !downloadProvider.isRomDownloading(rom),

@@ -37,7 +37,7 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
     void handleUpdate(BuildContext context) async {
       final controller = LibraryMassImportController.of(context, listen: false);
       final originalSlug = item.libraryItem.rom.slug;
-      await LibraryImportDialog.show(context, (info, path) {
+      await RomMetadataForm.show(context, (info, path) {
         final updatedItem = item.libraryItem;
         updatedItem.rom = info;
         updatedItem.filePath = path;

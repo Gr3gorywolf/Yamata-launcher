@@ -1,16 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yamata_launcher/models/artwork_scraper.dart';
-import 'package:yamata_launcher/models/contracts/debrider.dart';
-import 'package:yamata_launcher/models/contracts/game_runner.dart';
-import 'package:yamata_launcher/models/debrider_credentials.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
-import 'package:yamata_launcher/services/credentials_service.dart';
-import 'package:yamata_launcher/services/debrider_service.dart';
-import 'package:yamata_launcher/services/emulator_service.dart';
-import 'package:yamata_launcher/utils/flatpak_utils.dart';
+import 'package:yamata_launcher/services/artwork_scrapers_service.dart';
 
 class ArtworkScraperSettingsPage extends StatefulWidget {
   const ArtworkScraperSettingsPage({super.key});
@@ -24,14 +16,6 @@ class _ArtworkScraperSettingsPageState
     extends State<ArtworkScraperSettingsPage> {
   List<String> availableRunners = [];
   Map<String, String> artworkCredentials = {};
-  List<ArtworkScraper> configurableScrapers = [
-    ArtworkScraper(
-        name: "Steam GridDB",
-        requiresAuth: true,
-        refUrl: "https://www.steamgriddb.com",
-        icon: "https://avatars.githubusercontent.com/u/48405094",
-        type: ArtworkProviders.SGDB),
-  ];
   @override
   void initState() {
     super.initState();
@@ -39,8 +23,9 @@ class _ArtworkScraperSettingsPageState
   }
 
   void fetchDebriderCreds() async {
-    for (var debrider in configurableScrapers.where((s) => s.requiresAuth)) {
-      var creds = await CredentialsService.getCredentials(debrider.type.name);
+    for (var debrider in ArtworkScrapersService.configurableScrapers
+        .where((s) => s.requiresAuth)) {
+      var creds = await ArtworkScrapersService.getCredentials(debrider);
       if (creds != null) {
         artworkCredentials[debrider.type.name] = creds;
       }
@@ -54,7 +39,7 @@ class _ArtworkScraperSettingsPageState
     AlertsService.showAlert(context, "Delete credentials",
         "Are you sure you want to delete the credentials for ${artworkScraper.name}?",
         callback: () {
-      CredentialsService.removeCredentials(artworkScraper.type.name);
+      ArtworkScrapersService.removeCredentials(artworkScraper);
       artworkCredentials.remove(artworkScraper.type.name);
       setState(() {});
     });
@@ -62,7 +47,9 @@ class _ArtworkScraperSettingsPageState
 
   void handleSaveCredentials(
       ArtworkProviders artworkProvider, String credentials) {
-    CredentialsService.saveCredentials(artworkProvider.name, credentials)
+    final artworkScraper = ArtworkScrapersService.configurableScrapers
+        .firstWhere((scraper) => scraper.type == artworkProvider);
+    ArtworkScrapersService.saveCredentials(artworkScraper, credentials)
         .then((success) {
       if (success) {
         artworkCredentials[artworkProvider.name] = credentials;
@@ -151,7 +138,8 @@ class _ArtworkScraperSettingsPageState
       body: SingleChildScrollView(
         child: Column(
           children: [
-            ...configurableScrapers.map((artworkScraper) {
+            ...ArtworkScrapersService.configurableScrapers
+                .map((artworkScraper) {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
@@ -182,7 +170,7 @@ class _ArtworkScraperSettingsPageState
                       IconButton(
                         icon: const Icon(Icons.open_in_new),
                         onPressed: () {
-                          launchUrl(Uri.parse(artworkScraper.refUrl ?? ""));
+                          launchUrl(Uri.parse(artworkScraper.refUrl));
                         },
                       ),
                       SizedBox(width: 3),

@@ -124,6 +124,15 @@
             min-width: 0;
         }
 
+        .item-leading {
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
         .item-title {
             font-weight: 600;
         }
@@ -369,6 +378,37 @@
             </div>
 
             <div v-if="activeTab==='integrations'">
+                <h5>Artwork Scrapers</h5>
+
+                <div v-if="artworkScrapers.length===0" class="empty">
+                    No artwork scrapers
+                </div>
+
+                <ul class="collection" v-else>
+                    <li class="collection-item" v-for="scraper in artworkScrapers" :key="scraper.settingKey">
+                        <div style="display:flex;align-items:center;min-width:0;flex:1;">
+                            <img v-if="scraper.icon" class="item-leading" :src="scraper.icon" :alt="scraper.name">
+                            <div class="item-main">
+                                <div class="item-title">{{ scraper.name }}</div>
+                                <div class="item-sub">
+                                    {{ scraper.configured ? 'Credentials configured' : 'No credentials configured' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex">
+                            <a class="icon-btn" v-if="scraper.refUrl" :href="scraper.refUrl" target="_blank" rel="noopener noreferrer">
+                                <i class="material-icons">open_in_new</i>
+                            </a>
+                            <div class="icon-btn" @click="openArtworkScraperForm(scraper)">
+                                <i class="material-icons">{{ scraper.configured ? 'edit' : 'settings' }}</i>
+                            </div>
+                            <div class="icon-btn" v-if="scraper.configured" @click="deleteArtworkScraper(scraper.settingKey)">
+                                <i class="material-icons">delete</i>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+
                 <h5>Debrid Providers</h5>
 
                 <div v-if="debridProviders.length===0" class="empty">
@@ -396,10 +436,10 @@
             </div>
 
             <!-- FAB -->
-            <div class="fixed-action-btn">
+            <div class="fixed-action-btn" v-if="activeTab!=='integrations'">
                 <a class="btn-floating btn-large modal-trigger" style="position:fixed;right:20px;bottom:20px"
-                    :href="activeTab==='cookies' ? '#modalEditCookie' : activeTab==='integrations' ? '#modalEditDebrider' : '#modalAdd'"
-                    @click="activeTab==='cookies' ? openCookieForm(null) : activeTab==='integrations' ? openDebriderForm(null) : null">
+                    :href="activeTab==='cookies' ? '#modalEditCookie' : '#modalAdd'"
+                    @click="activeTab==='cookies' ? openCookieForm(null) : null">
                     <i class="material-icons">add</i>
                 </a>
             </div>
@@ -469,6 +509,29 @@
                     <a class="btn" @click="handleDebriderFormConfirm">{{debriderForm?.editing ? 'Save' : 'Add' }}</a>
                 </div>
             </div>
+            <!-- Modal for artwork scrapers -->
+            <div id="modalEditArtworkScraper" class="modal">
+                <div class="modal-content" v-if="!!artworkScraperForm">
+                    <h5>{{artworkScraperForm.editing ? 'Edit Artwork Scraper' : 'Configure Artwork Scraper' }}</h5>
+
+                    <div class="input-field">
+                        <h6 style="margin-bottom: 10px;">Provider</h6>
+                        <select v-model="artworkScraperForm.settingKey" :disabled="artworkScraperForm.editing">
+                            <option v-for="scraper in artworkScrapers" :key="scraper.settingKey" :value="scraper.settingKey">
+                                {{ scraper.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="input-field">
+                        <textarea v-model="artworkScraperForm.apiKey" placeholder="API key"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <a class="modal-close btn-flat">Cancel</a>
+                    <a class="btn" @click="handleArtworkScraperFormConfirm">{{artworkScraperForm?.editing ? 'Save' : 'Add' }}</a>
+                </div>
+            </div>
 
 
             <div id="modalLoad" class="modal">
@@ -524,8 +587,10 @@
                     const platformCatalogs = ref([]);
                     const siteCookies = ref([]);
                     const debridProviders = ref([]);
+                    const artworkScrapers = ref([]);
                     const cookieForm = ref(null);
                     const debriderForm = ref(null);
+                    const artworkScraperForm = ref(null);
                     const newUrl = ref('');
                     const downloadType = ref('Yamata');
 
@@ -539,6 +604,9 @@
                         siteCookies: '/api/cookies',
                         setCookie: site => `/api/cookies`,
                         deleteCookie: site => `/api/cookies?site=${btoa(site)}`,
+                        artworkScrapers: '/api/artwork-scrapers',
+                        setArtworkScraper: () => '/api/artwork-scrapers',
+                        deleteArtworkScraper: settingKey => `/api/artwork-scrapers?settingKey=${btoa(settingKey)}`,
                         debriders: '/api/debriders',
                         setDebrider: () => '/api/debriders',
                         deleteDebrider: settingKey => `/api/debriders?settingKey=${btoa(settingKey)}`
@@ -580,12 +648,19 @@
                         debridProviders.value = await fetchJson(API.debriders);
                     };
 
+                    const loadArtworkScrapers = async () => {
+                        artworkScrapers.value = await fetchJson(API.artworkScrapers);
+                    };
+
                     const switchTab = (tab) => {
                         activeTab.value = tab;
                         if (tab === 'download') loadDownloadSources();
                         else if (tab === 'platforms') loadPlatformCatalogs();
                         else if (tab === 'cookies') loadSiteCookies();
-                        else if (tab === 'integrations') loadDebridProviders();
+                        else if (tab === 'integrations') {
+                            loadDebridProviders();
+                            loadArtworkScrapers();
+                        }
                     };
 
                     const openCookieForm = (cookieSite) => {
@@ -623,6 +698,29 @@
                         await nextTick();
                         M.FormSelect.init(document.querySelectorAll('select'));
                         const modal = M.Modal.getInstance(document.getElementById('modalEditDebrider'));
+                        modal.open();
+                    }
+
+                    const openArtworkScraperForm = async (scraper) => {
+                        if (scraper) {
+                            artworkScraperForm.value = {
+                                settingKey: scraper.settingKey,
+                                apiKey: scraper.apiKey || '',
+                                editing: true
+                            };
+                        } else {
+                            if (artworkScrapers.value.length === 0) {
+                                await loadArtworkScrapers();
+                            }
+                            artworkScraperForm.value = {
+                                settingKey: artworkScrapers.value[0]?.settingKey || '',
+                                apiKey: '',
+                                editing: false
+                            };
+                        }
+                        await nextTick();
+                        M.FormSelect.init(document.querySelectorAll('select'));
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditArtworkScraper'));
                         modal.open();
                     }
 
@@ -753,6 +851,46 @@
                         }
                     };
 
+                    const handleArtworkScraperFormConfirm = async () => {
+                        try {
+                            if (!artworkScraperForm.value?.settingKey) {
+                                showError('Artwork scraper is required');
+                                return;
+                            }
+                            if (!artworkScraperForm.value.apiKey?.trim()) {
+                                showError('API key cannot be empty');
+                                return;
+                            }
+                            setLoading(true);
+                            const res = await fetch(API.setArtworkScraper(), {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    settingKey: artworkScraperForm.value.settingKey,
+                                    apiKey: artworkScraperForm.value.apiKey
+                                })
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error saving artwork scraper: ' + (error.error || 'Unknown error'));
+                                return;
+                            }
+                            await loadArtworkScrapers();
+                            M.toast({
+                                html: `Artwork scraper ${artworkScraperForm.value.editing ? 'updated' : 'configured'}`,
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error saving artwork scraper: ' + e.message);
+                        }
+                        const modal = M.Modal.getInstance(document.getElementById('modalEditArtworkScraper'));
+                        modal.close();
+                        setLoading(false);
+                    };
+
                     const handleDebriderFormConfirm = async () => {
                         try {
                             if (!debriderForm.value?.settingKey) {
@@ -816,6 +954,29 @@
                         }
                     };
 
+                    const deleteArtworkScraper = async (settingKey) => {
+                        const scraper = artworkScrapers.value.find(item => item.settingKey === settingKey);
+                        if (!confirm('Delete credentials for ' + (scraper?.name || settingKey) + '?')) return;
+                        try {
+                            const res = await fetch(API.deleteArtworkScraper(settingKey), {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const error = await res.json();
+                                showError('Error deleting artwork scraper: ' + (error.error || 'Unknown error'));
+                                return;
+                            }
+                            await loadArtworkScrapers();
+                            M.toast({
+                                html: 'Artwork scraper credentials deleted',
+                                classes: 'green'
+                            });
+                        } catch (e) {
+                            console.error(e);
+                            showError('Error deleting artwork scraper: ' + e.message);
+                        }
+                    };
+
                     const addSource = async () => {
                         try {
                             if (!newUrl.value) return;
@@ -873,6 +1034,7 @@
                         activeTab,
                         downloadSources,
                         platformCatalogs,
+                        artworkScrapers,
                         debridProviders,
                         switchTab,
                         refreshDownload,
@@ -885,13 +1047,17 @@
                         downloadType,
                         sourceTypes,
                         siteCookies,
+                        handleArtworkScraperFormConfirm,
                         handleCookieFormConfirm,
                         handleDebriderFormConfirm,
+                        openArtworkScraperForm,
                         openCookieForm,
                         openDebriderForm,
+                        deleteArtworkScraper,
                         deleteDebrider,
                         cookieForm,
-                        debriderForm
+                        debriderForm,
+                        artworkScraperForm
                     };
                 }
             }).mount('#app');

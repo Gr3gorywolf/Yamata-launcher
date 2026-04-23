@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:alfred/alfred.dart';
+import 'package:yamata_launcher/services/web-manager/routes/artwork_scrapers_routes.dart';
 import 'package:yamata_launcher/services/web-manager/helpers/html_page_builder.dart';
 import 'package:yamata_launcher/services/web-manager/helpers/network_helper.dart';
 import 'package:yamata_launcher/services/web-manager/routes/cookies_routes.dart';
@@ -37,6 +38,7 @@ class WebManagerServer {
 
     registerCookieRoutes(app);
     registerDebriderRoutes(app);
+    registerArtworkScraperRoutes(app);
     registerDownloadSourceRoutes(app);
     registerPlatformCatalogRoutes(app);
   }

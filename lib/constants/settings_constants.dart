@@ -23,7 +23,8 @@ enum SettingsKeys {
   ROM_LIST_ITEM_TYPE,
   SHOW_CONTROLLER_GUIDE,
   SELECT_FIRST_DEBRIDER,
-  SORT_BY_LAST_PLAYED_BY_DEFAULT;
+  SORT_BY_LAST_PLAYED_BY_DEFAULT,
+  LAST_APP_VERSION;
 }
 
 final _systemIsDarkThemed =
@@ -116,5 +117,10 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'sort_by_last_played_by_default',
     type: SettingType.bool,
     defaultValue: false,
+  ),
+  SettingsKeys.LAST_APP_VERSION: Setting<String>(
+    key: 'last_app_version',
+    type: SettingType.string,
+    defaultValue: "",
   ),
 };

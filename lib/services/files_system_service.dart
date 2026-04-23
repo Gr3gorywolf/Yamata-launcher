@@ -6,6 +6,7 @@ import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_scanner/media_scanner.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,10 +29,16 @@ class FileSystemService {
   static String _appSupportPath = "";
   static String? _downloadsPath;
   static SystemPaths? _systemPaths;
+  static bool _appGotUpdated = false;
   static var isDesktop =
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
   //getters
+  /// Returns true if its the app's first launch after an update
+  static get appGotUpdated {
+    return _appGotUpdated;
+  }
+
   static get rootPath {
     return _rootPath;
   }
@@ -217,6 +224,14 @@ class FileSystemService {
     }
   }
 
+  static Future<bool> _checkAppGotUpdated() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    var currentVersion = packageInfo.version;
+    var lastAppVersion =
+        await SettingsService().get<String>(SettingsKeys.LAST_APP_VERSION);
+    return lastAppVersion != currentVersion;
+  }
+
   /**
   * Shows a folder picker dialog and returns the selected folder path. Returns null if the user cancels the dialog or an error occurs.
   */
@@ -392,7 +407,7 @@ class FileSystemService {
 
   static setupAndroidIntents() async {
     final file = File(emulatorIntentsFilePath);
-    if (await file.exists()) {
+    if (await file.exists() && !appGotUpdated) {
       return;
     }
     final byteData = await rootBundle.load("assets/data/emulator-intents.json");
@@ -404,7 +419,7 @@ class FileSystemService {
   static setupAria2c() async {
     var aria2cDir = Directory("${_appSupportPath}/aria2c");
     final file = File("${aria2cDir.path}/${SystemHelpers.aria2cOutputBinary}");
-    if (await file.exists()) {
+    if (await file.exists() && !appGotUpdated) {
       return;
     }
     if (aria2cDir.existsSync() == false) {
@@ -434,7 +449,7 @@ class FileSystemService {
     var sevenZipDir = Directory("${_appSupportPath}/7z");
     final file =
         File("${sevenZipDir.path}/${SystemHelpers.SevenZipOutputBinary}");
-    if (await file.exists()) {
+    if (await file.exists() && !appGotUpdated) {
       return;
     }
     if (sevenZipDir.existsSync() == false) {
@@ -494,12 +509,19 @@ class FileSystemService {
     await _initAndroidSystemPaths();
     await _initRootPath();
     await setupDownloadsPath();
+    _appGotUpdated = await _checkAppGotUpdated();
     if (isDesktop) {
       await setupAria2c();
       await setupSevenZip();
     }
     if (Platform.isAndroid) {
       await setupAndroidIntents();
+    }
+
+    if (appGotUpdated) {
+      print("App got updated, and dependencies were updated");
+      await SettingsService().set<String>(SettingsKeys.LAST_APP_VERSION,
+          (await PackageInfo.fromPlatform()).version);
     }
 
     var paths = [

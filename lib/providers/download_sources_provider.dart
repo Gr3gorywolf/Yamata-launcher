@@ -287,6 +287,8 @@ class DownloadSourcesProvider extends ChangeNotifier {
         .map(_prepareSourceForMatching)
         .toList();
     _invalidateCompiledIndex();
+    _romSources
+        .addAll(await DownloadSourcesService.getCachedDownloadSources() ?? {});
     checkForUpdates();
     Timer.periodic(const Duration(hours: 1), (_) async {
       await checkForUpdates();
@@ -381,6 +383,7 @@ class DownloadSourcesProvider extends ChangeNotifier {
       });
     } finally {
       _compilingRoms.removeAll(romsToCompile.map((e) => e.slug));
+      await DownloadSourcesService.cacheDownloadSources(_romSources);
       notifyListeners();
     }
   }
@@ -407,15 +410,17 @@ class DownloadSourcesProvider extends ChangeNotifier {
 
     _romSources.clear();
     _invalidateCompiledIndex();
+    await DownloadSourcesService.cacheDownloadSources(_romSources);
     notifyListeners();
     return true;
   }
 
-  void removeDownloadSource(DownloadSourceWithDownloads source) {
+  Future<void> removeDownloadSource(DownloadSourceWithDownloads source) async {
     _downloadSources.remove(source);
     _romSources.clear();
     _invalidateCompiledIndex();
-    DownloadSourcesService.deleteDownloadSource(source);
+    await DownloadSourcesService.deleteDownloadSource(source);
+    await DownloadSourcesService.cacheDownloadSources(_romSources);
     notifyListeners();
   }
 

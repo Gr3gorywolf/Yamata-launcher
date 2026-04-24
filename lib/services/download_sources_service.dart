@@ -12,6 +12,38 @@ import 'package:yamata_launcher/utils/string_helper.dart';
 const sourcesFile = "download-sources.json";
 
 class DownloadSourcesService {
+  static Future cacheDownloadSources(
+      Map<String, List<DownloadSource>> sources) async {
+    try {
+      final jsonData = json.encode(sources.map((key, value) =>
+          MapEntry(key, value.map((e) => e.toJson()).toList())));
+      await CacheService.writeCacheFile(
+        sourcesFile,
+        jsonData,
+      );
+    } catch (e) {
+      print("Error caching download sources: $e");
+    }
+  }
+
+  static Future<Map<String, List<DownloadSource>>?>
+      getCachedDownloadSources() async {
+    try {
+      final cachedData = await CacheService.retrieveCacheFile(sourcesFile);
+      if (cachedData != null) {
+        final Map<String, dynamic> decodedData = json.decode(cachedData);
+        return decodedData.map((key, value) => MapEntry(
+            key,
+            (value as List)
+                .map((e) => DownloadSource.fromJson(e as Map<String, dynamic>))
+                .toList()));
+      }
+    } catch (e) {
+      print("Error retrieving cached download sources: $e");
+    }
+    return null;
+  }
+
   static String _getDownloadSourcePath(DownloadSourceWithDownloads source) {
     return FileSystemService.downloadSourcesPath +
         "/" +

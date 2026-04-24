@@ -269,6 +269,9 @@ class EmulatorService {
         // If theres a compatible runner it will launch it only if the executable path matches
         if (availableRunners.isNotEmpty) {
           for (var runner in availableRunners) {
+            if (runner.executablePath.isEmpty) {
+              continue;
+            }
             if (emulatorBinary.contains(runner.executablePath)) {
               Process? runnerProcess = null;
               try {

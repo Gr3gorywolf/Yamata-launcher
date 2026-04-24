@@ -173,6 +173,9 @@ class _EmulatorLaunchSettingsFieldsState
 
     GameRunner? matchedRunner;
     for (final runner in availableRunnerList) {
+      if (runner.executablePath.isEmpty) {
+        continue;
+      }
       if (effectiveBinary.contains(runner.executablePath) ||
           runner.executablePath.contains(effectiveBinary)) {
         matchedRunner = runner;

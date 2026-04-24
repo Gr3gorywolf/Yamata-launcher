@@ -57,6 +57,10 @@ class RomListItem extends StatelessWidget {
       (p) => p.isRomCompilingDownloadSources(romItem.slug),
     );
 
+    final isPlaying = context.select<LibraryProvider, bool>(
+      (p) => p.isGameRunning(romItem.slug),
+    );
+
     final console = ConsoleService.getConsoleFromName(romItem.console);
     final status = _buildStatus(
       theme: theme,
@@ -64,6 +68,7 @@ class RomListItem extends StatelessWidget {
       libraryState: libraryState,
       hasAvailableSources: hasAvailableSources,
       isLoadingSources: isLoadingSources,
+      isPlaying: isPlaying,
     );
     final props = RomListItemProps(
       romItem: romItem,
@@ -183,7 +188,15 @@ class RomListItem extends StatelessWidget {
     required RomListItemLibraryState libraryState,
     required bool hasAvailableSources,
     required bool isLoadingSources,
+    bool isPlaying = false,
   }) {
+    if (isPlaying) {
+      return RomListItemStatus(
+        icon: Icons.play_arrow,
+        text: 'Running...',
+        color: theme.colorScheme.primary,
+      );
+    }
     if (downloadState.hasCurrentDownload) {
       final percent = downloadState.progressPercent ?? 0;
       return RomListItemStatus(

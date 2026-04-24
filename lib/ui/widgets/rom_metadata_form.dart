@@ -70,7 +70,7 @@ class RomMetadataForm extends StatefulWidget {
 
 class _RomMetadataFormState extends State<RomMetadataForm> {
   late final List<Console> consoles;
-  String detailsUrl = "";
+  RomInfo? scrapedInfo;
   bool isFetchingMetadata = false;
 
   late final FormGroup form = FormGroup({
@@ -113,7 +113,6 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
           item.rom.gameplayCovers?.isNotEmpty == true
               ? item.rom.gameplayCovers!.first
               : '';
-      detailsUrl = item.rom.detailsUrl ?? '';
     }
   }
 
@@ -149,8 +148,7 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
     form.control('gameplayUrl').value = info.gameplayCovers?.isNotEmpty == true
         ? info.gameplayCovers!.first
         : '';
-
-    detailsUrl = info.detailsUrl ?? '';
+    scrapedInfo = info;
   }
 
   (RomInfo, String)? _buildRomInfo() {
@@ -164,9 +162,15 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
     }
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
+    var generatedSlug = RomService.getRomSlug(console.toLowerCase(), title);
     final romSlug = widget.libraryItem != null && !widget.canRegenerateSlug
         ? widget.libraryItem!.rom.slug
-        : RomService.getRomSlug(console.toLowerCase(), title);
+        : generatedSlug;
+    RomInfo? scrapedInfoData;
+    // This is to make sure that customized games dont have metadata of other game
+    if (scrapedInfo?.slug == generatedSlug) {
+      scrapedInfoData = scrapedInfo;
+    }
     return (
       RomInfo(
         slug: romSlug,
@@ -174,7 +178,17 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
         portrait: portrait.isEmpty ? null : portrait,
         gameplayCovers: gameplay.isEmpty ? null : [gameplay],
         console: console.toLowerCase(),
-        detailsUrl: detailsUrl.trim(),
+        detailsUrl: scrapedInfoData?.detailsUrl?.trim() ??
+            widget.libraryItem?.rom.detailsUrl?.trim() ??
+            '',
+        rating: scrapedInfoData?.rating ?? widget.libraryItem?.rom.rating,
+        releaseDate:
+            scrapedInfoData?.releaseDate ?? widget.libraryItem?.rom.releaseDate,
+        categories:
+            scrapedInfoData?.categories ?? widget.libraryItem?.rom.categories,
+        logo: scrapedInfoData?.logo ?? widget.libraryItem?.rom.logo,
+        titleImage:
+            scrapedInfoData?.titleImage ?? widget.libraryItem?.rom.titleImage,
       ),
       romPath
     );
@@ -287,7 +301,7 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
                   title: "Game Title",
                   icon: Icons.title,
                   helperText:
-                      "Use the 'Search' icon or submit the title to look for metadata and artworks on the game database.",
+                      "Use the 'Search' icon or submit the title to look for metadata and artworks on the game database. Scraping a game will replace all your current metadata and artworks.",
                   actions: [
                     IconButton(
                       icon: Icon(Icons.travel_explore),

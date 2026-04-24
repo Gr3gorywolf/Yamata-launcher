@@ -96,6 +96,10 @@ class _ThumbnailSkeleton extends StatelessWidget {
 class RomThumbnailCache {
   static final Map<String, File?> _cache = {};
 
+  static clear() {
+    _cache.clear();
+  }
+
   static File? get(String slug) {
     if (_cache.containsKey(slug)) return _cache[slug];
 

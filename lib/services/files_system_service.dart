@@ -21,6 +21,7 @@ import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/native/system_paths_android_interface.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:yamata_launcher/ui/widgets/rom_thumbnail.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 import 'package:path/path.dart' as p;
 
@@ -480,6 +481,7 @@ class FileSystemService {
         await dir.delete(recursive: true);
       }
       await dir.create();
+      RomThumbnailCache.clear();
       return true;
     } catch (e) {
       print("Error deleting cache path: " + e.toString());

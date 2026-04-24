@@ -63,8 +63,8 @@ class CachedFetch {
           .timeout(timeout ?? Duration(seconds: 25));
 
       if (res.statusCode != 200) return null;
-
-      await CacheService.writeCacheFile(fullKey, res.body, ttl: ttl);
+      final decoded = utf8.decode(res.bodyBytes);
+      await CacheService.writeCacheFile(fullKey, decoded, ttl: ttl);
 
       final newSignature = res.headers['etag'] ?? res.headers['content-length'];
 
@@ -73,7 +73,7 @@ class CachedFetch {
       }
 
       return _runInIsolate(() {
-        return parser(jsonDecode(res.body));
+        return parser(jsonDecode(decoded));
       });
     } catch (e, st) {
       print('CachedFetch<json> [$key]: $e');

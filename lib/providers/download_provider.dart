@@ -83,7 +83,7 @@ class DownloadProvider extends ChangeNotifier {
 
   DownloadInfo? getDownloadInfo(RomInfo? rom) {
     try {
-      return _activeDownloadInfos.where((e) => e.romSlug == rom!.slug).first;
+      return getDownloadInfoBySlug(rom?.slug);
     } catch (_) {
       return null;
     }
@@ -91,7 +91,8 @@ class DownloadProvider extends ChangeNotifier {
 
   DownloadInfo? getDownloadInfoBySlug(String? slug) {
     try {
-      return _activeDownloadInfos.where((e) => e.romSlug == slug).first;
+      var foundInfos = _activeDownloadInfos.where((e) => e.romSlug == slug);
+      return foundInfos.isNotEmpty ? foundInfos.first : null;
     } catch (_) {
       return null;
     }

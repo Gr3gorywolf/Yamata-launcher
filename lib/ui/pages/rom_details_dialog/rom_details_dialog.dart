@@ -20,12 +20,6 @@ class RomDetailsDialog extends StatefulWidget {
 }
 
 class _RomDetailsDialogState extends State<RomDetailsDialog> {
-  bool _isLoading = false;
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;

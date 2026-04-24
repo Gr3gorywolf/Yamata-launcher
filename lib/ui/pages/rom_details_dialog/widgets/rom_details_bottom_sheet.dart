@@ -41,10 +41,12 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
 
   @override
   void initState() {
+    Future.microtask(() {
+      compileDownloadSources();
+      fetchHltbInfo();
+      fetchLaunchbox();
+    });
     super.initState();
-    compileDownloadSources();
-    fetchHltbInfo();
-    fetchLaunchbox();
   }
 
   void compileDownloadSources() {

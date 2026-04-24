@@ -359,8 +359,10 @@ class DownloadSourcesProvider extends ChangeNotifier {
   Future<void> compileRomDownloadSources(List<RomInfo> roms) async {
     if (_downloadSources.isEmpty || roms.isEmpty) return;
 
-    final romsToCompile =
-        roms.where((rom) => _romSources[rom.slug] == null).toList();
+    final romsToCompile = roms
+        .where((rom) =>
+            _romSources[rom.slug] == null && !_compilingRoms.contains(rom.slug))
+        .toList();
 
     if (romsToCompile.isEmpty) return;
     _compilingRoms.addAll(romsToCompile.map((e) => e.slug));
@@ -374,7 +376,9 @@ class DownloadSourcesProvider extends ChangeNotifier {
       );
       final Map<String, List<DownloadSource>> compiled =
           await compute(_compileRomSourcesIsolate, payload);
-      _romSources.addAll(compiled);
+      roms.forEach((rom) {
+        _romSources[rom.slug] = compiled[rom.slug] ?? [];
+      });
     } finally {
       _compilingRoms.removeAll(romsToCompile.map((e) => e.slug));
       notifyListeners();

@@ -13,7 +13,8 @@ class ConsoleSourcesRepository {
       var res =
           await client.get(Uri.parse(sourceUrl)).timeout(Duration(seconds: 15));
       if (res.statusCode == 200) {
-        var responseData = json.decode(res.body);
+        final decoded = utf8.decode(res.bodyBytes);
+        var responseData = json.decode(decoded);
         return PlatformCatalogSource.fromJson(responseData);
       } else {
         return null;

@@ -193,7 +193,8 @@ class DownloadSourcesRepository {
       var res =
           await client.get(Uri.parse(sourceUrl)).timeout(Duration(seconds: 40));
       if (res.statusCode == 200) {
-        var responseData = json.decode(res.body);
+        final decoded = utf8.decode(res.bodyBytes);
+        var responseData = json.decode(decoded);
         List<DownloadSourceRom> downloads = (responseData['downloads'] as List)
             .where((download) =>
                 download is Map<String, dynamic> &&
@@ -230,7 +231,8 @@ class DownloadSourcesRepository {
             .get(Uri.parse(backupUrl))
             .timeout(Duration(seconds: 15));
         if (res.statusCode == 200) {
-          var responseData = json.decode(res.body);
+          final decoded = utf8.decode(res.bodyBytes);
+          var responseData = json.decode(decoded);
           var sourceBackupUrl = responseData[sourceUrl];
           if (sourceBackupUrl != null) {
             return await fetchDownloadSource(sourceBackupUrl, type);

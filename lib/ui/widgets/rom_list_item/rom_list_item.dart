@@ -168,6 +168,7 @@ class RomListItem extends StatelessWidget {
       contentLabel: contentLabel,
       statusText: downloadState.statusText,
       progressValue: progressValue,
+      isPaused: downloadState.isPaused,
     );
   }
 
@@ -199,6 +200,13 @@ class RomListItem extends StatelessWidget {
     }
     if (downloadState.hasCurrentDownload) {
       final percent = downloadState.progressPercent ?? 0;
+      if (downloadState.isPaused) {
+        return RomListItemStatus(
+          icon: Icons.pause,
+          text: 'Paused - $percent%',
+          color: Colors.yellow.withOpacity(0.7),
+        );
+      }
       return RomListItemStatus(
         icon: Icons.downloading,
         text:

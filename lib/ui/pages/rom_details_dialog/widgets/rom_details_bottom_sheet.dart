@@ -307,8 +307,10 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
             height: 7,
           ),
           LinearProgressIndicator(
-            backgroundColor: Colors.grey[800],
-            value: (downloadInfo.downloadPercent ?? 0) / 100,
+            color: downloadInfo?.isPaused == true
+                ? Colors.yellow.withOpacity(0.7)
+                : Theme.of(context).colorScheme.primary,
+            value: (downloadInfo?.downloadPercent ?? 0) / 100,
           ),
           const SizedBox(height: 4),
           Opacity(

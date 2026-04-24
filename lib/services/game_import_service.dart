@@ -83,6 +83,7 @@ class GameImportService {
             await _flushPendingLookups(
               currentBatch,
               launchboxRegistry: launchboxRegistry,
+              consoleFilter: consoleFilter,
               onResolved: (payload) {
                 callback(payload);
                 processedFiles += 1;
@@ -119,6 +120,7 @@ class GameImportService {
         await _flushPendingLookups(
           currentBatch,
           launchboxRegistry: launchboxRegistry,
+          consoleFilter: consoleFilter,
           onResolved: (payload) {
             callback(payload);
             processedFiles += 1;

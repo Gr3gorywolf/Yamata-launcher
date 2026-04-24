@@ -92,6 +92,7 @@ class DownloadListItem extends StatelessWidget {
       contentLabel: contentLabel,
       statusText: downloadInfo?.downloadInfo,
       progressValue: progressValue,
+      isPaused: downloadInfo?.isPaused ?? false,
     );
   }
 
@@ -125,6 +126,7 @@ class DownloadListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final downloadStatus = _buildDownloadStatus();
+    var isUsingGamepad = Provider.of<AppProvider>(context).isUsingGamepad;
     var isDownloading = downloadStatus?.hasProgress == true;
 
     return RepaintBoundary(
@@ -266,11 +268,13 @@ class DownloadListItem extends StatelessWidget {
                           RomListItemDownloadProgress(
                             downloadStatus: downloadStatus,
                           ),
-                          SizedBox(height: 8),
-                          RomActionButton(
-                            romItem,
-                            size: RomActionButtonSize.small,
-                          )
+                          if (!isUsingGamepad) ...[
+                            SizedBox(height: 8),
+                            RomActionButton(
+                              romItem,
+                              size: RomActionButtonSize.small,
+                            )
+                          ]
                         ],
                       ),
                     )

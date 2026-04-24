@@ -9,6 +9,7 @@ class RomListItemDownloadState {
   final bool isExtraContent;
   final String? statusText;
   final int? progressPercent;
+  final bool isPaused;
   final bool isExtracting;
 
   const RomListItemDownloadState({
@@ -18,6 +19,7 @@ class RomListItemDownloadState {
     required this.statusText,
     required this.progressPercent,
     required this.isExtracting,
+    this.isPaused = false,
   });
 
   factory RomListItemDownloadState.fromDownloadInfo(
@@ -29,6 +31,7 @@ class RomListItemDownloadState {
       statusText: downloadInfo?.downloadInfo,
       progressPercent: downloadInfo?.downloadPercent,
       isExtracting: downloadInfo?.isExtracting ?? false,
+      isPaused: downloadInfo?.isPaused ?? false,
     );
   }
 
@@ -88,11 +91,13 @@ class RomListItemDownloadStatus {
   final String? contentLabel;
   final String? statusText;
   final double? progressValue;
+  final bool isPaused;
 
   const RomListItemDownloadStatus({
     required this.contentLabel,
     required this.statusText,
     required this.progressValue,
+    this.isPaused = false,
   });
 
   bool get hasContent => contentLabel != null;

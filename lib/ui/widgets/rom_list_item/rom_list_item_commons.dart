@@ -120,7 +120,9 @@ class RomListItemDownloadProgress extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LinearProgressIndicator(
-          backgroundColor: Colors.grey[800],
+          color: downloadStatus?.isPaused == true
+              ? Colors.yellow.withOpacity(0.7)
+              : Theme.of(context).colorScheme.primary,
           value: downloadStatus?.progressValue ?? 0,
         ),
         const SizedBox(height: 3),

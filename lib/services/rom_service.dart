@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:diacritic/diacritic.dart';
 import 'package:media_scanner/media_scanner.dart';
 import 'package:yamata_launcher/app_router.dart';
+import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
@@ -187,43 +188,75 @@ class RomService {
   }
 
   /// Locate the largest valid ROM or compressed file in the given directory
-  static File? searchRomFile(Directory directory,
-      {bool skipCompressedFiles = false, String? specificFileName}) {
-    String? outputPath;
-    if (directory.existsSync()) {
-      // Find the largest valid ROM / compressed file
-      final validExtensions = {
-        ...VALID_ROM_EXTENSIONS,
-        ...(skipCompressedFiles ? [] : VALID_COMPRESSED_EXTENSIONS),
-      }.map((e) => '.${e.toLowerCase()}').toSet();
+  static File? searchRomFile(
+    Directory directory, {
+    bool skipCompressedFiles = false,
+    String? specificFileName,
+  }) {
+    if (!directory.existsSync()) return null;
 
-      final files = directory
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where((f) =>
-              validExtensions.any((ext) => f.path.toLowerCase().endsWith(ext)))
-          .toList();
+    final validExtensions = {
+      ...VALID_ROM_EXTENSIONS,
+      if (!skipCompressedFiles) ...VALID_COMPRESSED_EXTENSIONS,
+    }.map((e) => '.${e.toLowerCase()}').toSet();
 
-      if (files.isNotEmpty) {
-        files.sort(
-          (a, b) => b.lengthSync().compareTo(a.lengthSync()),
-        );
-        var foundFilename = files.firstWhereOrNull((file) {
-          print(file.path);
-          print(p.basename(file.path));
-          return [
-            if (specificFileName != null) specificFileName.toLowerCase(),
-            ...SETUP_FILE_NAMES,
-            ...windowsGamesFileNames
-          ].contains(p.basename(file.path).toLowerCase());
-        });
-        outputPath = foundFilename?.path ?? files.first.path;
-      }
-    }
-    if (outputPath == null) {
-      return null;
-    }
-    return File(outputPath);
+    final invalidExecs = {
+      ...REDIST_FILE_MATCHES,
+      ...UNINSTS_FILE_NAMES,
+    };
+
+    final windowsExtensions = CONSOLE_EXTENSIONS.entries
+        .where((entry) => entry.value.contains(CONSOLE_SLUGS.windows))
+        .map((entry) => '.${entry.key}'.toLowerCase())
+        .toSet();
+
+    final files =
+        directory.listSync(recursive: true).whereType<File>().where((f) {
+      final pathLower = f.path.toLowerCase();
+      final baseName = p.basename(pathLower);
+
+      final hasValidExtension =
+          validExtensions.any((ext) => pathLower.endsWith(ext));
+
+      if (!hasValidExtension) return false;
+
+      final isWindowsExec =
+          windowsExtensions.any((ext) => pathLower.endsWith(ext));
+
+      final isInvalidExec = isWindowsExec &&
+          invalidExecs.any((invalid) => baseName.contains(invalid));
+
+      return !isInvalidExec;
+    }).toList();
+
+    if (files.isEmpty) return null;
+
+    files.sort((a, b) {
+      final pathCompare = a.path.length.compareTo(b.path.length);
+      if (pathCompare != 0) return pathCompare;
+
+      return b.lengthSync().compareTo(a.lengthSync());
+    });
+
+    final priorityNames = [
+      if (specificFileName != null) specificFileName.toLowerCase(),
+      ...SETUP_FILE_NAMES,
+      ...windowsGamesFileNames,
+    ];
+
+    final foundFilename = files.firstWhereOrNull((file) {
+      final pathLower = file.path.toLowerCase();
+      return priorityNames.any((name) => pathLower.endsWith(name));
+    });
+
+    final foundWindowsExec = files.firstWhereOrNull((file) {
+      final pathLower = file.path.toLowerCase();
+      return windowsExtensions.any((ext) => pathLower.endsWith(ext));
+    });
+
+    final output = foundFilename ?? foundWindowsExec ?? files.first;
+
+    return File(output.path);
   }
 
   static Future catchRomPortrait(RomInfo romInfo,

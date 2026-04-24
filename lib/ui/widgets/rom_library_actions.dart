@@ -135,10 +135,8 @@ class RomLibraryActions extends StatelessWidget {
     handleEditMetadata() async {
       await RomMetadataForm.show(context, (rom, newPath) {
         if (libraryItem == null) return;
-        var originalSlug = libraryItem.rom.slug;
         libraryItem.rom = rom;
-        libraryProvider.updateLibraryItem(libraryItem,
-            originalSlug: originalSlug);
+        libraryProvider.updateLibraryItem(libraryItem);
       }, libraryItem: libraryItem, canEditConsole: false, canEditPath: false);
     }
 

@@ -120,22 +120,15 @@ class LibraryProvider extends ChangeNotifier {
     return libraryItem;
   }
 
-  addLibraryItem(RomLibraryItem item) async {
+  Future<bool> addLibraryItem(RomLibraryItem item) async {
     if (db == null) {
-      return;
+      return false;
     }
     var foundLibraryItem = _libraryItems[item.rom.slug];
     if (foundLibraryItem != null) {
-      foundLibraryItem.rom = item.rom;
-      foundLibraryItem.isImported = item.isImported;
-      foundLibraryItem.manualDownload = item.manualDownload;
-      item = foundLibraryItem;
-      await LibraryDao(db!).update(item);
-      return;
-    } else {
-      await LibraryDao(db!).insert(item);
+      return false;
     }
-
+    await LibraryDao(db!).insert(item);
     item.doesExists = await File(item.filePath ?? '').exists();
     _libraryItems[item.rom.slug] = item;
     notifyListeners();
@@ -143,6 +136,7 @@ class LibraryProvider extends ChangeNotifier {
       RomService.catchRomPortrait(item.rom,
           shouldRegenerate: foundLibraryItem != null);
     }
+    return true;
   }
 
   removeLibraryItem(String romSlug) async {

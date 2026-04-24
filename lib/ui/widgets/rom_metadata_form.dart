@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/settings_constants.dart';
@@ -8,6 +9,7 @@ import 'package:yamata_launcher/models/artwork_scraper.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/game_metadata_repository.dart';
 import 'package:yamata_launcher/repository/game_metadata_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -29,20 +31,26 @@ class RomMetadataForm extends StatefulWidget {
   final RomLibraryItem? libraryItem;
   final bool canEditConsole;
   final bool canEditPath;
+  final bool canRegenerateSlug;
+  final bool canBeLibraryDuplicate;
   final Function(RomInfo info, String filePath) onPicked;
 
   RomMetadataForm(
       {super.key,
       required this.onPicked,
       this.libraryItem,
+      this.canRegenerateSlug = false,
       this.canEditConsole = true,
-      this.canEditPath = true});
+      this.canEditPath = true,
+      this.canBeLibraryDuplicate = false});
 
   static show(
       BuildContext context, Function(RomInfo info, String filePath) onPicked,
       {RomLibraryItem? libraryItem,
       bool canEditConsole = true,
-      bool canEditPath = true}) {
+      bool canEditPath = true,
+      bool canRegenerateSlug = false,
+      bool canBeLibraryDuplicate = false}) {
     showDialog(
       context: context,
       builder: (context) => RomMetadataForm(
@@ -50,6 +58,8 @@ class RomMetadataForm extends StatefulWidget {
         libraryItem: libraryItem,
         canEditConsole: canEditConsole,
         canEditPath: canEditPath,
+        canRegenerateSlug: canRegenerateSlug,
+        canBeLibraryDuplicate: canBeLibraryDuplicate,
       ),
     );
   }
@@ -148,13 +158,15 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
 
     final title = (form.control('title').value as String).trim();
     final console = (form.control('console').value as String).trim();
-    String romPath = '';
+    String romPath = widget.libraryItem?.filePath ?? '';
     if (widget.canEditPath) {
       romPath = (form.control('romPath').value as String).trim();
     }
     final portrait = (form.control('portraitUrl').value as String).trim();
     final gameplay = (form.control('gameplayUrl').value as String).trim();
-    final romSlug = RomService.getRomSlug(console.toLowerCase(), title);
+    final romSlug = widget.libraryItem != null && !widget.canRegenerateSlug
+        ? widget.libraryItem!.rom.slug
+        : RomService.getRomSlug(console.toLowerCase(), title);
     return (
       RomInfo(
         slug: romSlug,
@@ -172,6 +184,14 @@ class _RomMetadataFormState extends State<RomMetadataForm> {
     form.markAllAsTouched();
     var result = _buildRomInfo();
     if (result == null) {
+      return;
+    }
+    var libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
+    if (!widget.canBeLibraryDuplicate &&
+        widget.libraryItem == null &&
+        libraryProvider.getLibraryItem(result.$1.slug) != null) {
+      Future.microtask(() => AlertsService.showErrorSnackbar(
+          "A game with the same title and console already exists in your library. Please change the title or console to avoid duplicates."));
       return;
     }
     var (romInfo, romPath) = result;

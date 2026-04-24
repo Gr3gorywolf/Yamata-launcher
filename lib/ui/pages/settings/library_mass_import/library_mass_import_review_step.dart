@@ -56,7 +56,7 @@ class LibraryMassImportReviewStep extends StatelessWidget {
     final tabs = [
       _LibraryMassImportTabData(
         id: 'valid',
-        title: 'Valid (${validGames.length})',
+        title: 'Valid (${validFilesCount})',
         items: validGames,
         emptyTitle: 'No valid matches yet',
         emptyDescription:
@@ -72,7 +72,7 @@ class LibraryMassImportReviewStep extends StatelessWidget {
       ),
       _LibraryMassImportTabData(
         id: 'invalid',
-        title: 'Invalid (${invalidGames.length})',
+        title: 'Invalid (${invalidFilesCount})',
         items: invalidGames,
         emptyTitle: 'No invalid games',
         emptyDescription:

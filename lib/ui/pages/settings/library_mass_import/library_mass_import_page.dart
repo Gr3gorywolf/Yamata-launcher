@@ -76,6 +76,13 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
       if (!item.libraryItem.rom.isValid) {
         continue;
       }
+      var foundLibraryItem =
+          libraryProvider.getLibraryItem(item.libraryItem.rom.slug);
+      if (foundLibraryItem != null) {
+        foundLibraryItem.filePath = item.libraryItem.filePath;
+        await libraryProvider.updateLibraryItem(foundLibraryItem);
+        continue;
+      }
       await libraryProvider.addLibraryItem(item.libraryItem);
       gamesCount++;
     }

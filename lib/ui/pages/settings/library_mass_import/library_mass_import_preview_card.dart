@@ -45,7 +45,9 @@ class LibraryMassImportPreviewCard extends StatelessWidget {
       },
           libraryItem: item.libraryItem,
           canEditConsole: true,
-          canEditPath: false);
+          canEditPath: false,
+          canBeLibraryDuplicate: true,
+          canRegenerateSlug: true);
     }
 
     void handleSkip(BuildContext context, bool value) {

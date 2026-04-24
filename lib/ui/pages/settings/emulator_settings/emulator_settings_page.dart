@@ -6,6 +6,7 @@ import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/pages/settings/emulator_settings/emulator_settings_form.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 
 class EmulatorSettingsPage extends StatefulWidget {
   const EmulatorSettingsPage({super.key});
@@ -98,9 +99,9 @@ class _EmulatorSettingsPageState extends State<EmulatorSettingsPage> {
         title: const Text('Emulator Settings'),
       ),
       floatingActionButton: !emulatorSettings.isEmpty
-          ? FloatingActionButton.extended(
-              icon: Icon(Icons.add),
-              label: Text('Add emulator setting'),
+          ? GamepadAwareFloatingActionButton(
+              icon: Icons.add,
+              title: 'Add emulator setting',
               onPressed: handleAddEmulatorSetting,
             )
           : null,

@@ -39,10 +39,26 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
   static const double _axisNeutralThreshold = 0.5;
   static const Duration _repeatInterval = Duration(milliseconds: 150);
 
+  static final Map<LogicalKeyboardKey, String> androidKeyMap = {
+    LogicalKeyboardKey.gameButtonA: 'a',
+    LogicalKeyboardKey.gameButtonB: 'b',
+    LogicalKeyboardKey.gameButtonX: 'x',
+    LogicalKeyboardKey.gameButtonY: 'y',
+    LogicalKeyboardKey.gameButtonThumbLeft: 'leftStick',
+    LogicalKeyboardKey.gameButtonThumbRight: 'rightStick',
+    LogicalKeyboardKey.gameButtonLeft1: 'leftBumper',
+    LogicalKeyboardKey.gameButtonRight1: 'rightBumper',
+    LogicalKeyboardKey.gameButtonSelect: 'select',
+    LogicalKeyboardKey.gameButtonStart: 'start',
+    LogicalKeyboardKey.arrowUp: 'dpadUp',
+    LogicalKeyboardKey.arrowDown: 'dpadDown',
+    LogicalKeyboardKey.arrowLeft: 'dpadLeft',
+    LogicalKeyboardKey.arrowRight: 'dpadRight',
+  };
+
   @override
   void initState() {
     super.initState();
-
     _subscription = Gamepads.normalizedEvents.listen((event) {
       _handleGamepadEvent(event);
     });
@@ -91,10 +107,8 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
     void visit(Element element) {
       if (!isRenderable(element)) return;
 
-      // IMPORTANTE: visitar primero hijos (DFS profundo)
       element.visitChildElements(visit);
 
-      // Luego evaluar (esto hace que el último sea el más profundo)
       if (element is StatefulElement && element.state is ScrollableState) {
         result = element.state as ScrollableState;
       }
@@ -270,27 +284,15 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
   void _handleAndroidGamepadEvent(KeyEvent key) {
     print(
         "Android gamepad event: ${key.logicalKey.debugName} (${key.logicalKey.keyId})");
-    const androidKeys = [
-      LogicalKeyboardKey.gameButtonA,
-      LogicalKeyboardKey.gameButtonB,
-      LogicalKeyboardKey.gameButtonX,
-      LogicalKeyboardKey.gameButtonY,
-      LogicalKeyboardKey.gameButtonThumbLeft,
-      LogicalKeyboardKey.gameButtonThumbRight,
-      LogicalKeyboardKey.gameButtonLeft1,
-      LogicalKeyboardKey.gameButtonRight1,
-      LogicalKeyboardKey.gameButtonSelect,
-      LogicalKeyboardKey.gameButtonStart,
-      LogicalKeyboardKey.arrowDown,
-      LogicalKeyboardKey.arrowUp,
-      LogicalKeyboardKey.arrowLeft,
-      LogicalKeyboardKey.arrowRight,
-    ];
 
-    if ((androidKeys.contains(key.logicalKey) ||
+    if ((androidKeyMap.keys.contains(key.logicalKey) ||
             key.logicalKey.debugName?.startsWith("game") == true) &&
         key is KeyDownEvent) {
-      Provider.of<AppProvider>(context, listen: false).setUsingGamepad(true);
+      var appProvider = Provider.of<AppProvider>(context, listen: false);
+      appProvider.setUsingGamepad(true);
+      if (androidKeyMap.containsKey(key.logicalKey)) {
+        appProvider.onGamepadButtonPressed.add(androidKeyMap[key.logicalKey]!);
+      }
       if (key.logicalKey == LogicalKeyboardKey.gameButtonLeft1) {
         _handleChangeTab(false);
       }
@@ -307,6 +309,11 @@ class _AppGamepadListenerState extends State<AppGamepadListener> {
 
       print("Gamepad event: $keyName = $keyVal");
       Provider.of<AppProvider>(context, listen: false).setUsingGamepad(true);
+      if (keyVal is double && keyVal > _buttonPressedThreshold) {
+        Provider.of<AppProvider>(context, listen: false)
+            .onGamepadButtonPressed
+            .add(keyName);
+      }
       switch (keyName) {
         case 'dpadUp':
         case 'dpadDown':

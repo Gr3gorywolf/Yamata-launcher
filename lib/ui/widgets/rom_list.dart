@@ -71,9 +71,13 @@ class _RomListState extends State<RomList> with AutomaticKeepAliveClientMixin {
 
     final roms = widget.roms ?? const [];
     final screenWidth = MediaQuery.of(context).size.width;
+    var gamepadCardSize = 280;
+    if (screenWidth < 1920) {
+      gamepadCardSize = 230;
+    }
     final appProvider = Provider.of<AppProvider>(context);
-    final cardWidth = appProvider.isUsingGamepad ? 280 : 283;
-    final cardHeight = appProvider.isUsingGamepad ? 280 : 450;
+    final cardWidth = appProvider.isUsingGamepad ? gamepadCardSize : 283;
+    final cardHeight = appProvider.isUsingGamepad ? gamepadCardSize : 450;
     final gridSpacing = appProvider.isUsingGamepad ? 25 : 8;
     final gridAxisCount =
         max(1, (screenWidth / (cardWidth + gridSpacing)).floor());

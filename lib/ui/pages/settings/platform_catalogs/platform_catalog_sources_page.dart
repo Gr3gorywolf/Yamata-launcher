@@ -8,6 +8,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:path/path.dart' as p;
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class ConsoleSourcesPage extends StatefulWidget {
@@ -270,10 +271,10 @@ class _ConsoleSourcesPageState extends State<ConsoleSourcesPage> {
         },
       ),
       floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
-          ? FloatingActionButton.extended(
+          ? GamepadAwareFloatingActionButton(
               onPressed: handleSetConsoleSource,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Catalog Source'),
+              icon: Icons.add,
+              title: 'Add Catalog Source',
             )
           : null,
     );

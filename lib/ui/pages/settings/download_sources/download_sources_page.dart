@@ -11,6 +11,7 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/searchable_dropdown_form_field.dart';
 import 'package:yamata_launcher/ui/widgets/status_tag.dart';
 import 'package:yamata_launcher/utils/string_helper.dart';
@@ -313,10 +314,10 @@ class _DownloadSourcesPageState extends State<DownloadSourcesPage> {
         },
       ),
       floatingActionButton: !provider.downloadSources.isEmpty
-          ? FloatingActionButton.extended(
+          ? GamepadAwareFloatingActionButton(
               onPressed: () => _handleSetSource(null),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Download Source'),
+              icon: Icons.add,
+              title: 'Add Download Source',
             )
           : null,
     );

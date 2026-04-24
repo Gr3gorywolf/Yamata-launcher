@@ -13,6 +13,7 @@ import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:yamata_launcher/ui/widgets/cookie_extractor_webview.dart';
 import 'package:yamata_launcher/ui/widgets/dialog_section_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/wrapped_link_text.dart';
 import 'package:yamata_launcher/utils/url_helper.dart';
 
@@ -215,9 +216,10 @@ class _SiteCookiesPageState extends State<SiteCookiesPage> {
       appBar: AppBar(
         title: const Text('Site Cookies'),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: GamepadAwareFloatingActionButton(
         onPressed: handleSetSite,
-        child: const Icon(Icons.add),
+        icon: Icons.add,
+        title: 'Add Site',
       ),
       body: _cookieSites.isEmpty
           ? EmptyPlaceholder(

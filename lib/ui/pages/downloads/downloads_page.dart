@@ -12,6 +12,7 @@ import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/ui/widgets/download_list_item.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/new_download_form.dart';
 import 'package:yamata_launcher/ui/widgets/toolbar.dart';
 
@@ -75,10 +76,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
         initialValues: ToolbarValue(filters: [], search: ''),
         settings: ToolbarSettings(title: "Downloads", disableSearch: true),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: GamepadAwareFloatingActionButton(
         onPressed: () => openDownloadForm(null),
-        icon: const Icon(Icons.add),
-        label: const Text("Add download"),
+        icon: Icons.add,
+        title: 'Add download',
       ),
       body: Consumer<DownloadProvider>(
         builder: (context, downloadProvider, _) {

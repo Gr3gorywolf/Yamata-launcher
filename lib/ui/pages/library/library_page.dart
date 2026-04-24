@@ -9,6 +9,7 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/settings_service.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 import 'package:yamata_launcher/ui/widgets/rom_metadata_form.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
 import 'package:yamata_launcher/ui/widgets/rom_list.dart';
@@ -143,10 +144,10 @@ class _LibraryPageState extends State<LibraryPage> {
     );
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: GamepadAwareFloatingActionButton(
           onPressed: () => {RomMetadataForm.show(context, handleAddToLibrary)},
-          label: Text('Import Game'),
-          icon: Icon(Icons.add)),
+          title: 'Import Game',
+          icon: Icons.add),
       appBar: Toolbar<RomLibraryItem>(
         onChanged: (values) {
           setState(() {

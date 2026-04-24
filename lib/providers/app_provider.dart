@@ -30,6 +30,8 @@ class AppProvider extends ChangeNotifier {
   bool get sortByLastPlayedByDefault => _sortByLastPlayedByDefault;
   String? get incomingDownloadUrl => _incomingDownloadUrl;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
+  StreamController<String?> onGamepadButtonPressed =
+      StreamController<String?>.broadcast();
   StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
   StreamController<String?> onUrlIncoming =
       StreamController<String?>.broadcast();

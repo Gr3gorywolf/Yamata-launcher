@@ -8,6 +8,7 @@ import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_ma
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_registry_sync_step.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_review_step.dart';
 import 'package:yamata_launcher/ui/pages/settings/library_mass_import/library_mass_import_setup_step.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 
 class LibraryMassImportPage extends StatefulWidget {
   const LibraryMassImportPage({super.key});
@@ -140,11 +141,11 @@ class _LibraryMassImportPageState extends State<LibraryMassImportPage> {
             ),
             floatingActionButton: controller.stage ==
                     LibraryMassImportStage.review
-                ? FloatingActionButton.extended(
+                ? GamepadAwareFloatingActionButton(
                     onPressed:
                         controller.canCompleteImport ? _handleImportTap : null,
-                    icon: const Icon(Icons.done_all),
-                    label: const Text('Complete import'),
+                    icon: Icons.done_all,
+                    title: 'Complete import',
                   )
                 : null,
             body: AnimatedSwitcher(

@@ -227,7 +227,6 @@ class AlertsService {
               title,
               style: TextStyle(color: textColor ?? Colors.green),
             ),
-            backgroundColor: Colors.grey[900],
             content: SingleChildScrollView(
               child: Container(
                   constraints: BoxConstraints(maxWidth: 500),

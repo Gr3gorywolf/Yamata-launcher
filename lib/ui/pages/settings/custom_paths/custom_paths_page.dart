@@ -13,6 +13,7 @@ import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/ui/pages/settings/custom_paths/custom_paths_form.dart';
 import 'package:yamata_launcher/ui/widgets/empty_placeholder.dart';
+import 'package:yamata_launcher/ui/widgets/gamepad_aware_floating_action_button.dart';
 
 class CustomPathsPage extends StatefulWidget {
   @override
@@ -146,10 +147,10 @@ class _CustomPathsPageState extends State<CustomPathsPage> {
         },
       ),
       floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
-          ? FloatingActionButton.extended(
+          ? GamepadAwareFloatingActionButton(
               onPressed: handleAddPath,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Custom Path'),
+              icon: Icons.add,
+              title: 'Add Custom Path',
             )
           : null,
     );

@@ -109,7 +109,9 @@ class SevenZipConsoleHandler {
     final args = [
       'x',
       '-y',
+      '-bb1',
       '-bsp1',
+      '-bse1',
       if (workingPassword != null) '-p$workingPassword',
       archivePath,
     ];

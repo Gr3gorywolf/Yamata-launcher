@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -168,11 +169,12 @@ _CompiledSourceIndex _buildCompiledSourceIndexIsolate(
 
 /**
  * Isolate function to compile download sources for roms.
+ * It returns a map with the list of download source hashes for each rom slug.
  */
-Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
+Map<String, List<String>> _compileRomSourcesIsolate(
   _CompilePayload payload,
 ) {
-  final result = <String, List<DownloadSource>>{};
+  final result = <String, List<String>>{};
   final stopwatch = Stopwatch()..start();
 
   print("Isolate: Compiling ${payload.roms.length} roms");
@@ -245,7 +247,7 @@ Map<String, List<DownloadSource>> _compileRomSourcesIsolate(
         }
 
         for (final slug in romEntry.value) {
-          result[slug] = matchedSources;
+          result[slug] = matchedSources.map((s) => s.hash).toList();
         }
       }
     }
@@ -262,7 +264,8 @@ class DownloadSourcesProvider extends ChangeNotifier {
   }
 
   List<DownloadSourceWithDownloads> _downloadSources = [];
-  final Map<String, List<DownloadSource>> _romSources = {};
+  // Map of rom slug to list of download source hashes
+  final Map<String, List<String>> _romSources = {};
   final List<String> _sourceUrlsWithUpdates = [];
   final Set<String> _compilingRoms = {};
   _CompiledSourceIndex? _compiledSourceIndex;
@@ -322,7 +325,14 @@ class DownloadSourcesProvider extends ChangeNotifier {
   }
 
   List<DownloadSource> getRomSources(String romSlug) {
-    return _romSources[romSlug] ?? [];
+    return (_romSources[romSlug] ?? [])
+        .map((hash) {
+          return _downloadSources
+              .map((s) => s.sourceInfo)
+              .firstWhereOrNull((source) => source.hash == hash);
+        })
+        .whereType<DownloadSource>()
+        .toList();
   }
 
   List<DownloadSourceRom> _findMatches(
@@ -376,9 +386,9 @@ class DownloadSourcesProvider extends ChangeNotifier {
         roms: romsToCompile,
         sourceIndex: sourceIndex,
       );
-      final Map<String, List<DownloadSource>> compiled =
+      final Map<String, List<String>> compiled =
           await compute(_compileRomSourcesIsolate, payload);
-      roms.forEach((rom) {
+      romsToCompile.forEach((rom) {
         _romSources[rom.slug] = compiled[rom.slug] ?? [];
       });
     } finally {

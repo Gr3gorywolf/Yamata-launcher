@@ -42,8 +42,8 @@ class RomThumbnail extends StatelessWidget {
         width: width,
         fit: fit,
         gaplessPlayback: true,
-        cacheWidth: width.toInt() * 8,
-        cacheHeight: height.toInt() * 8,
+        cacheWidth: width.toInt() * 6,
+        cacheHeight: height.toInt() * 6,
       );
     }
 
@@ -61,8 +61,8 @@ class RomThumbnail extends StatelessWidget {
         url,
         fit: fit,
         gaplessPlayback: true,
-        cacheWidth: width.toInt() * 8,
-        cacheHeight: height.toInt() * 8,
+        cacheWidth: width.toInt() * 6,
+        cacheHeight: height.toInt() * 6,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const _ThumbnailSkeleton();

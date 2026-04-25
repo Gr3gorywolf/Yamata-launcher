@@ -52,7 +52,7 @@ class _RomDetailsBottomSheetState extends State<RomDetailsBottomSheet> {
   void compileDownloadSources() {
     var sourcesProvider =
         Provider.of<DownloadSourcesProvider>(context, listen: false);
-    var downloadSources = sourcesProvider.compileRomDownloadSources([
+    sourcesProvider.compileRomDownloadSources([
       widget.rom,
     ]);
   }

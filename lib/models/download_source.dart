@@ -1,3 +1,5 @@
+import 'package:yamata_launcher/utils/string_helper.dart';
+
 import 'download_source_rom.dart';
 
 enum DownloadSourceType { Yamata, Hydra }
@@ -23,6 +25,15 @@ class DownloadSource {
       this.downloadUrl,
       this.sizeBytes,
       this.type});
+  // Generate a hash for the download source based on its properties
+  String get hash {
+    return StringHelper.hashSha(title +
+        (downloadUrl ?? "") +
+        (romsCount?.toString() ?? "") +
+        (type?.toString() ?? "") +
+        (sizeBytes ?? ""));
+  }
+
   DownloadSource.fromJson(Map<String, dynamic> json) {
     title = json['title'] ?? "";
     romsCount = json['roms_count'];

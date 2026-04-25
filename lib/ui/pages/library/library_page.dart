@@ -120,6 +120,8 @@ class _LibraryPageState extends State<LibraryPage> {
     item.addedAt = DateTime.now();
     item.isImported = true;
     await libraryProvider.updateLibraryItem(item);
+    Provider.of<DownloadSourcesProvider>(context, listen: false)
+        .compileRomDownloadSources([info]);
   }
 
   @override

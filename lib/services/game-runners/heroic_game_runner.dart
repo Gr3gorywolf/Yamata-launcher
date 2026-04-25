@@ -92,7 +92,7 @@ class HeroicGameRunner implements GameRunner {
   }
 
   String _buildLaunchUrl(String gameId) {
-    return 'heroic://launch?appName=$gameId&runner=sideload';
+    return 'heroic://launch/sideload/$gameId';
   }
 
   String _macOsAppBundlePath() {

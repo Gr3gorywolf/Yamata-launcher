@@ -13,6 +13,7 @@ import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_intent.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -188,7 +189,8 @@ class EmulatorService {
     final rom = download.rom;
     final consoleKey = rom.console;
     final slug = rom.slug;
-
+    final appProvider =
+        Provider.of<AppProvider>(navigatorContext!, listen: false);
     var emulatorSetting = await EmulatorSettingsDao(db!).get(consoleKey);
     var isNativePlatform = EmulatorService.isNativePlatform(consoleKey);
     if (emulatorSetting == null) {
@@ -254,6 +256,7 @@ class EmulatorService {
 
     handleUpdateLibraryItem();
     provider.setGameRunning(slug, true);
+    appProvider.cleanExecutionLogs(slug);
 
     try {
       if (Platform.isAndroid) {
@@ -302,23 +305,31 @@ class EmulatorService {
                 await FlatpakUtils.isFlatpakExecutable(emulatorBinary)) {
               process = await FlatpakUtils.launchFlatpak(
                   emulatorBinary, launchParams);
-              ProcessHelper.pipeProcessOutput(
-                  process: process,
-                  progressPrefix: "",
-                  onLog: (output) => print("[Flatpak] $output"));
             } else {
               process = await Process.start(emulatorBinary, launchParams,
-                  mode: ProcessStartMode.inheritStdio,
+                  //mode: ProcessStartMode.inheritStdio,
                   workingDirectory:
                       p.dirname(filePath.isEmpty ? emulatorBinary : filePath));
             }
           }
         }
+        appProvider.addLogToExecutionLogs(slug,
+            "Launched emulator with PID ${process.pid} and command: $emulatorBinary ${launchParams.join(' ')}");
+        // Saves the logs of the current execution
+        ProcessHelper.pipeProcessOutput(
+            process: process,
+            progressPrefix: "",
+            onLog: (output) {
+              print("> $output");
+              appProvider.addLogToExecutionLogs(slug, output);
+            });
         _activeGamesProcesses[slug] = process;
 
         await process.exitCode;
       }
     } on Exception catch (err) {
+      appProvider.addLogToExecutionLogs(
+          slug, "Failed to launch the game: ${err.toString()}");
       AlertsService.showErrorSnackbar("Failed to open the rom", exception: err);
     } finally {
       final activeTimer = _activeGames[slug];

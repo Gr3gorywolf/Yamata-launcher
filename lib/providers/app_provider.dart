@@ -30,6 +30,8 @@ class AppProvider extends ChangeNotifier {
   bool get sortByLastPlayedByDefault => _sortByLastPlayedByDefault;
   String? get incomingDownloadUrl => _incomingDownloadUrl;
   ViewModeToggleMode romListItemType = ViewModeToggleMode.grid;
+  Map<String, String> _executionLogs = {};
+  Map<String, String> get executionLogs => _executionLogs;
   StreamController<String?> onGamepadButtonPressed =
       StreamController<String?>.broadcast();
   StreamController<bool?> onChangeTab = StreamController<bool?>.broadcast();
@@ -71,6 +73,18 @@ class AppProvider extends ChangeNotifier {
 
   setShowGamepadGuide(bool val) {
     _showGamepadGuide = val;
+    notifyListeners();
+  }
+
+  addLogToExecutionLogs(String slug, String log) {
+    var currentLogs = _executionLogs[slug] ?? "";
+    currentLogs += log + "\n";
+    _executionLogs[slug] = currentLogs;
+    notifyListeners();
+  }
+
+  cleanExecutionLogs(String slug) {
+    _executionLogs.remove(slug);
     notifyListeners();
   }
 

@@ -10,6 +10,7 @@ import 'package:yamata_launcher/models/download_source.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/download_provider.dart';
 import 'package:yamata_launcher/providers/download_sources_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
@@ -18,6 +19,7 @@ import 'package:yamata_launcher/services/download_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/ui/widgets/execution_logs_dialog.dart';
 import 'package:yamata_launcher/ui/widgets/rom_metadata_form.dart';
 import 'package:yamata_launcher/ui/pages/rom_settings_dialog/rom_settings_dialog.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +36,8 @@ enum _RomMenuAction {
   downloadExtra,
   extractRom,
   openRomFolder,
-  removeFromLibrary
+  removeFromLibrary,
+  viewLogs
 }
 
 class RomLibraryActions extends StatelessWidget {
@@ -54,6 +57,8 @@ class RomLibraryActions extends StatelessWidget {
     var libraryProvider = Provider.of<LibraryProvider>(context);
     var downloadSourcesProvider = Provider.of<DownloadSourcesProvider>(context);
     var downloadProvider = Provider.of<DownloadProvider>(context);
+    var executionLogs =
+        Provider.of<AppProvider>(context).executionLogs[rom.slug] ?? "";
     var libraryItem = libraryProvider.getLibraryItem(rom.slug);
     var isFavorite = (libraryItem?.isFavorite ?? false) == true;
     var filePath = libraryItem?.filePath ?? "";
@@ -214,6 +219,9 @@ class RomLibraryActions extends StatelessWidget {
                 case _RomMenuAction.editMetadata:
                   handleEditMetadata();
                   break;
+                case _RomMenuAction.viewLogs:
+                  ExecutionLogsDialog.show(context, rom.slug ?? '');
+                  break;
                 case _RomMenuAction.downloadExtra:
                   handleDownloadExtraContent();
                   break;
@@ -260,6 +268,18 @@ class RomLibraryActions extends StatelessWidget {
                       Icon(Icons.download, size: 20),
                       SizedBox(width: 10),
                       Text("Download extra content"),
+                    ],
+                  ),
+                ),
+              if (!Platform.isAndroid && executionLogs.isNotEmpty)
+                PopupMenuItem<_RomMenuAction>(
+                  value: _RomMenuAction.viewLogs,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.terminal, size: 20),
+                      SizedBox(width: 10),
+                      Text("View execution logs"),
                     ],
                   ),
                 ),

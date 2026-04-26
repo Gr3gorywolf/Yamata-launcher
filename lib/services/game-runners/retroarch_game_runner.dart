@@ -91,13 +91,6 @@ class RetroarchGameRunner implements GameRunner {
     final process = Platform.isLinux
         ? await FlatpakUtils.launchFlatpak(command, launchArgs)
         : await Process.start(command, launchArgs);
-
-    ProcessHelper.pipeProcessOutput(
-      process: process,
-      onLog: (String line) {
-        print('RetroArch: $line');
-      },
-    );
     return process;
   }
 

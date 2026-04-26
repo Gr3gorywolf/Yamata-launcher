@@ -267,7 +267,6 @@ class HeroicGameRunner implements GameRunner {
             environment: _buildLaunchEnvironment(),
             includeParentEnvironment: false);
 
-    ProcessHelper.pipeProcessOutput(process: process, onLog: print);
     return process;
   }
 }

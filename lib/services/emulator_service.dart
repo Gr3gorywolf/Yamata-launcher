@@ -260,7 +260,7 @@ class EmulatorService {
 
     try {
       if (Platform.isAndroid) {
-        emulatorLaunchResult = await EmulatorService.launchEmulatorIntent(
+        emulatorLaunchResult = await launchEmulatorIntent(
           consoleKey,
           emulatorBinary,
           filePath,
@@ -295,6 +295,7 @@ class EmulatorService {
           }
         }
         if (process == null) {
+          launchParams.removeWhere((param) => param.isEmpty);
           if (Platform.isMacOS) {
             final execPath =
                 await SystemHelpers.resolveMacAppExecutable(emulatorBinary);
@@ -320,7 +321,7 @@ class EmulatorService {
             process: process,
             progressPrefix: "",
             onLog: (output) {
-              print("> $output");
+              print("${slug}> $output");
               appProvider.addLogToExecutionLogs(slug, output);
             });
         _activeGamesProcesses[slug] = process;

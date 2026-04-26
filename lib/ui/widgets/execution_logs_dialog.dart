@@ -112,7 +112,6 @@ class _ExecutionLogsDialogState extends State<ExecutionLogsDialog> {
         _syncLogs(logs);
 
         return Dialog(
-          backgroundColor: Colors.transparent,
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Container(
@@ -122,29 +121,11 @@ class _ExecutionLogsDialogState extends State<ExecutionLogsDialog> {
               minHeight: 320,
               maxHeight: 700,
             ),
-            decoration: BoxDecoration(
-              color: terminalBackground,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: terminalBorder, width: 1.2),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black54,
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
-                ),
-              ],
-            ),
             child: Column(
               children: [
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: const BoxDecoration(
-                    color: terminalPanel,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(13),
-                    ),
-                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -159,35 +140,7 @@ class _ExecutionLogsDialogState extends State<ExecutionLogsDialog> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.slug,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: terminalMutedText,
-                              ),
-                            ),
                           ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: _isReading ? readingText : terminalBorder,
-                          ),
-                        ),
-                        child: Text(
-                          _isReading ? 'READING' : 'LIVE',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: _isReading ? readingText : terminalText,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                          ),
                         ),
                       ),
                       const SizedBox(width: 8),

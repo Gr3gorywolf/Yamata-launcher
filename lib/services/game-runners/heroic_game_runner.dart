@@ -246,18 +246,8 @@ class HeroicGameRunner implements GameRunner {
     await closeLauncher();
 
     final launchUrl = _buildLaunchUrl(gameId);
-    final command = Platform.isMacOS ? 'open' : this.executablePath;
-    final launchArgs = Platform.isMacOS
-        ? [
-            '-W',
-            '-a',
-            _macOsAppBundlePath(),
-            '--args',
-            '--no-gui',
-            '--no-sandbox',
-            launchUrl
-          ]
-        : ['--no-gui', '--no-sandbox', launchUrl];
+    final command = this.executablePath;
+    final launchArgs = ['--no-gui', '--no-sandbox', '--console', launchUrl];
 
     print("launching heroic with command $command ${launchArgs.join(' ')}");
 

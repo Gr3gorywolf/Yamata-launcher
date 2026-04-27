@@ -247,7 +247,7 @@ class HeroicGameRunner implements GameRunner {
 
     final launchUrl = _buildLaunchUrl(gameId);
     final command = this.executablePath;
-    final launchArgs = ['--no-gui', '--no-sandbox', '--console', launchUrl];
+    final launchArgs = ['--no-gui', '--no-sandbox', launchUrl];
 
     print("launching heroic with command $command ${launchArgs.join(' ')}");
 

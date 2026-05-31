@@ -10,7 +10,7 @@ import 'package:yamata_launcher/utils/cached_fetch.dart';
 class RomDetailsRepository {
   Future<HltbEntry?> fetchHltbData(RomInfo rom) async {
     return await CachedFetch.object<HltbEntry>(
-      key: "hltb_${rom.slug}",
+      key: "hltb_v2_${rom.slug}",
       fetcher: () async {
         var scraper = HltbScraper();
         var results = await scraper.search(rom.name);
@@ -22,7 +22,7 @@ class RomDetailsRepository {
         return detail;
       },
       fromJson: (json) => HltbEntry.fromJson(json),
-      ttl: Duration(days: 1),
+      ttl: Duration(hours: 12),
     );
   }
 

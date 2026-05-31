@@ -146,13 +146,11 @@ class _CustomPathsPageState extends State<CustomPathsPage> {
           );
         },
       ),
-      floatingActionButton: !ConsoleService.externalPlatformCatalogs.isEmpty
-          ? GamepadAwareFloatingActionButton(
-              onPressed: handleAddPath,
-              icon: Icons.add,
-              title: 'Add Custom Path',
-            )
-          : null,
+      floatingActionButton: GamepadAwareFloatingActionButton(
+        onPressed: handleAddPath,
+        icon: Icons.add,
+        title: 'Add Custom Path',
+      ),
     );
   }
 }

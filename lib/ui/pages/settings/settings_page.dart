@@ -374,13 +374,13 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: 'Manage your artwork scrapers and their credentials.',
               onTap: () => context.push("/settings/artwork-scraper-settings"),
             ),
-            // _NavigationTile(
-            //   icon: Icons.rocket_launch,
-            //   title: 'Game runners',
-            //   subtitle:
-            //       'Customize the behavior of the game runners, like heroic games launcher, retroarch, etc...',
-            //   onTap: () => context.push("/settings/game-runners-settings"),
-            // ),
+            _NavigationTile(
+              icon: Icons.rocket_launch,
+              title: 'Runners',
+              subtitle:
+                  'View and configure the runners installed on this system.',
+              onTap: () => context.push("/settings/game-runners-settings"),
+            ),
             // Behavior section
             const _SectionHeader(title: 'Behavior'),
             if (FileSystemService.isDesktop)

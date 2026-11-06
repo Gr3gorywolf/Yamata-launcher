@@ -7,6 +7,7 @@ import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
+import 'package:yamata_launcher/models/runner_configuration.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
@@ -118,6 +119,14 @@ class _RomSettingsDialogState extends State<RomSettingsDialog> {
       }
 
       libraryItem.openParams = value;
+      await provider.updateLibraryItem(libraryItem);
+    }
+
+    Future<void> updateRunnerConfiguration(
+        RunnerConfiguration? configuration) async {
+      if (libraryItem == null) return;
+      libraryItem.overrideRunnerConfig = configuration;
+      libraryItem.ignoreDefaultRunnerConfig = configuration == null;
       await provider.updateLibraryItem(libraryItem);
     }
 
@@ -268,7 +277,10 @@ class _RomSettingsDialogState extends State<RomSettingsDialog> {
                 console: widget.rom.console,
                 binaryController: overrideEmulatorController,
                 launchParametersController: launchParametersController,
-                emulatorSetting: defaultEmulatorSetting,
+                runnerConfig: libraryItem?.ignoreDefaultRunnerConfig == true
+                    ? null
+                    : libraryItem?.overrideRunnerConfig ??
+                        defaultEmulatorSetting?.runnerConfig,
                 binaryTitle: "Emulator override",
                 binaryHintText: "Default emulator",
                 binaryHelperText:
@@ -281,6 +293,7 @@ class _RomSettingsDialogState extends State<RomSettingsDialog> {
                 showLaunchParameters: FileSystemService.isDesktop,
                 onBinaryChanged: updateOverrideEmulator,
                 onLaunchParametersChanged: updateLaunchParameters,
+                onRunnerConfigChanged: updateRunnerConfiguration,
               ),
               DialogSectionItem(
                 title: "Time played",

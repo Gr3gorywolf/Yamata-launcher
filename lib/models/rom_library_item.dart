@@ -1,6 +1,7 @@
 import 'package:yamata_launcher/models/contracts/json_serializable.dart';
 import 'package:yamata_launcher/models/download_source_rom.dart';
 import 'package:yamata_launcher/models/rom_info.dart';
+import 'package:yamata_launcher/models/runner_configuration.dart';
 
 class RomLibraryItem extends JsonSerializable {
   RomInfo rom;
@@ -12,6 +13,8 @@ class RomLibraryItem extends JsonSerializable {
   DateTime? downloadedAt;
   String? openParams;
   String? overrideEmulator;
+  RunnerConfiguration? overrideRunnerConfig;
+  bool ignoreDefaultRunnerConfig = false;
   bool? doesExists = false;
   DownloadSourceRom? manualDownload;
   bool isImported = false;
@@ -26,6 +29,8 @@ class RomLibraryItem extends JsonSerializable {
       this.downloadedAt,
       this.openParams,
       this.overrideEmulator,
+      this.overrideRunnerConfig,
+      this.ignoreDefaultRunnerConfig = false,
       this.manualDownload,
       this.isImported = false});
 
@@ -45,6 +50,11 @@ class RomLibraryItem extends JsonSerializable {
             : null,
         openParams = json['openParams'],
         overrideEmulator = json['overrideEmulator'],
+        overrideRunnerConfig = json['overrideRunnerConfig'] is Map
+            ? RunnerConfiguration.fromJson(
+                Map<String, dynamic>.from(json['overrideRunnerConfig']))
+            : null,
+        ignoreDefaultRunnerConfig = json['ignoreDefaultRunnerConfig'] ?? false,
         isImported = json['isImported'] ?? false,
         manualDownload = json['manualDownload'] != null
             ? DownloadSourceRom.fromJson(json['manualDownload'])
@@ -61,6 +71,10 @@ class RomLibraryItem extends JsonSerializable {
     data['downloadedAt'] = this.downloadedAt?.toIso8601String();
     data['openParams'] = this.openParams;
     data['overrideEmulator'] = this.overrideEmulator;
+    if (this.overrideRunnerConfig != null) {
+      data['overrideRunnerConfig'] = this.overrideRunnerConfig!.toJson();
+    }
+    data['ignoreDefaultRunnerConfig'] = this.ignoreDefaultRunnerConfig;
     data['isImported'] = this.isImported;
     if (this.manualDownload != null) {
       data['manualDownload'] = this.manualDownload!.toJson();

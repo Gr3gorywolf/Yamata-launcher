@@ -2,16 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:yamata_launcher/models/argument_group.dart';
+import 'package:flutter/material.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
+import 'package:yamata_launcher/models/runner_configuration.dart';
 import 'package:yamata_launcher/services/console_service.dart';
-import 'package:yamata_launcher/services/emulator_service.dart';
 import 'package:yamata_launcher/services/os_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
-import 'package:yamata_launcher/utils/process_helper.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class RetroarchGameRunner implements GameRunner {
@@ -28,6 +27,9 @@ class RetroarchGameRunner implements GameRunner {
     OsType.linux: 'org.libretro.RetroArch',
     OsType.macos: '/Applications/RetroArch.app',
   };
+
+  @override
+  String get runnerId => 'retroarch';
 
   @override
   String get name => 'RetroArch';
@@ -68,15 +70,20 @@ class RetroarchGameRunner implements GameRunner {
           'No installed RetroArch cores found for ${ConsoleService.getConsoleFromName(rom.rom.console)?.name}');
     }
 
-    var launchParams = "-L ${installedCores.first}";
-    if (emulatorSetting.launchParams.isNotEmpty) {
-      launchParams = emulatorSetting.launchParams;
-    }
+    final configuredCore = emulatorSetting.runnerConfig?.settings['core'];
+    final core =
+        configuredCore is String && installedCores.contains(configuredCore)
+            ? configuredCore
+            : installedCores.first;
+    // A selected core is runner configuration, not a generic command-line
+    // option. Strip legacy -L options so it remains the source of truth.
+    final customParams = emulatorSetting.launchParams.replaceAll(
+      RegExp(r'(^|\s)-L\s+\S+'),
+      '',
+    );
+    var launchParams = "-L $core $customParams".trim();
     if (rom.openParams != null && rom.openParams!.isNotEmpty) {
       launchParams += " ${rom.openParams}";
-    }
-    if (!launchParams.contains("-L")) {
-      launchParams = "-L ${installedCores.first} $launchParams";
     }
     var launchArgs = [...launchParams.split(' '), rom.filePath ?? "", '-v'];
     var executableBinary = this.executablePath;
@@ -85,7 +92,9 @@ class RetroarchGameRunner implements GameRunner {
           executablesByPlatform[OsType.macos]!);
     }
     final command =
-        Platform.isWindows ? emulatorSetting.emulatorBinary : executableBinary;
+        Platform.isWindows && emulatorSetting.emulatorBinary.isNotEmpty
+            ? emulatorSetting.emulatorBinary
+            : executableBinary;
     print("launching retroarch with command $command ${launchArgs.join(' ')}");
 
     final process = Platform.isLinux
@@ -95,34 +104,33 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Future<List<ArgumentGroup>> getAvailableParams(
-      String console, String executablePath) async {
-    var coresPath = await _getCoresPath(executablePath);
-    var installedCores = [];
-    if (coresPath != null) {
-      installedCores = await _getConsoleInstalledCores(console, coresPath);
+  Widget buildEmulatorSettingsConfiguration({
+    required String console,
+    required RunnerConfiguration configuration,
+    required ValueChanged<RunnerConfiguration> onChanged,
+  }) {
+    return _RetroArchCoreConfiguration(
+      runner: this,
+      console: console,
+      configuration: configuration,
+      onChanged: onChanged,
+    );
+  }
+
+  @override
+  Widget? buildRunnerSettings(BuildContext context) => null;
+
+  @override
+  Future<void> openRunner() async {
+    var command = executablePath;
+    if (Platform.isMacOS) {
+      command = await SystemHelpers.resolveMacAppExecutable(command);
     }
-    var params = [
-      ArgumentGroup(
-        key: 'cores',
-        name: 'Core to use',
-        singleSelect: true,
-        arguments: installedCores.map((core) {
-          var coreName = p.basenameWithoutExtension(core);
-          return Argument("${coreName}", '-L $core');
-        }).toList(),
-      ),
-      ArgumentGroup(
-        key: 'system',
-        name: 'System options',
-        singleSelect: false,
-        arguments: [
-          Argument("Launch fullscreen", "-f"),
-          Argument("Show RetroArch menu on launch", "--menu")
-        ],
-      ),
-    ];
-    return params;
+    if (Platform.isLinux && await FlatpakUtils.isFlatpakExecutable(command)) {
+      await FlatpakUtils.launchFlatpak(command, const []);
+      return;
+    }
+    await Process.start(command, const []);
   }
 
   Future<List<String>> _getConsoleInstalledCores(
@@ -144,6 +152,14 @@ class RetroarchGameRunner implements GameRunner {
       }
     }
     return cores;
+  }
+
+  Future<List<String>> getInstalledCoresForConsole(String console) async {
+    final coresPath = await _getCoresPath(executablePath);
+    if (coresPath == null) {
+      return [];
+    }
+    return _getConsoleInstalledCores(console, coresPath);
   }
 
   Future<String?> _getCoresPath(String executablePath) async {
@@ -173,5 +189,85 @@ class RetroarchGameRunner implements GameRunner {
     var content = String.fromCharCodes(bytes);
     var coresByConsole = Map<String, List<dynamic>>.from(jsonDecode(content));
     return coresByConsole[console]?.cast<String>() ?? [];
+  }
+}
+
+class _RetroArchCoreConfiguration extends StatefulWidget {
+  final RetroarchGameRunner runner;
+  final String console;
+  final RunnerConfiguration configuration;
+  final ValueChanged<RunnerConfiguration> onChanged;
+
+  const _RetroArchCoreConfiguration({
+    required this.runner,
+    required this.console,
+    required this.configuration,
+    required this.onChanged,
+  });
+
+  @override
+  State<_RetroArchCoreConfiguration> createState() =>
+      _RetroArchCoreConfigurationState();
+}
+
+class _RetroArchCoreConfigurationState
+    extends State<_RetroArchCoreConfiguration> {
+  late Future<List<String>> _cores;
+
+  @override
+  void initState() {
+    super.initState();
+    _cores = widget.runner.getInstalledCoresForConsole(widget.console);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: _cores,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final cores = snapshot.data!;
+        final selectedCore = widget.configuration.settings['core'];
+        if (cores.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(8),
+            child: Text(
+              'No compatible RetroArch cores are installed for this platform.',
+            ),
+          );
+        }
+
+        return DropdownButtonFormField<String>(
+          value: selectedCore is String && cores.contains(selectedCore)
+              ? selectedCore
+              : null,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'RetroArch core',
+            border: OutlineInputBorder(),
+          ),
+          hint: const Text('Select a core'),
+          items: cores
+              .map((core) => DropdownMenuItem(
+                    value: core,
+                    child: Text(p.basenameWithoutExtension(core)),
+                  ))
+              .toList(),
+          onChanged: (core) {
+            if (core == null) return;
+            widget.onChanged(widget.configuration.copyWith(settings: {
+              ...widget.configuration.settings,
+              'core': core,
+            }));
+          },
+        );
+      },
+    );
   }
 }

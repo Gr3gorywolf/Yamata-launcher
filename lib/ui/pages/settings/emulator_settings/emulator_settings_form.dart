@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/models/console.dart';
 import 'package:yamata_launcher/models/emulator_setting.dart';
+import 'package:yamata_launcher/models/runner_configuration.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
@@ -30,6 +30,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   final launchParametersController = TextEditingController();
   final selectedBinaryController = TextEditingController();
   String selectedConsole = "";
+  RunnerConfiguration? runnerConfig;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       selectedConsole = widget.editingSetting!.console;
       selectedBinaryController.text = widget.editingSetting!.emulatorBinary;
       launchParametersController.text = widget.editingSetting!.launchParams;
+      runnerConfig = widget.editingSetting!.runnerConfig;
     } else if (availableConsoles.isNotEmpty) {
       selectedConsole = availableConsoles.first.slug ?? "";
     }
@@ -62,6 +64,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
   void handleSave() {
     if (selectedConsole.isEmpty ||
         (selectedBinaryController.text.isEmpty &&
+            runnerConfig == null &&
             !FileSystemService.isDesktop)) {
       AlertsService.showErrorSnackbar(
           "Please select a console and emulator binary path",
@@ -72,6 +75,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
       console: selectedConsole,
       emulatorBinary: selectedBinaryController.text,
       launchParams: launchParametersController.text,
+      runnerConfig: runnerConfig,
     );
     widget.onSubmit(setting);
     Navigator.of(context).pop();
@@ -116,6 +120,7 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                 console: selectedConsole,
                 binaryController: selectedBinaryController,
                 launchParametersController: launchParametersController,
+                runnerConfig: runnerConfig,
                 binaryTitle: "Emulator $emulatorExecutableType",
                 binaryHintText: "Emulator $emulatorExecutableType path",
                 binaryHelperText:
@@ -126,6 +131,9 @@ class _EmulatorSettingsFormState extends State<EmulatorSettingsForm> {
                     "Parameters flags used when launching the ROM (if supported by the emulator)",
                 enableBinaryEditing: FileSystemService.isDesktop,
                 showLaunchParameters: FileSystemService.isDesktop,
+                onRunnerConfigChanged: (configuration) {
+                  setState(() => runnerConfig = configuration);
+                },
               ),
             ],
           ),

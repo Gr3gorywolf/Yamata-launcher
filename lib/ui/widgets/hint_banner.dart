@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class HintBanner extends StatelessWidget {
   final String text;
-  const HintBanner({super.key, required this.text});
+  final Widget? trailing;
+
+  const HintBanner({super.key, required this.text, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,7 @@ class HintBanner extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
           ),
+          if (trailing != null) trailing!,
         ],
       ),
     );

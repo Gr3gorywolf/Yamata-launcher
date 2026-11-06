@@ -15,11 +15,9 @@ import 'package:yamata_launcher/models/emulator_setting.dart';
 import 'package:yamata_launcher/models/rom_library_item.dart';
 import 'package:yamata_launcher/providers/app_provider.dart';
 import 'package:yamata_launcher/providers/library_provider.dart';
-import 'package:yamata_launcher/repository/emulator_intents_repository.dart';
 import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
-import 'package:yamata_launcher/services/game-runners/heroic_game_runner.dart';
 import 'package:yamata_launcher/services/game-runners/retroarch_game_runner.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
@@ -37,8 +35,14 @@ class EmulatorService {
   static Map<String, Map<String, String>> _emulatorIntents = {};
   static List<GameRunner> runners = [
     RetroarchGameRunner(),
-    HeroicGameRunner(),
   ];
+
+  static GameRunner? getRunnerById(String runnerId) {
+    for (final runner in runners) {
+      if (runner.runnerId == runnerId) return runner;
+    }
+    return null;
+  }
 
   /**
    * Since the emulator intents have interpolated values, we need to parse them each time we use them.
@@ -234,6 +238,10 @@ class EmulatorService {
     var filePath = download.filePath ?? "";
 
     final overrideEmulator = download.overrideEmulator;
+    final runnerConfig = download.ignoreDefaultRunnerConfig
+        ? null
+        : download.overrideRunnerConfig ?? emulatorSetting.runnerConfig;
+    final launchSetting = emulatorSetting.copyWith(runnerConfig: runnerConfig);
     var emulatorBinary =
         (overrideEmulator != null && overrideEmulator.isNotEmpty)
             ? overrideEmulator
@@ -267,31 +275,35 @@ class EmulatorService {
         );
       } else {
         Process? process;
-        var availableRunners = await getCompatibleRunners(consoleKey);
-        print(availableRunners);
-        // If theres a compatible runner it will launch it only if the executable path matches
-        if (availableRunners.isNotEmpty) {
-          for (var runner in availableRunners) {
-            if (runner.executablePath.isEmpty) {
-              continue;
-            }
-            if (emulatorBinary.contains(runner.executablePath)) {
-              Process? runnerProcess = null;
-              try {
-                runnerProcess = await runner.launch(download, emulatorSetting);
-              } on Exception catch (e) {
-                print("Error checking runner availability: $e");
-                AlertsService.showErrorSnackbar(
-                    "Failed to launch the game with ${runner.name}",
-                    exception: e);
-                return;
-              }
+        final configuredRunner =
+            runnerConfig == null ? null : getRunnerById(runnerConfig.runnerId);
+        if (runnerConfig != null && configuredRunner == null) {
+          throw Exception(
+              'The configured runner "${runnerConfig.runnerId}" is unavailable.');
+        }
 
-              if (runnerProcess != null) {
-                process = runnerProcess;
-              }
+        // New settings select runners explicitly by id. Keep matching the
+        // executable only for settings created before runnerConfig existed.
+        GameRunner? runner = configuredRunner;
+        if (runner == null) {
+          final availableRunners = await getCompatibleRunners(consoleKey);
+          for (final candidate in availableRunners) {
+            if (candidate.executablePath.isNotEmpty &&
+                emulatorBinary.contains(candidate.executablePath)) {
+              runner = candidate;
               break;
             }
+          }
+        }
+        if (runner != null) {
+          try {
+            process = await runner.launch(download, launchSetting);
+          } on Exception catch (e) {
+            print("Error launching runner: $e");
+            AlertsService.showErrorSnackbar(
+                "Failed to launch the game with ${runner.name}",
+                exception: e);
+            return;
           }
         }
         if (process == null) {

@@ -14,6 +14,8 @@ import 'package:yamata_launcher/utils/flatpak_utils.dart';
 import 'package:yamata_launcher/utils/system_helpers.dart';
 
 class RetroarchGameRunner implements GameRunner {
+  String _configuredExecutablePath = '';
+  bool _isExecutableAvailable = false;
   var dataFolderByPlatform = {
     OsType.windows: '${Platform.environment['APPDATA']}\\RetroArch',
     OsType.linux:
@@ -35,20 +37,46 @@ class RetroarchGameRunner implements GameRunner {
   String get name => 'RetroArch';
 
   @override
-  String get executablePath => executablesByPlatform[OsService.osType] ?? '';
+  String get executablePath => _configuredExecutablePath;
 
   @override
-  bool get isRunnerInstalled {
-    final executablePath = executablesByPlatform[OsService.osType];
-    if (executablePath == null) return false;
-    if (Platform.isLinux) {
-      return Directory(this.dataFolderByPlatform[OsType.linux]!).existsSync() ||
-          FlatpakUtils.cachedFlatpakApps?.contains('org.libretro.RetroArch') ==
-              true;
-    }
-    return File(executablePath).existsSync() ||
-        Directory(executablePath).existsSync();
+  List<String> get defaultExecutablePaths {
+    final executable = executablesByPlatform[OsService.osType];
+    return executable == null ? const [] : [executable];
   }
+
+  @override
+  Future<bool> isExecutableAvailable(String executablePath) async {
+    final path = executablePath.trim();
+    if (path.isEmpty) return false;
+    if (Platform.isLinux && await FlatpakUtils.isFlatpakExecutable(path)) {
+      return true;
+    }
+    if (await File(path).exists() || await Directory(path).exists()) {
+      return true;
+    }
+    if (Platform.isWindows && !path.contains('/') && !path.contains('\\')) {
+      try {
+        return (await Process.run('where', [path])).exitCode == 0;
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  @override
+  Future<void> setExecutablePath(String executablePath) async {
+    final path = executablePath.trim();
+    _configuredExecutablePath = path;
+    final isAvailable = await isExecutableAvailable(path);
+    if (_configuredExecutablePath == path) {
+      _isExecutableAvailable = isAvailable;
+    }
+  }
+
+  @override
+  bool get isRunnerInstalled => _isExecutableAvailable;
 
   @override
   Future<bool> canRunOnConsole(String console) async {
@@ -59,7 +87,11 @@ class RetroarchGameRunner implements GameRunner {
   @override
   Future<Process?> launch(
       RomLibraryItem rom, EmulatorSetting emulatorSetting) async {
-    var coresPath = await _getCoresPath(emulatorSetting.emulatorBinary);
+    var coresPath = await _getCoresPath(
+      emulatorSetting.emulatorBinary.isNotEmpty
+          ? emulatorSetting.emulatorBinary
+          : executablePath,
+    );
     if (coresPath == null) {
       throw Exception('Cores folder not found for RetroArch');
     }
@@ -88,8 +120,8 @@ class RetroarchGameRunner implements GameRunner {
     var launchArgs = [...launchParams.split(' '), rom.filePath ?? "", '-v'];
     var executableBinary = this.executablePath;
     if (Platform.isMacOS) {
-      executableBinary = await SystemHelpers.resolveMacAppExecutable(
-          executablesByPlatform[OsType.macos]!);
+      executableBinary =
+          await SystemHelpers.resolveMacAppExecutable(executableBinary);
     }
     final command =
         Platform.isWindows && emulatorSetting.emulatorBinary.isNotEmpty
@@ -97,9 +129,10 @@ class RetroarchGameRunner implements GameRunner {
             : executableBinary;
     print("launching retroarch with command $command ${launchArgs.join(' ')}");
 
-    final process = Platform.isLinux
-        ? await FlatpakUtils.launchFlatpak(command, launchArgs)
-        : await Process.start(command, launchArgs);
+    final process =
+        Platform.isLinux && await FlatpakUtils.isFlatpakExecutable(command)
+            ? await FlatpakUtils.launchFlatpak(command, launchArgs)
+            : await Process.start(command, launchArgs);
     return process;
   }
 
@@ -118,7 +151,11 @@ class RetroarchGameRunner implements GameRunner {
   }
 
   @override
-  Widget? buildRunnerSettings(BuildContext context) => null;
+  Widget? buildRunnerSettings(
+    BuildContext context, {
+    VoidCallback? onRefresh,
+  }) =>
+      null;
 
   @override
   Future<void> openRunner() async {

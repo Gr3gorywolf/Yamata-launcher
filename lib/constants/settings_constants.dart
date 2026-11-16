@@ -24,6 +24,7 @@ enum SettingsKeys {
   SHOW_CONTROLLER_GUIDE,
   SELECT_FIRST_DEBRIDER,
   SORT_BY_LAST_PLAYED_BY_DEFAULT,
+  RUNNERS_PATHS,
   LAST_APP_VERSION;
 }
 
@@ -117,6 +118,11 @@ Map<SettingsKeys, Setting> settingsRegistry = {
     key: 'sort_by_last_played_by_default',
     type: SettingType.bool,
     defaultValue: false,
+  ),
+  SettingsKeys.RUNNERS_PATHS: Setting<String>(
+    key: 'runners_paths',
+    type: SettingType.string,
+    defaultValue: '{}',
   ),
   SettingsKeys.LAST_APP_VERSION: Setting<String>(
     key: 'last_app_version',

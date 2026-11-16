@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:yamata_launcher/app_router.dart';
 import 'package:yamata_launcher/constants/console_constants.dart';
 import 'package:yamata_launcher/constants/files_constants.dart';
+import 'package:yamata_launcher/constants/settings_constants.dart';
 import 'package:yamata_launcher/database/app_database.dart';
 import 'package:yamata_launcher/database/daos/emulator_settings_dao.dart';
 import 'package:yamata_launcher/models/contracts/game_runner.dart';
@@ -22,6 +23,7 @@ import 'package:yamata_launcher/services/game-runners/retroarch_game_runner.dart
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
+import 'package:yamata_launcher/services/settings_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:yamata_launcher/utils/flatpak_utils.dart';
 import 'package:yamata_launcher/utils/process_helper.dart';
@@ -33,6 +35,8 @@ class EmulatorService {
   static Map<String, Timer> _activeGames = {};
   static Map<String, Process> _activeGamesProcesses = {};
   static Map<String, Map<String, String>> _emulatorIntents = {};
+  static Map<String, String> _runnerPaths = {};
+  static final Map<String, int> _runnerPathWriteVersions = {};
   static List<GameRunner> runners = [
     RetroarchGameRunner(),
   ];
@@ -42,6 +46,68 @@ class EmulatorService {
       if (runner.runnerId == runnerId) return runner;
     }
     return null;
+  }
+
+  static Future<void> loadRunnerSettings() async {
+    if (Platform.isLinux) {
+      await FlatpakUtils.getInstalledFlatpakAppIds();
+    }
+
+    final serializedPaths =
+        await SettingsService().get<String>(SettingsKeys.RUNNERS_PATHS);
+    try {
+      final decodedPaths = jsonDecode(serializedPaths);
+      if (decodedPaths is Map) {
+        _runnerPaths = decodedPaths.map(
+          (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+        );
+      }
+    } catch (_) {
+      _runnerPaths = {};
+    }
+
+    var pathsChanged = false;
+    for (final runner in runners) {
+      var path = _runnerPaths[runner.runnerId]?.trim() ?? '';
+      if (path.isEmpty) {
+        for (final candidate in runner.defaultExecutablePaths) {
+          if (await runner.isExecutableAvailable(candidate)) {
+            path = candidate;
+            break;
+          }
+        }
+      }
+
+      await runner.setExecutablePath(path);
+      if (_runnerPaths[runner.runnerId] != path) {
+        _runnerPaths[runner.runnerId] = path;
+        pathsChanged = true;
+      }
+    }
+
+    if (pathsChanged) {
+      await _saveRunnerPaths();
+    }
+  }
+
+  static Future<void> setRunnerExecutablePath(
+    GameRunner runner,
+    String executablePath,
+  ) async {
+    final path = executablePath.trim();
+    final writeVersion = (_runnerPathWriteVersions[runner.runnerId] ?? 0) + 1;
+    _runnerPathWriteVersions[runner.runnerId] = writeVersion;
+    await runner.setExecutablePath(path);
+    if (_runnerPathWriteVersions[runner.runnerId] != writeVersion) return;
+    _runnerPaths[runner.runnerId] = path;
+    await _saveRunnerPaths();
+  }
+
+  static Future<void> _saveRunnerPaths() async {
+    await SettingsService().set<String>(
+      SettingsKeys.RUNNERS_PATHS,
+      jsonEncode(_runnerPaths),
+    );
   }
 
   /**
@@ -175,7 +241,7 @@ class EmulatorService {
     }
     final availableRunners = <GameRunner>[];
     for (final runner in runners) {
-      if (await runner.canRunOnConsole(console)) {
+      if (runner.isRunnerInstalled && await runner.canRunOnConsole(console)) {
         availableRunners.add(runner);
       }
     }
@@ -280,6 +346,10 @@ class EmulatorService {
         if (runnerConfig != null && configuredRunner == null) {
           throw Exception(
               'The configured runner "${runnerConfig.runnerId}" is unavailable.');
+        }
+        if (configuredRunner != null && !configuredRunner.isRunnerInstalled) {
+          throw Exception(
+              'The configured runner "${configuredRunner.name}" does not have a valid executable.');
         }
 
         // New settings select runners explicitly by id. Keep matching the

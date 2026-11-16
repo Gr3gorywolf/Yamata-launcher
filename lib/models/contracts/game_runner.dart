@@ -10,6 +10,9 @@ abstract class GameRunner {
   String get runnerId;
   String get name;
   String get executablePath;
+  List<String> get defaultExecutablePaths;
+  Future<bool> isExecutableAvailable(String executablePath);
+  Future<void> setExecutablePath(String executablePath);
   bool get isRunnerInstalled;
   Future<bool> canRunOnConsole(String console);
   Future<Process?> launch(RomLibraryItem rom, EmulatorSetting emulatorSetting);
@@ -23,8 +26,11 @@ abstract class GameRunner {
   });
 
   /// Optional settings for the runner itself, independent of any emulator.
-  /// Returning null means the integrations page opens the runner directly.
-  Widget? buildRunnerSettings(BuildContext context);
+  /// This content is rendered beneath the shared executable selector.
+  Widget? buildRunnerSettings(
+    BuildContext context, {
+    VoidCallback? onRefresh,
+  });
 
   Future<void> openRunner();
 }

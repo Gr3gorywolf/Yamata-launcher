@@ -57,6 +57,7 @@ class _SplashcreenPageState extends State<SplashcreenPage> {
     if (FileSystemService.isDesktop) {
       await OsService.init();
     }
+    await EmulatorService.loadRunnerSettings();
     await Provider.of<LibraryProvider>(context, listen: false).init();
     await Provider.of<DownloadSourcesProvider>(context, listen: false)
         .initialize();

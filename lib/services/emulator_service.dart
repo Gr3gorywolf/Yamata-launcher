@@ -20,6 +20,7 @@ import 'package:yamata_launcher/services/alerts_service.dart';
 import 'package:yamata_launcher/services/console_service.dart';
 import 'package:yamata_launcher/services/files_system_service.dart';
 import 'package:yamata_launcher/services/game-runners/retroarch_game_runner.dart';
+import 'package:yamata_launcher/services/game-runners/wur_game_runner.dart';
 import 'package:yamata_launcher/services/native/intents_android_interface.dart';
 import 'package:android_intent_plus/flag.dart' as flag;
 import 'package:yamata_launcher/services/rom_service.dart';
@@ -39,6 +40,7 @@ class EmulatorService {
   static final Map<String, int> _runnerPathWriteVersions = {};
   static List<GameRunner> runners = [
     RetroarchGameRunner(),
+    WurGameRunner(),
   ];
 
   static GameRunner? getRunnerById(String runnerId) {
@@ -68,6 +70,7 @@ class EmulatorService {
 
     var pathsChanged = false;
     for (final runner in runners) {
+      if (!runner.isSupportedOnCurrentPlatform) continue;
       var path = _runnerPaths[runner.runnerId]?.trim() ?? '';
       if (path.isEmpty) {
         for (final candidate in runner.defaultExecutablePaths) {

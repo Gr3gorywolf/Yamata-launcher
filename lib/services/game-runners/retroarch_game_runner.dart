@@ -37,6 +37,10 @@ class RetroarchGameRunner implements GameRunner {
   String get name => 'RetroArch';
 
   @override
+  bool get isSupportedOnCurrentPlatform =>
+      executablesByPlatform.containsKey(OsService.osType);
+
+  @override
   String get executablePath => _configuredExecutablePath;
 
   @override

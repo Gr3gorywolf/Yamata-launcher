@@ -48,6 +48,17 @@ class _RunnerSettingsState extends State<RunnerSettings> {
     setState(() {});
   }
 
+  void _refresh() {
+    final path = widget.runner.executablePath;
+    if (_executableController.text != path) {
+      _executableController.removeListener(_saveExecutablePath);
+      _executableController.text = path;
+      _lastExecutablePath = path;
+      _executableController.addListener(_saveExecutablePath);
+    }
+    if (mounted) setState(() {});
+  }
+
   Future<void> _selectExecutable() async {
     if (Platform.isAndroid) {
       final app =
@@ -77,9 +88,7 @@ class _RunnerSettingsState extends State<RunnerSettings> {
   Widget build(BuildContext context) {
     final runnerContent = widget.runner.buildRunnerSettings(
       context,
-      onRefresh: () {
-        if (mounted) setState(() {});
-      },
+      onRefresh: _refresh,
     );
     final canEditPath = FileSystemService.isDesktop;
 

@@ -9,6 +9,7 @@ abstract class GameRunner {
   /// Stable persisted identifier. Never use the display name as a key.
   String get runnerId;
   String get name;
+  bool get isSupportedOnCurrentPlatform;
   String get executablePath;
   List<String> get defaultExecutablePaths;
   Future<bool> isExecutableAvailable(String executablePath);

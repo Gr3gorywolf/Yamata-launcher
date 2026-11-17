@@ -18,6 +18,7 @@ class _GameRunnersSettingsPageState extends State<GameRunnersSettingsPage> {
       appBar: AppBar(title: const Text('Game Runners')),
       body: ListView(
         children: EmulatorService.runners
+            .where((runner) => runner.isSupportedOnCurrentPlatform)
             .map((runner) => _RunnerTile(
                   runner: runner,
                   onSettingsChanged: () => setState(() {}),

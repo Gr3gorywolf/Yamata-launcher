@@ -166,6 +166,7 @@ class AlertsService {
     String title,
     String text, {
     ValueNotifier<double?>? progressNotifier,
+    ValueNotifier<String>? textNotifier,
   }) {
     showDialog(
       context: ctx,
@@ -173,16 +174,16 @@ class AlertsService {
       builder: (dialogContext) {
         Widget content;
 
-        if (progressNotifier == null) {
-          content = LoadingAlertDialogContent(text: text);
-        } else {
-          content = ValueListenableBuilder<double?>(
+        Widget buildContent(String currentText) {
+          if (progressNotifier == null) {
+            return LoadingAlertDialogContent(text: currentText);
+          }
+          return ValueListenableBuilder<double?>(
             valueListenable: progressNotifier,
             builder: (context, progress, _) {
               final displayText = progress == null
-                  ? text
-                  : '$text (${(progress * 100).toStringAsFixed(0)}%)';
-
+                  ? currentText
+                  : '$currentText (${(progress * 100).toStringAsFixed(0)}%)';
               return LoadingAlertDialogContent(
                 text: displayText,
                 progress: progress,
@@ -190,6 +191,13 @@ class AlertsService {
             },
           );
         }
+
+        content = textNotifier == null
+            ? buildContent(text)
+            : ValueListenableBuilder<String>(
+                valueListenable: textNotifier,
+                builder: (context, currentText, _) => buildContent(currentText),
+              );
 
         return AlertDialog(
           title: Text(
